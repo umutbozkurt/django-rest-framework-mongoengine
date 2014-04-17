@@ -1,4 +1,4 @@
-mongoengine-serializer
+mongoengine-model-serializer
 ======================
  
 MongoEngine Model Serializer for **Django Rest Framework**
