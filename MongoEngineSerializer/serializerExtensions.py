@@ -20,14 +20,9 @@ class MongoEngineModelSerializerOptions(serializers.ModelSerializerOptions):
 
 
 class MongoEngineModelSerializer(serializers.ModelSerializer):
-
-    ##USAGE###################################################################
-    # class BlogEntrySerializer(MongoEngineModelSerializer):                 #
-    # class Meta:                                                            #
-    #     model = BlogEntry                                                  #
-    #     depth = 1                                                          #
-    #     related_model_validations = {'Category': Category, 'author': User} #
-    ##########################################################################
+    """
+    Model Serializer that supports Mongoengine
+    """
     _options_class = MongoEngineModelSerializerOptions
 
     def validate_related_field(self, attrs, source, object_type):
@@ -156,11 +151,11 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         """
         object_data = obj._data
         counter = 0
-        multiplier = 0
+        emb_obj_count = 0
 
         for field in fields:
             if issubclass(object_data[field].__class__, DBRef) or issubclass(object_data[field].__class__, mongoengine.Document):
-                multiplier += 1
+                emb_obj_count += 1
 
         for field in fields:
             if depth == 0:
@@ -168,13 +163,13 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
                     break
             elif issubclass(object_data[field].__class__, DBRef):
                 object_data = dereference.DeReference().__call__(object_data)
-                if counter < depth*multiplier:
+                if counter < depth*emb_obj_count:
                     counter += 1
                     object_data[field] = self.transform_object(object_data[field], object_data[field]._fields, depth-1)
                 else:
                     object_data[field] = unicode(object_data[field].pk)
             elif issubclass(object_data[field].__class__, mongoengine.Document):
-                if counter < depth*multiplier:
+                if counter < depth*emb_obj_count:
                     counter += 1
                     object_data[field] = self.transform_object(object_data[field], object_data[field]._fields, depth-1)
                 else:

@@ -27,16 +27,3 @@ class CommentSerializer(MongoEngineModelSerializer):
         depth = 2
         related_model_validations = {'owner': User, 'post': Post}
         exclude = ('isApproved',)
-
-###############################################################################
-###############################################################################
-###                                                                         ###
-###  class SomeSerializer(MongoEngineModelSerializer):                      ###
-###     class Meta: -> Just like Model Serializer in Django Rest Framework  ###
-###         model   -> Model the serializer will use                        ###
-###         depth   -> The depth of JSON (when embedding Documents)         ###
-###         related_model_validations -> Validates ReferenceField()         ###
-###         exclude -> Exclude fields from serialization                    ###
-###                                                                         ###
-###############################################################################
-###############################################################################
