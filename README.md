@@ -14,12 +14,16 @@ This serializer is an extension to ***Model Serializer***.
 >  - Validating
 >
 > MongoEngine Documents
- 
-----------
+
+<i class="icon-cog"></i> Setup
+---------
+``` pip install django-rest-framework-mongoengine```
+
 <i class="icon-wrench"></i>Usage
 ---------
-Write ***class meta*** as usual and you're done!
-```
+
+serializers.py
+``` 
 class CommentSerializer(MongoEngineModelSerializer):
     class Meta:
         model = Comment
@@ -27,15 +31,20 @@ class CommentSerializer(MongoEngineModelSerializer):
         related_model_validations = {'owner': User, 'post': Post}
         exclude = ('isApproved',)
 ```
- 
-----------
+models.py
+``` 
+class Comment(Document):
+    post = ReferenceField(Post)
+    owner = ReferenceField(User)
+    text = StringField(max_length=140)
+    isApproved = BooleanField(default=False)
+```
+Mongoengine Model Serializer will **reference** or **embed** Post/User Documents regarding CommentSerializer's **depth**.
+
 <i class="icon-download"></i>Requirements
 ---------
  
  - MongoEngine
  - Django Rest Framework
  
----------
-<i class="icon-cog"></i> Setup
----------
-**No additional configuration/setup needed!**
+
