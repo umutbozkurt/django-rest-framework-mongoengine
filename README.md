@@ -3,7 +3,7 @@ mongoengine-model-serializer
  
 MongoEngine Model Serializer for **Django Rest Framework**
  
-0xe801 This serializer is an extension to ***Model Serializer***.
+This serializer is an extension to ***Model Serializer***.
 `MongoEngine Model Serializer` is pretty easy to use if you are familiar with DRF.
  
 > <i class="icon-right-open"></i>**MongoEngine Model Serializer Provides:**
