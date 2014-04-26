@@ -24,6 +24,8 @@ This serializer is an extension to ***Model Serializer***.
 
 serializers.py
 ``` 
+from rest_framework_mongoengine import mongoengine_serializer
+
 class CommentSerializer(MongoEngineModelSerializer):
     class Meta:
         model = Comment
