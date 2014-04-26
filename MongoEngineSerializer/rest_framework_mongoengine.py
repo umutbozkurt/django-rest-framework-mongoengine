@@ -138,7 +138,22 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.ImageField: fields.ImageField,
             mongoengine.ObjectIdField: fields.Field,
             mongoengine.ReferenceField: fields.CharField,
-            }
+        }
+
+        attribute_dict = {
+            mongoengine.StringField: ['max_length'],
+            mongoengine.DecimalField: ['max_digits', 'decimal_places'],
+            mongoengine.EmailField: ['max_length'],
+            mongoengine.FileField: ['max_length'],
+            mongoengine.ImageField: ['max_length'],
+            mongoengine.URLField: ['max_length'],
+        }
+
+        if model_field.__class__ in attribute_dict:
+            attributes = attribute_dict[model_field.__class__]
+            for attribute in attributes:
+                kwargs.update({attribute: getattr(model_field, attribute)})
+
         try:
             return field_mapping[model_field.__class__](**kwargs)
         except KeyError:

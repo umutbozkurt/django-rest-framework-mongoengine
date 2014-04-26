@@ -9,7 +9,7 @@ class User(Document):
     name = StringField(max_length=50)
     surname = StringField(max_length=20)
     username = StringField(max_length=30)
-    email = StringField(required=True)
+    email = EmailField(max_length=30)
 
 
 class Blog(Document):
