@@ -93,7 +93,7 @@ class User(Document):
 See [LICENSE][8]
 
 
-  [1]: https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/DOCUMENTATION.md
+  [1]: https://pythonhosted.org/django-rest-framework-mongoengine/
   [2]: https://github.com/umutbozkurt/django-rest-framework-mongoengine/releases
   [3]: https://lh4.googleusercontent.com/-Gf_do_QmMHo/U1zTSghmCZI/AAAAAAAAACs/QA5tELHm66I/w511-h382-no/Screen+Shot+2014-04-27+at+12.47.13.png
   [4]: https://lh6.googleusercontent.com/--DFC8tBE1JA/U1zXZJlQ16I/AAAAAAAAADA/uAglm0TdXOk/w464-h103-no/Screen+Shot+2014-04-27+at+13.09.13.png
