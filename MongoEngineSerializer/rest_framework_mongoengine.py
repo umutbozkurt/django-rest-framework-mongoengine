@@ -211,6 +211,10 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             #Call transform_object if field is a related model
             if issubclass(obj._data[key].__class__, mongoengine.Document) or isinstance(obj._data[key], DBRef):
                 value = self.transform_object(obj._data[key], value, depth)
+            #Override value with transform_ methods
+            method = getattr(self, 'transform_%s' % field_name, None)
+            if callable(method):
+                value = method(obj, value)
             if not getattr(field, 'write_only', False):
                 ret[key] = value
             ret.fields[key] = self.augment_field(field, field_name, key, value)
