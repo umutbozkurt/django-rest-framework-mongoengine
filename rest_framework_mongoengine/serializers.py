@@ -204,13 +204,15 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         for field_name, field in self.fields.items():
             if field.read_only and obj is None:
-               continue
+                continue
             field.initialize(parent=self, field_name=field_name)
             key = self.get_field_key(field_name)
             value = field.field_to_native(obj, field_name)
-            #Call transform_object if field is a related model
-            if issubclass(obj._data[key].__class__, mongoengine.Document) or isinstance(obj._data[key], DBRef):
-                value = self.transform_object(obj._data[key], value, depth)
+            #Support for custom fields, check key exists on default fields
+            if key in obj._data:
+                #Call transform_object if field is a related model
+                if issubclass(obj._data[key].__class__, mongoengine.Document) or isinstance(obj._data[key], DBRef):
+                    value = self.transform_object(obj._data[key], value, depth)
             #Override value with transform_ methods
             method = getattr(self, 'transform_%s' % field_name, None)
             if callable(method):
