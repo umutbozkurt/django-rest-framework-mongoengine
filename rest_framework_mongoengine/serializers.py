@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
+import warnings
 from rest_framework import serializers
 from rest_framework import fields
 from bson import DBRef
 from mongoengine import dereference
 import mongoengine
+from mongoengine.base import BaseDocument
 from django.db import models
 from django.forms import widgets
 from django.utils.datastructures import SortedDict
@@ -235,3 +237,27 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         if not self._errors:
             return self.restore_object(attrs, instance=getattr(self, 'object', None))
+
+    @property
+    def data(self):
+        """
+        Returns the serialized data on the serializer.
+        """
+        if self._data is None:
+            obj = self.object
+
+            if self.many is not None:
+                many = self.many
+            else:
+                many = hasattr(obj, '__iter__') and not isinstance(obj, (BaseDocument, Page, dict))
+                if many:
+                    warnings.warn('Implicit list/queryset serialization is deprecated. '
+                                  'Use the `many=True` flag when instantiating the serializer.',
+                                  DeprecationWarning, stacklevel=2)
+
+            if many:
+                self._data = [self.to_native(item) for item in obj]
+            else:
+                self._data = self.to_native(obj)
+
+        return self._data
