@@ -12,9 +12,15 @@ class User(Document):
     email = EmailField(max_length=30)
 
 
+class BlogExtension(EmbeddedDocument):
+    extra_field = StringField()
+    some_other_field = StringField()
+
+
 class Blog(Document):
     owner = ReferenceField(User)
     title = StringField(max_length=30)
+    extension = EmbeddedDocumentField(BlogExtension)
 
 
 class Post(Document):

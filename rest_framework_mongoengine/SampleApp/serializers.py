@@ -1,5 +1,5 @@
 from models import *
-from serializers import MongoEngineModelSerializer
+from rest_framework_mongoengine.serializers import MongoEngineModelSerializer
 
 
 class UserSerializer(MongoEngineModelSerializer):
