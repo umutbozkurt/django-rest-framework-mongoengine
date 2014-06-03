@@ -141,6 +141,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.ImageField: fields.ImageField,
             mongoengine.ObjectIdField: fields.Field,
             mongoengine.ReferenceField: fields.CharField,
+            mongoengine.EmbeddedDocumentField: fields.WritableField,
+            mongoengine.ListField: fields.WritableField
         }
 
         attribute_dict = {
@@ -214,8 +216,10 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             #Support for custom fields, check key exists on default fields
             if key in obj._data:
                 #Call transform_object if field is a related model
-                if issubclass(obj._data[key].__class__, mongoengine.Document) or isinstance(obj._data[key], DBRef):
+                if issubclass(obj._data[key].__class__, BaseDocument) or isinstance(obj._data[key], DBRef):
                     value = self.transform_object(obj._data[key], value, depth)
+                elif issubclass(obj._data[key].__class__, list):
+                    value = [self.transform_object(document, value[0], depth) for document in obj._data[key]]
             #Override value with transform_ methods
             method = getattr(self, 'transform_%s' % field_name, None)
             if callable(method):
