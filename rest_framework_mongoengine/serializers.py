@@ -219,7 +219,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
                 if issubclass(obj._data[key].__class__, BaseDocument) or isinstance(obj._data[key], DBRef):
                     value = self.transform_object(obj._data[key], value, depth)
                 elif issubclass(obj._data[key].__class__, list):
-                    value = [self.transform_object(document, value[0], depth) for document in obj._data[key]]
+                    value = [self.transform_object(document, value[0], depth) if issubclass(document.__class__, BaseDocument) else document for document in obj._data[key]]
             #Override value with transform_ methods
             method = getattr(self, 'transform_%s' % field_name, None)
             if callable(method):
