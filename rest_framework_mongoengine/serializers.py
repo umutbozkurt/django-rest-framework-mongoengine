@@ -213,17 +213,23 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             field.initialize(parent=self, field_name=field_name)
             key = self.get_field_key(field_name)
             value = field.field_to_native(obj, field_name)
-            #Support for custom fields, check key exists on default fields
-            if key in obj._data:
-                #Call transform_object if field is a related model
-                if issubclass(obj._data[key].__class__, BaseDocument) or isinstance(obj._data[key], DBRef):
-                    value = self.transform_object(obj._data[key], value, depth)
-                elif issubclass(obj._data[key].__class__, list):
-                    value = [self.transform_object(document, value[0], depth) if issubclass(document.__class__, BaseDocument) else document for document in obj._data[key]]
-            #Override value with transform_ methods
             method = getattr(self, 'transform_%s' % field_name, None)
             if callable(method):
                 value = method(obj, value)
+            #Custom transform_%s methods
+            method = getattr(self, 'transform_%s' % field_name, None)
+            if callable(method):
+                value = method(obj, value)
+            #Support for custom fields, check key exists on default fields
+            else:
+                if key in obj._data:
+                    #Call transform_object if field is a related model
+                    if issubclass(obj._data[key].__class__, BaseDocument) or isinstance(obj._data[key], DBRef):
+                        value = self.transform_object(obj._data[key], value, depth)
+                    elif issubclass(obj._data[key].__class__, list):
+                        value = [self.transform_object(document, value[0], depth)
+                                 if issubclass(document.__class__, BaseDocument)
+                                 else document for document in obj._data[key]]
             if not getattr(field, 'write_only', False):
                 ret[key] = value
             ret.fields[key] = self.augment_field(field, field_name, key, value)
