@@ -2,8 +2,6 @@ from mongoengine import *
 
 connect('MySampleDB')
 
-### MongoEngineModelSerializer supports Documents and Reference Fields, for now.
-
 
 class User(Document):
     name = StringField(max_length=50)
@@ -20,8 +18,8 @@ class BlogExtension(EmbeddedDocument):
 class Blog(Document):
     owner = ReferenceField(User)
     title = StringField(max_length=30)
-    extension = EmbeddedDocumentField(BlogExtension)
-    post_list = ListField(ReferenceField('Post'))
+    extensions = ListField(EmbeddedDocumentField(BlogExtension))
+    tags = ListField(StringField())
 
 
 class Post(Document):
