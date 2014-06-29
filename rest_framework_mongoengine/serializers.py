@@ -142,12 +142,13 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.ObjectIdField: fields.Field,
             mongoengine.ReferenceField: fields.CharField,
             mongoengine.EmbeddedDocumentField: fields.WritableField,
-            mongoengine.ListField: fields.WritableField
+            mongoengine.ListField: fields.WritableField,
+            mongoengine.DecimalField: fields.DecimalField,
         }
 
         attribute_dict = {
             mongoengine.StringField: ['max_length'],
-            mongoengine.DecimalField: ['max_digits', 'decimal_places'],
+            mongoengine.DecimalField: ['max_value'],
             mongoengine.EmailField: ['max_length'],
             mongoengine.FileField: ['max_length'],
             mongoengine.ImageField: ['max_length'],
