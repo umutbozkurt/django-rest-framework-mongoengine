@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 import warnings
+from django.core.exceptions import ValidationError
+from mongoengine.errors import ValidationError
 from rest_framework import serializers
 from rest_framework import fields
-from bson import DBRef
-from mongoengine import dereference
 import mongoengine
 from mongoengine.base import BaseDocument
 from django.core.paginator import Page
@@ -11,6 +11,7 @@ from django.db import models
 from django.forms import widgets
 from django.utils.datastructures import SortedDict
 from rest_framework.compat import get_concrete_model
+from fields import ReferenceField, ListField, EmbeddedDocumentField
 
 
 class MongoEngineModelSerializerOptions(serializers.ModelSerializerOptions):
@@ -32,12 +33,13 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         """
         Validate related model
         """
-        value = attrs[source]
-
         try:
-            object_type.objects.get(pk=value)
-        except object_type.DoesNotExist:
-            raise serializers.ValidationError(object_type.__name__ + ' with PK ' + value + ' does not exists.')
+            value = attrs[source]
+        except KeyError:
+            return attrs
+
+        value.validate()
+
         return attrs
 
     def perform_validation(self, attrs):
@@ -52,11 +54,17 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             if self.partial and source not in attrs:
                 continue
 
+            if field_name in attrs and hasattr(field, 'model_field'):
+                try:
+                    field.model_field.validate(attrs[field_name])
+                except ValidationError as err:
+                    self._errors[field_name] = str(err)
+
             # Related Model Validations
             if field_name in self.opts.validations:
                 try:
                     self.validate_related_field(attrs, source, self.opts.validations[field_name])
-                except serializers.ValidationError as err:
+                except ValidationError as err:
                     self._errors[field_name] = self._errors.get(field_name, []) + list(err.messages)
 
             try:
@@ -119,8 +127,14 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
     def get_field(self, model_field):
         kwargs = {}
 
-        if model_field.required:
-            kwargs['required'] = False
+        if model_field.__class__ in (mongoengine.ReferenceField, mongoengine.EmbeddedDocumentField, mongoengine.ListField):
+            kwargs['model_field'] = model_field
+
+        if not model_field.__class__ == mongoengine.ObjectIdField:
+            kwargs['required'] = model_field.required
+
+        if model_field.__class__ == mongoengine.EmbeddedDocumentField:
+            kwargs['document_type'] = model_field.document_type
 
         if model_field.default:
             kwargs['required'] = False
@@ -140,15 +154,14 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.FileField: fields.FileField,
             mongoengine.ImageField: fields.ImageField,
             mongoengine.ObjectIdField: fields.Field,
-            mongoengine.ReferenceField: fields.CharField,
-            mongoengine.EmbeddedDocumentField: fields.WritableField,
-            mongoengine.ListField: fields.WritableField,
-            mongoengine.DecimalField: fields.DecimalField,
+            mongoengine.ReferenceField: ReferenceField,
+            mongoengine.ListField: ListField,
+            mongoengine.EmbeddedDocumentField: EmbeddedDocumentField
         }
 
         attribute_dict = {
             mongoengine.StringField: ['max_length'],
-            mongoengine.DecimalField: ['max_value'],
+            mongoengine.DecimalField: ['max_digits', 'decimal_places'],
             mongoengine.EmailField: ['max_length'],
             mongoengine.FileField: ['max_length'],
             mongoengine.ImageField: ['max_length'],
@@ -165,41 +178,6 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         except KeyError:
             return fields.ModelField(model_field=model_field, **kwargs)
 
-    def transform_object(self, obj, fields, depth):
-        """
-        Models to natives
-        Recursion for embedded models
-        """
-        object_data = obj._data
-        counter = 0
-        emb_obj_count = 0
-
-        for field in fields:
-            if issubclass(object_data[field].__class__, DBRef) or issubclass(object_data[field].__class__, mongoengine.Document):
-                emb_obj_count += 1
-
-        for field in fields:
-            if depth == 0:
-                    object_data = unicode(object_data['id'])
-                    break
-            elif issubclass(object_data[field].__class__, DBRef):
-                object_data = dereference.DeReference().__call__(object_data)
-                if counter < depth*emb_obj_count:
-                    counter += 1
-                    object_data[field] = self.transform_object(object_data[field], object_data[field]._fields, depth-1)
-                else:
-                    object_data[field] = unicode(object_data[field].pk)
-            elif issubclass(object_data[field].__class__, mongoengine.Document):
-                if counter < depth*emb_obj_count:
-                    counter += 1
-                    object_data[field] = self.transform_object(object_data[field], object_data[field]._fields, depth-1)
-                else:
-                    object_data[field] = unicode(object_data[field].pk)
-            else:
-                object_data[field] = unicode(object_data[field])
-
-        return object_data
-
     def to_native(self, obj):
         """
         Rest framework built-in to_native + transform_object
@@ -214,23 +192,10 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             field.initialize(parent=self, field_name=field_name)
             key = self.get_field_key(field_name)
             value = field.field_to_native(obj, field_name)
+            #Override value with transform_ methods
             method = getattr(self, 'transform_%s' % field_name, None)
             if callable(method):
                 value = method(obj, value)
-            #Custom transform_%s methods
-            method = getattr(self, 'transform_%s' % field_name, None)
-            if callable(method):
-                value = method(obj, value)
-            #Support for custom fields, check key exists on default fields
-            else:
-                if key in obj._data:
-                    #Call transform_object if field is a related model
-                    if issubclass(obj._data[key].__class__, BaseDocument) or isinstance(obj._data[key], DBRef):
-                        value = self.transform_object(obj._data[key], value, depth)
-                    elif issubclass(obj._data[key].__class__, list):
-                        value = [self.transform_object(document, value[0], depth)
-                                 if issubclass(document.__class__, BaseDocument)
-                                 else document for document in obj._data[key]]
             if not getattr(field, 'write_only', False):
                 ret[key] = value
             ret.fields[key] = self.augment_field(field, field_name, key, value)
