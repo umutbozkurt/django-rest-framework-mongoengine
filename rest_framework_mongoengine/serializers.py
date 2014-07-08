@@ -11,7 +11,7 @@ from django.db import models
 from django.forms import widgets
 from django.utils.datastructures import SortedDict
 from rest_framework.compat import get_concrete_model
-from fields import ReferenceField, ListField, EmbeddedDocumentField
+from fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicField
 
 
 class MongoEngineModelSerializerOptions(serializers.ModelSerializerOptions):
@@ -124,6 +124,13 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         return ret
 
+    def get_dynamic_fields(self, obj):
+        dynamic_fields = {}
+        if obj and obj._dynamic:
+            for key, value in obj._dynamic_fields.items():
+                dynamic_fields[key] = self.get_field(value)
+        return dynamic_fields
+
     def get_field(self, model_field):
         kwargs = {}
 
@@ -156,7 +163,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.ObjectIdField: fields.Field,
             mongoengine.ReferenceField: ReferenceField,
             mongoengine.ListField: ListField,
-            mongoengine.EmbeddedDocumentField: EmbeddedDocumentField
+            mongoengine.EmbeddedDocumentField: EmbeddedDocumentField,
+            mongoengine.DynamicField: DynamicField
         }
 
         attribute_dict = {
@@ -186,7 +194,11 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         ret.fields = self._dict_class()
         depth = self.opts.depth
 
-        for field_name, field in self.fields.items():
+        #Dynamic Document Support
+        dynamic_fields = self.get_dynamic_fields(obj)
+        all_fields = dict(dynamic_fields, **self.fields)
+
+        for field_name, field in all_fields.items():
             if field.read_only and obj is None:
                 continue
             field.initialize(parent=self, field_name=field_name)
@@ -207,6 +219,9 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         if data is not None or files is not None:
             attrs = self.restore_fields(data, files)
+            for key in data.keys():
+                if key not in attrs:
+                    attrs[key] = data[key]
             if attrs is not None:
                 attrs = self.perform_validation(attrs)
         else:

@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, include, url
-from SampleApp import views
+from rest_framework_mongoengine.SampleApp import views
 from django.contrib import admin
 admin.autodiscover()
 

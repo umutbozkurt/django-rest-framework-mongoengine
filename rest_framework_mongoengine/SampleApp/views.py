@@ -1,4 +1,4 @@
-from generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework_mongoengine.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from serializers import *
 
 

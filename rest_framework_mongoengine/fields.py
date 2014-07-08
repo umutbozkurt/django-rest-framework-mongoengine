@@ -6,6 +6,7 @@ from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from rest_framework import serializers
 
+
 class MongoDocumentField(serializers.WritableField):
     MAX_RECURSION_DEPTH = 5
 
@@ -36,7 +37,7 @@ class MongoDocumentField(serializers.WritableField):
         return data
 
     def transform_dict(self, obj, depth):
-        return dict([(self.get_field_key(key), self.transform_object(val, depth-1))
+        return dict([(key, self.transform_object(val, depth-1))
                      for key, val in obj.items()])
 
     def transform_object(self, obj, depth):
@@ -51,7 +52,7 @@ class MongoDocumentField(serializers.WritableField):
             return self.transform_document(obj, depth-1)
         elif isinstance(obj, dict):
             # Dictionaries
-            return self.transform_dict(obj. depth-1)
+            return self.transform_dict(obj, depth-1)
         elif isinstance(obj, list):
             # List
             return [self.transform_object(value, depth-1) for value in obj]
@@ -111,3 +112,14 @@ class EmbeddedDocumentField(MongoDocumentField):
         if not obj:
             return self.get_default_value()
         return self.document_type(**obj)
+
+
+class DynamicField(MongoDocumentField):
+
+    type_label = 'dynamic field'
+
+    def __init__(self, *args, **kwargs):
+        super(MongoDocumentField, self).__init__(*args, **kwargs)
+
+    def to_native(self, obj):
+        return self.transform_object(obj, MongoDocumentField.MAX_RECURSION_DEPTH)

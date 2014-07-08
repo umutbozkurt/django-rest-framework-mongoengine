@@ -15,7 +15,7 @@ class BlogExtension(EmbeddedDocument):
     some_other_field = StringField()
 
 
-class Blog(Document):
+class Blog(DynamicDocument):
     owner = ReferenceField(User)
     title = StringField(max_length=30)
     extensions = ListField(EmbeddedDocumentField(BlogExtension))
@@ -24,7 +24,7 @@ class Blog(Document):
 
 class Post(Document):
     author = ReferenceField(User)
-    blog = ReferenceField(Blog)
+    #blog = ReferenceField(Blog)
     text = StringField()
 
 
@@ -33,5 +33,3 @@ class Comment(Document):
     post = ReferenceField(Post)
     text = StringField(max_length=140)
     isApproved = BooleanField(default=False)
-
-
