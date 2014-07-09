@@ -124,13 +124,6 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         return ret
 
-    def get_dynamic_fields(self, obj):
-        dynamic_fields = {}
-        if obj and obj._dynamic:
-            for key, value in obj._dynamic_fields.items():
-                dynamic_fields[key] = self.get_field(value)
-        return dynamic_fields
-
     def get_field(self, model_field):
         kwargs = {}
 
@@ -192,13 +185,13 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         """
         ret = self._dict_class()
         ret.fields = self._dict_class()
-        depth = self.opts.depth
 
-        #Dynamic Document Support
-        dynamic_fields = self.get_dynamic_fields(obj)
-        all_fields = dict(dynamic_fields, **self.fields)
+        # Dynamic Document Support
+        if obj and obj._dynamic:
+            for key, value in obj._dynamic_fields.items():
+                self.fields[key] = self.get_field(value)
 
-        for field_name, field in all_fields.items():
+        for field_name, field in self.fields.items():
             if field.read_only and obj is None:
                 continue
             field.initialize(parent=self, field_name=field_name)
