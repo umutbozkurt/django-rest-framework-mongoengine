@@ -10,17 +10,15 @@ class UserSerializer(MongoEngineModelSerializer):
 class BlogSerializer(MongoEngineModelSerializer):
     class Meta:
         model = Blog
-        related_model_validations = {'owner': User}
+        depth = 3
 
 
 class PostSerializer(MongoEngineModelSerializer):
     class Meta:
         model = Post
-        related_model_validations = {'author': User, 'blog': Blog}
 
 
 class CommentSerializer(MongoEngineModelSerializer):
     class Meta:
         model = Comment
-        related_model_validations = {'owner': User, 'post': Post}
         exclude = ('isApproved',)
