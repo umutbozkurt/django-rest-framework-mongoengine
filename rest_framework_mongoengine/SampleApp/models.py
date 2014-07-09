@@ -24,7 +24,7 @@ class Blog(DynamicDocument):
 
 class Post(Document):
     author = ReferenceField(User)
-    #blog = ReferenceField(Blog)
+    blog = ReferenceField(Blog)
     text = StringField()
 
 

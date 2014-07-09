@@ -88,6 +88,9 @@ class ListField(MongoDocumentField):
 
     type_label = 'list'
 
+    def from_native(self, value):
+        return self.model_field.to_python(value)
+
     def to_native(self, obj):
         return self.transform_object(obj, MongoDocumentField.MAX_RECURSION_DEPTH)
 
