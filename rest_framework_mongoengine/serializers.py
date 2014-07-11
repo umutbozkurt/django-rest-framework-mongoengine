@@ -11,7 +11,7 @@ from django.db import models
 from django.forms import widgets
 from django.utils.datastructures import SortedDict
 from rest_framework.compat import get_concrete_model
-from fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicField
+from .fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicField
 
 
 class MongoEngineModelSerializerOptions(serializers.ModelSerializerOptions):

@@ -1,5 +1,5 @@
 from rest_framework_mongoengine.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from serializers import *
+from .serializers import *
 
 
 class BlogList(ListCreateAPIView):
