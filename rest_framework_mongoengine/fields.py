@@ -112,7 +112,6 @@ class EmbeddedDocumentField(MongoDocumentField):
         return self.to_native(self.default())
 
     def from_native(self, obj):
-        print obj
         if not obj:
             return self.get_default_value()
         return self.document_type(**obj)
