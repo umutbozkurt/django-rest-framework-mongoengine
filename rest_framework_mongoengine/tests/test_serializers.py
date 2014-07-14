@@ -12,17 +12,19 @@ class Job(me.Document):
     status = me.StringField(choices=('draft', 'published'))
     notes = me.StringField(required=False)
     on = me.DateTimeField(default=datetime.utcnow)
+    weight = me.IntField(default=0)
 
 
 class JobSerializer(MongoEngineModelSerializer):
     id = s.Field()
     title = s.CharField()
     status = s.ChoiceField(read_only=True)
+    sort_weight = s.IntegerField(source='weight')
 
 
     class Meta:
         model = Job 
-        fields = ('id', 'title','status')
+        fields = ('id', 'title','status', 'sort_weight')
 
 
 
@@ -33,7 +35,8 @@ class TestReadonlyRestore(TestCase):
         data = {
             'title': 'updated title ...',
             'status': 'published',  # this one is read only
-            'notes': 'hacked' # this field should not update
+            'notes': 'hacked', # this field should not update
+            'sort_weight': 10 # mapped to a field with differet name
         }
 
         serializer = JobSerializer(job, data=data, partial=True)
@@ -43,3 +46,5 @@ class TestReadonlyRestore(TestCase):
         self.assertEqual(data['title'], obj.title)
         self.assertEqual('draft', obj.status)
         self.assertEqual('secure', obj.notes)
+
+        self.assertEqual(10, obj.weight)
