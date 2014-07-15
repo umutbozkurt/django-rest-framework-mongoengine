@@ -68,7 +68,17 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
     def restore_object(self, attrs, instance=None):
         if instance is not None:
+
+            dynamic_fields = self.get_dynamic_fields(instance)
+            all_fields = dict(dynamic_fields, **self.fields)
+            # import ipdb; ipdb.set_trace()
+
             for key, val in attrs.items():
+                field = all_fields.get(key)
+                if not field or field.read_only:
+                    continue
+
+                key = getattr(field, 'source', None ) or key
                 try:
                     setattr(instance, key, val)
                 except ValueError:

@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='django-rest-framework-mongoengine',
-    version='1.3',
+    version='1.3.1',
     packages=['rest_framework_mongoengine',],
     license='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/LICENSE',
     long_description='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/README.md',
