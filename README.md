@@ -1,103 +1,56 @@
 Mongoengine Model Serializer
 ======================
 
-<i class="icon-info-circled"></i> Introduction
------------------
-
-MongoEngine Model Serializer for **Django Rest Framework**
- 
-This serializer is an extension to ***Model Serializer***.
-
-`MongoEngine Model Serializer` is pretty easy to learn and has flexible usage.
+MongoEngine ***Model Serializer*** for **Django Rest Framework**.
 
 -----------------
-Documentation
------------------
-See [DOCUMENTATION][1] for more detailed info.
-
------------------
-<i class="icon-th-list"></i> Features
------------------
-
->  - Serializing
->  - Embedding
->  - Referencing
->  - Validating
->
-> MongoEngine Documents
-
------------------
-
-<i class="icon-download"></i> Setup
----------
-### <i class="icon-download-cloud">Pip Installer</i> 
-``` pip install django-rest-framework-mongoengine```
-### <i class="icon-folder-open">GitHub Releases</i> 
-Download from Repo's [releases][2] section.
-
------------------
-<i class="icon-wrench"></i>Usage
----------
-###Embedding and Referencing
-``` 
-class CommentSerializer(MongoEngineModelSerializer):
-    class Meta:
-        model = Comment
-        depth = 1
-        related_model_validations = {'owner': User, 'post': Post}
-        exclude = ('isApproved',)
+Usage
+--------
 ```
-####models.py
-``` 
-class Comment(Document):
-    post = ReferenceField(Post)
+# model
+class Blog(Document):
     owner = ReferenceField(User)
-    text = StringField(max_length=140)
-    isApproved = BooleanField(default=False)
+    title = StringField()
+    extensions = ListField(EmbeddedDocument(BlogExtension))
+    tags = ListField(StringField())
+    approved = BooleanField()
+
+# serializer
+class BlogSerializer(MongoEngineModelSerializer):
+    class Meta:
+        model = Blog
+        depth = 2
+        exclude = ('approved', )
 ```
-![Sample Output][3]
+**Notes:** 
 
-### <i class="icon-right-big"></i>Validation
+ - MongoEngine Model Serializer also supports  ***DynamicDocument***. 
+ - `Depth` is optional and defaults to 5. It is used for ***ReferenceField*** & ***ListField***.
 
-#### <i class="icon-angle-right"></i>Reference Field Validation
+Sample Output
+---------
 
-```
-related_model_validations = {'owner': User, 'post': Post}
-```
-
-![validation][4]
-
-
-#### <i class="icon-angle-right"></i> Field Validation
-
-```
-class User(Document):
-    name = StringField(max_length=50)
-    rating = DecimalField(max_digits=2, decimal_places=1)
-    username = StringField(max_length=30)
-    email = EmailField(max_length=30)
-```
-
-![field-validation][5]
+![Sample Output][1]
 
 -----------------
-<i class="icon-attach"></i>Requirements
+Install
+---------
+``` pip install django-rest-framework-mongoengine```
+
+-----------------
+Requirements
 -----------------
  
- - [MongoEngine][6]
- - [Django Rest Framework][7]
+ - [MongoEngine][2]
+ - [Django Rest Framework][3]
  
 -----------------
-<i class="icon-doc-text"></i>License
+License
 -----------------
-See [LICENSE][8]
+See [LICENSE][4]
 
 
-  [1]: https://pythonhosted.org/django-rest-framework-mongoengine/
-  [2]: https://github.com/umutbozkurt/django-rest-framework-mongoengine/releases
-  [3]: https://lh4.googleusercontent.com/-Gf_do_QmMHo/U1zTSghmCZI/AAAAAAAAACs/QA5tELHm66I/w511-h382-no/Screen+Shot+2014-04-27+at+12.47.13.png
-  [4]: https://lh6.googleusercontent.com/--DFC8tBE1JA/U1zXZJlQ16I/AAAAAAAAADA/uAglm0TdXOk/w464-h103-no/Screen+Shot+2014-04-27+at+13.09.13.png
-  [5]: https://lh3.googleusercontent.com/-c9RhYm3RD9s/U1ziBxGx0TI/AAAAAAAAADc/dyRRrIUiAmc/w486-h162-no/Screen+Shot+2014-04-27+at+13.54.34.png
-  [6]: http://mongoengine.org/
-  [7]: http://www.django-rest-framework.org/
-  [8]: https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/LICENSE
+  [1]: https://lh6.googleusercontent.com/-vv4lo9TXrgA/U8gfzWS3tzI/AAAAAAAAAE0/Xqum8YjrSqk/w570-h521-no/Screen+Shot+2014-07-17+at+22.06.43.png
+  [2]: http://mongoengine.org/
+  [3]: http://www.django-rest-framework.org/
+  [4]: https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/LICENSE
