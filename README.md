@@ -6,7 +6,7 @@ Mongoengine Model Serializer
 -----------------
 Usage
 --------
-```
+```python
 # model
 class Blog(Document):
     owner = ReferenceField(User)
