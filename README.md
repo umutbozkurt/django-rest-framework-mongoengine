@@ -1,7 +1,7 @@
 Mongoengine Model Serializer
 ======================
 
-MongoEngine ***Model Serializer*** for **Django Rest Framework**.
+***Model Serializer*** that supports ***MongoEngine***, for ***Django Rest Framework***.
 
 -----------------
 Usage
