@@ -5,7 +5,10 @@ from mongoengine import dereference
 from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from rest_framework import serializers
-
+import sys
+if sys.version_info[0] >= 3:
+    def unicode(val):
+        return str(val)
 
 class MongoDocumentField(serializers.WritableField):
     MAX_RECURSION_DEPTH = 5  # default value of depth
