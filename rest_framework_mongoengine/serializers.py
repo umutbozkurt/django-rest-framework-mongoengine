@@ -11,7 +11,7 @@ from django.db import models
 from django.forms import widgets
 from django.utils.datastructures import SortedDict
 from rest_framework.compat import get_concrete_model
-from fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicField
+from .fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicField
 
 
 class MongoEngineModelSerializerOptions(serializers.ModelSerializerOptions):
@@ -20,7 +20,7 @@ class MongoEngineModelSerializerOptions(serializers.ModelSerializerOptions):
     """
     def __init__(self, meta):
         super(MongoEngineModelSerializerOptions, self).__init__(meta)
-        self.validations = getattr(meta, 'related_model_validations', {})
+        self.depth = getattr(meta, 'depth', 5)
 
 
 class MongoEngineModelSerializer(serializers.ModelSerializer):
@@ -28,19 +28,6 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
     Model Serializer that supports Mongoengine
     """
     _options_class = MongoEngineModelSerializerOptions
-
-    def validate_related_field(self, attrs, source, object_type):
-        """
-        Validate related model
-        """
-        try:
-            value = attrs[source]
-        except KeyError:
-            return attrs
-
-        value.validate()
-
-        return attrs
 
     def perform_validation(self, attrs):
         """
@@ -59,13 +46,6 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
                     field.model_field.validate(attrs[field_name])
                 except ValidationError as err:
                     self._errors[field_name] = str(err)
-
-            # Related Model Validations
-            if field_name in self.opts.validations:
-                try:
-                    self.validate_related_field(attrs, source, self.opts.validations[field_name])
-                except ValidationError as err:
-                    self._errors[field_name] = self._errors.get(field_name, []) + list(err.messages)
 
             try:
                 validate_method = getattr(self, 'validate_%s' % field_name, None)
@@ -88,7 +68,17 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
     def restore_object(self, attrs, instance=None):
         if instance is not None:
+
+            dynamic_fields = self.get_dynamic_fields(instance)
+            all_fields = dict(dynamic_fields, **self.fields)
+            # import ipdb; ipdb.set_trace()
+
             for key, val in attrs.items():
+                field = all_fields.get(key)
+                if not field or field.read_only:
+                    continue
+
+                key = getattr(field, 'source', None ) or key
                 try:
                     setattr(instance, key, val)
                 except ValueError:
@@ -127,8 +117,10 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
     def get_field(self, model_field):
         kwargs = {}
 
-        if model_field.__class__ in (mongoengine.ReferenceField, mongoengine.EmbeddedDocumentField, mongoengine.ListField):
+        if model_field.__class__ in (mongoengine.ReferenceField, mongoengine.EmbeddedDocumentField,
+                                     mongoengine.ListField, mongoengine.DynamicField):
             kwargs['model_field'] = model_field
+            kwargs['depth'] = self.opts.depth
 
         if not model_field.__class__ == mongoengine.ObjectIdField:
             kwargs['required'] = model_field.required
@@ -157,12 +149,13 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.ReferenceField: ReferenceField,
             mongoengine.ListField: ListField,
             mongoengine.EmbeddedDocumentField: EmbeddedDocumentField,
-            mongoengine.DynamicField: DynamicField
+            mongoengine.DynamicField: DynamicField,
+            mongoengine.DecimalField: fields.DecimalField
         }
 
         attribute_dict = {
             mongoengine.StringField: ['max_length'],
-            mongoengine.DecimalField: ['max_digits', 'decimal_places'],
+            mongoengine.DecimalField: ['min_value', 'max_value'],
             mongoengine.EmailField: ['max_length'],
             mongoengine.FileField: ['max_length'],
             mongoengine.ImageField: ['max_length'],

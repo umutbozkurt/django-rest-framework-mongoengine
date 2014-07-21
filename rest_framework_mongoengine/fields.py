@@ -5,16 +5,20 @@ from mongoengine import dereference
 from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from rest_framework import serializers
-
+import sys
+if sys.version_info[0] >= 3:
+    def unicode(val):
+        return str(val)
 
 class MongoDocumentField(serializers.WritableField):
-    MAX_RECURSION_DEPTH = 5
+    MAX_RECURSION_DEPTH = 5  # default value of depth
 
     def __init__(self, *args, **kwargs):
         try:
             self.model_field = kwargs.pop('model_field')
+            self.depth = kwargs.pop('depth', self.MAX_RECURSION_DEPTH)
         except KeyError:
-            raise ValueError("ReferenceField requires 'model_field' kwarg")
+            raise ValueError("%s requires 'model_field' kwarg" % self.type_label)
 
         super(MongoDocumentField, self).__init__(*args, **kwargs)
 
@@ -63,7 +67,7 @@ class MongoDocumentField(serializers.WritableField):
 
 class ReferenceField(MongoDocumentField):
 
-    type_label = 'reference'
+    type_label = 'ReferenceField'
 
     def from_native(self, value):
         try:
@@ -81,23 +85,23 @@ class ReferenceField(MongoDocumentField):
         return instance
 
     def to_native(self, obj):
-        return self.transform_object(obj, MongoDocumentField.MAX_RECURSION_DEPTH)
+        return self.transform_object(obj, self.depth)
 
 
 class ListField(MongoDocumentField):
 
-    type_label = 'list'
+    type_label = 'ListField'
 
     def from_native(self, value):
         return self.model_field.to_python(value)
 
     def to_native(self, obj):
-        return self.transform_object(obj, MongoDocumentField.MAX_RECURSION_DEPTH)
+        return self.transform_object(obj, self.depth)
 
 
 class EmbeddedDocumentField(MongoDocumentField):
 
-    type_label = 'embedded document'
+    type_label = 'EmbeddedDocumentField'
 
     def __init__(self, *args, **kwargs):
         try:
@@ -111,7 +115,6 @@ class EmbeddedDocumentField(MongoDocumentField):
         return self.to_native(self.default())
 
     def from_native(self, obj):
-        print obj
         if not obj:
             return self.get_default_value()
         return self.document_type(**obj)
@@ -119,10 +122,7 @@ class EmbeddedDocumentField(MongoDocumentField):
 
 class DynamicField(MongoDocumentField):
 
-    type_label = 'dynamic field'
-
-    def __init__(self, *args, **kwargs):
-        super(MongoDocumentField, self).__init__(*args, **kwargs)
+    type_label = 'DynamicField'
 
     def to_native(self, obj):
-        return self.transform_object(obj, MongoDocumentField.MAX_RECURSION_DEPTH)
+        return self.transform_object(obj, self.depth)
