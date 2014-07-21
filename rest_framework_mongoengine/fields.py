@@ -114,10 +114,11 @@ class EmbeddedDocumentField(MongoDocumentField):
     def get_default_value(self):
         return self.to_native(self.default())
 
+    def to_native(self, obj):
+        return self.model_field.to_mongo(obj).to_dict()
+
     def from_native(self, obj):
-        if not obj:
-            return self.get_default_value()
-        return self.document_type(**obj)
+        return self.model_field.to_python(obj)
 
 
 class DynamicField(MongoDocumentField):
