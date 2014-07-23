@@ -48,3 +48,46 @@ class TestReadonlyRestore(TestCase):
         self.assertEqual('secure', obj.notes)
 
         self.assertEqual(10, obj.weight)
+
+
+
+
+class Location(me.EmbeddedDocument):
+    city = me.StringField()
+
+
+class SomeObject(me.Document):
+    name = me.StringField()
+    loc = me.EmbeddedDocumentField('Location')
+
+
+
+class LocationSerializer(MongoEngineModelSerializer):
+    city = s.CharField()
+
+    class Meta:
+        model = Location
+
+class SomeObjectSerializer(MongoEngineModelSerializer):
+    location = LocationSerializer(source='loc')
+    class Meta:
+        model = SomeObject
+        fields = ('name', 'location')
+
+
+class TestRestoreEmbedded(TestCase):
+    def test_restore(self):        
+        data = {
+            'name': 'some anme', 
+            'location': {
+                'city': 'Toronto'
+            }
+        }
+        instance = SomeObject(name='original')
+        serializer = SomeObjectSerializer(instance, data=data, partial=True)
+        obj = serializer.object 
+
+        self.assertTrue(serializer.is_valid())
+
+        self.assertEqual(data['name'], obj.name )
+        self.assertEqual('Toronto', obj.loc.city )
