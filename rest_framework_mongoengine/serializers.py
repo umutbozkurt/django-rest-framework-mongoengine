@@ -67,29 +67,32 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         return attrs
 
     def restore_object(self, attrs, instance=None):
-        if instance is not None:
+        if instance is None:
+            instance = self.opts.model()
 
-            dynamic_fields = self.get_dynamic_fields(instance)
-            all_fields = dict(dynamic_fields, **self.fields)
-            
+        dynamic_fields = self.get_dynamic_fields(instance)
+        all_fields = dict(dynamic_fields, **self.fields)
+        
 
-            for key, val in attrs.items():
-                field = all_fields.get(key)
-                if not field or field.read_only:
-                    continue
+        for key, val in attrs.items():
+            field = all_fields.get(key)
+            if not field or field.read_only:
+                continue
 
-                if isinstance(field, serializers.Serializer):
-                    # import ipdb; ipdb.set_trace()
+            if isinstance(field, serializers.Serializer):                
+                many = field.many
+                if many:
+                    # somehow it already has objects in it 
+                    pass
+                else:
                     val = field.from_native(val) 
 
-                key = getattr(field, 'source', None ) or key
-                try:
-                    setattr(instance, key, val)
-                except ValueError:
-                    self._errors[key] = self.error_messages['required']
+            key = getattr(field, 'source', None ) or key
+            try:
+                setattr(instance, key, val)
+            except ValueError:
+                self._errors[key] = self.error_messages['required']
 
-        else:
-            instance = self.opts.model(**attrs)
         return instance
 
     def get_default_fields(self):
