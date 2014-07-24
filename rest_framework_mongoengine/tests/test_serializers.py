@@ -52,6 +52,9 @@ class TestReadonlyRestore(TestCase):
 
 
 
+
+# Testing restoring embedded property 
+
 class Location(me.EmbeddedDocument):
     city = me.StringField()
 
@@ -76,18 +79,29 @@ class SomeObjectSerializer(MongoEngineModelSerializer):
 
 
 class TestRestoreEmbedded(TestCase):
-    def test_restore(self):        
-        data = {
+    def setUp(self):
+        self.data = {
             'name': 'some anme', 
             'location': {
                 'city': 'Toronto'
             }
         }
-        instance = SomeObject(name='original')
-        serializer = SomeObjectSerializer(instance, data=data, partial=True)
+
+    def test_restore_new(self):
+        serializer = SomeObjectSerializer(data=self.data)    
+        self.assertTrue(serializer.is_valid())
         obj = serializer.object 
 
+        self.assertEqual(self.data['name'], obj.name )
+        self.assertEqual('Toronto', obj.loc.city )
+
+    def test_restore_update(self):        
+        data = self.data
+        instance = SomeObject(name='original', loc=Location(city="New York"))
+        serializer = SomeObjectSerializer(instance, data=data, partial=True)
+         
         self.assertTrue(serializer.is_valid())
+        obj = serializer.object
 
         self.assertEqual(data['name'], obj.name )
         self.assertEqual('Toronto', obj.loc.city )

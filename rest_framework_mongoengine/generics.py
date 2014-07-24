@@ -50,7 +50,9 @@ class MongoAPIView(GenericAPIView):
         Get a document instance for read/update/delete requests.
         """
         query_kwargs = self.get_query_kwargs()
-        return self.get_queryset().get(**query_kwargs)
+        obj = self.get_queryset().get(**query_kwargs)
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class CreateAPIView(mixins.CreateModelMixin,

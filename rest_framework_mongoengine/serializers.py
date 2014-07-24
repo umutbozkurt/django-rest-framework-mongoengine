@@ -71,12 +71,16 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
             dynamic_fields = self.get_dynamic_fields(instance)
             all_fields = dict(dynamic_fields, **self.fields)
-            # import ipdb; ipdb.set_trace()
+            
 
             for key, val in attrs.items():
                 field = all_fields.get(key)
                 if not field or field.read_only:
                     continue
+
+                if isinstance(field, serializers.Serializer):
+                    # import ipdb; ipdb.set_trace()
+                    val = field.from_native(val) 
 
                 key = getattr(field, 'source', None ) or key
                 try:
