@@ -81,11 +81,18 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
             if isinstance(field, serializers.Serializer):                
                 many = field.many
-                if many:
-                    # somehow it already has objects in it 
-                    pass
+
+                def _restore(field, item):
+                    # looks like a bug, sometimes there are decerialized objects in attrs
+                    # sometimes they are just dicts 
+                    if isinstance(item, BaseDocument):
+                        return item 
+                    return field.from_native(item)
+
+                if many:                    
+                    val = [_restore(field, item) for item in val] 
                 else:
-                    val = field.from_native(val) 
+                    val = _restore(field, val) 
 
             key = getattr(field, 'source', None ) or key
             try:
