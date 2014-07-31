@@ -116,7 +116,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
     def get_dynamic_fields(self, obj):
         dynamic_fields = {}
-        if obj and obj._dynamic:
+        if obj is not None and obj._dynamic:
             for key, value in obj._dynamic_fields.items():
                 dynamic_fields[key] = self.get_field(value)
         return dynamic_fields
