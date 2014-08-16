@@ -1,6 +1,7 @@
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework import mixins
 from rest_framework.generics import GenericAPIView
+from mongoengine.django.shortcuts import get_document_or_404
 
 
 class MongoAPIView(GenericAPIView):
@@ -38,7 +39,12 @@ class MongoAPIView(GenericAPIView):
         """
         query_key = self.lookup_url_kwarg or self.lookup_field
         query_kwargs = {query_key: self.kwargs[query_key]}
-        return self.get_queryset().get(**query_kwargs)
+        queryset = self.get_queryset()
+
+        obj = get_document_or_404(queryset, **query_kwargs)
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
 
 class CreateAPIView(mixins.CreateModelMixin,
