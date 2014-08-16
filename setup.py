@@ -8,5 +8,6 @@ setup(
     long_description='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/README.md',
     url='https://github.com/umutbozkurt/django-rest-framework-mongoengine',
     author='Umut Bozkurt',
-    author_email='umutbozkurt92@gmail.com'
+    author_email='umutbozkurt92@gmail.com',
+    requires=['mongoengine', 'djangorestframework']
 )
