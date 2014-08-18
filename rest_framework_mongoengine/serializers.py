@@ -157,7 +157,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.ListField: ListField,
             mongoengine.EmbeddedDocumentField: EmbeddedDocumentField,
             mongoengine.DynamicField: DynamicField,
-            mongoengine.DecimalField: fields.DecimalField
+            mongoengine.DecimalField: fields.DecimalField,
+            mongoengine.UUIDField: fields.CharField
         }
 
         attribute_dict = {
