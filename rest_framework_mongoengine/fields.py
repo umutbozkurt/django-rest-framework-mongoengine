@@ -52,7 +52,8 @@ class MongoDocumentField(serializers.WritableField):
         Recursion for (embedded) objects
         """
         if depth == 0:
-            return "Max recursion depth exceeded"
+            # Return primary key if exists, else return default text
+            return str(getattr(obj, 'pk', "Max recursion depth exceeded"))
         elif isinstance(obj, BaseDocument):
             # Document, EmbeddedDocument
             return self.transform_document(obj, depth-1)
