@@ -62,6 +62,8 @@ class MongoDocumentField(serializers.WritableField):
         elif isinstance(obj, list):
             # List
             return [self.transform_object(value, depth-1) for value in obj]
+        elif obj is None:
+            return None
         else:
             # Default to string
             return unicode(obj)
@@ -117,10 +119,13 @@ class EmbeddedDocumentField(MongoDocumentField):
         return self.to_native(self.default())
 
     def to_native(self, obj):
-        return self.model_field.to_mongo(obj).to_dict()
+        if obj is None:
+            return None
+        else:
+            return self.model_field.to_mongo(obj).to_dict()
 
-    def from_native(self, obj):
-        return self.model_field.to_python(obj)
+    def from_native(self, value):
+        return self.model_field.to_python(value)
 
 
 class DynamicField(MongoDocumentField):
