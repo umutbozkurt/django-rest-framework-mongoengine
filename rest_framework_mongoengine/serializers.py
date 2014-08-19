@@ -92,7 +92,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         cls = self.opts.model
         opts = get_concrete_model(cls)
         fields = []
-        fields += [getattr(opts, field) for field in opts._fields]
+        fields += [getattr(opts, field) for field in cls._fields_ordered]
 
         ret = SortedDict()
 
@@ -189,7 +189,9 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         #Dynamic Document Support
         dynamic_fields = self.get_dynamic_fields(obj)
-        all_fields = dict(dynamic_fields, **self.fields)
+        all_fields = self._dict_class()
+        all_fields.update(self.fields)
+        all_fields.update(dynamic_fields)
 
         for field_name, field in all_fields.items():
             if field.read_only and obj is None:
