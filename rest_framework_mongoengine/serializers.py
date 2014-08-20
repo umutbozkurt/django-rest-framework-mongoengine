@@ -178,7 +178,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         try:
             return field_mapping[model_field.__class__](**kwargs)
         except KeyError:
-            return fields.ModelField(model_field=model_field, **kwargs)
+            # Defaults to WritableField if not in field mapping
+            return fields.WritableField(**kwargs)
 
     def to_native(self, obj):
         """
