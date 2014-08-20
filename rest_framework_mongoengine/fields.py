@@ -134,4 +134,4 @@ class DynamicField(MongoDocumentField):
     type_label = 'DynamicField'
 
     def to_native(self, obj):
-        return self.transform_object(obj, self.depth)
+        return self.model_field.to_python(obj)
