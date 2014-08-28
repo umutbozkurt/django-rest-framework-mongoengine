@@ -101,7 +101,7 @@ class ListField(MongoDocumentField):
         return self.model_field.to_python(value)
 
     def to_native(self, obj):
-        return self.transform_object(obj, self.depth)
+        return [self.model_field.to_mongo(list_item) for list_item in obj]
 
 
 class EmbeddedDocumentField(MongoDocumentField):
