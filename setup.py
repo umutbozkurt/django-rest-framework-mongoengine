@@ -8,7 +8,7 @@ setup(
     license='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/LICENSE',
     long_description='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/README.md',
     url='https://github.com/umutbozkurt/django-rest-framework-mongoengine',
-    download_url='https://github.com/umutbozkurt/django-rest-framework-mongoengine/releases/tag/v1.3.3',
+    download_url='https://github.com/umutbozkurt/django-rest-framework-mongoengine/releases/',
     keywords=['mongoengine', 'serializer', 'django rest framework'],
     author='Umut Bozkurt',
     author_email='umutbozkurt92@gmail.com',
