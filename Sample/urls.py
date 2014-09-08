@@ -1,10 +1,11 @@
 from django.conf.urls import patterns, include, url
-from rest_framework_mongoengine.SampleApp import views
+from SampleApp import views
 from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^$',  include('homepage.urls')),
     url(r'^users/$', views.UserList.as_view()),
     url(r'^users/(?P<id>[\w]{24})/$', views.UserDetails.as_view()),
     url(r'^blogs/$', views.BlogList.as_view()),
