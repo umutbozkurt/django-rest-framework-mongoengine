@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='django-rest-framework-mongoengine',
-    version='1.4',
+    version='1.5',
     description='Model Serializer that supports MongoEngine, for Django Rest Framework.',
     packages=['rest_framework_mongoengine',],
     license='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/LICENSE',
