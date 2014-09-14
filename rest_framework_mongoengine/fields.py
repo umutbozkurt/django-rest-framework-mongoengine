@@ -68,7 +68,6 @@ class MongoDocumentField(serializers.WritableField):
         elif obj is None:
             return None
         else:
-            print obj
             return unicode(obj) if isinstance(obj, ObjectId) else obj
 
 
