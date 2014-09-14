@@ -5,6 +5,8 @@ from mongoengine import dereference
 from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from rest_framework import serializers
+from mongoengine.fields import ObjectId
+
 import sys
 
 if sys.version_info[0] >= 3:
@@ -66,8 +68,8 @@ class MongoDocumentField(serializers.WritableField):
         elif obj is None:
             return None
         else:
-            # Default to string
-            return unicode(obj)
+            print obj
+            return unicode(obj) if isinstance(obj, ObjectId) else obj
 
 
 class ReferenceField(MongoDocumentField):
@@ -101,7 +103,7 @@ class ListField(MongoDocumentField):
         return self.model_field.to_python(value)
 
     def to_native(self, obj):
-        return [self.model_field.to_mongo(list_item) for list_item in obj]
+        return self.transform_object(obj, self.depth)
 
 
 class EmbeddedDocumentField(MongoDocumentField):
