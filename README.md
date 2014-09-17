@@ -23,6 +23,23 @@ class BlogSerializer(MongoEngineModelSerializer):
         model = Blog
         depth = 2
         exclude = ('approved', )
+        
+# urls
+urlpatterns = patterns('',
+    url(r'^blog/$', views.BlogList.as_view()),
+    url(r'^blog/(?P<id>[0-9a-z]+)/$', views.BlogDetail.as_view()),
+)
+
+# views
+from rest_framework_mongoengine.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+
+class BlogList(ListCreateAPIView):
+    queryset = Blog.objects.all()
+    serializer_class = BlogSerializer
+
+class BlogDetail(RetrieveUpdateDestroyAPIView):
+    queryset = Blog.objects.all()
+    serializer_class = BlogSerializer
 ```
 **Notes:** 
 
