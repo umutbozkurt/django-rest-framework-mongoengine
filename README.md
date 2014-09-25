@@ -61,14 +61,10 @@ Install as package
 -----------------
 You can use this library as a package to your project:
 
- - Step 1: Installing required files
-``` pip install -r requirements.txt```
- - Step 2: make sure you're having a mongodb running locally:
-```mongod```
- - Step 3: Create users and table in dbsqlite and django admin:
-``` python manage.py syncdb```
- - Step 4: Run the SampleApp demo:
-``` python manage.py runserver```
+ - Step 1: Installing required files ``` pip install -r requirements.txt```
+ - Step 2: make sure you're having a mongodb running locally: ```mongod```
+ - Step 3: Create users and table in dbsqlite and django admin: ``` python manage.py syncdb```
+ - Step 4: Run the SampleApp demo: ``` python manage.py runserver```
 
 Then run <b>http://localhost:8000/</b> on your favorite browser to test the interface
 
