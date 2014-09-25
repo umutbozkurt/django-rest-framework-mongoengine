@@ -64,7 +64,7 @@ You can use this library as a package to your project:
  - Step 1: Installing required files
 ``` pip install -r requirements.txt```
  - Step 2: make sure you're having a mongodb running locally:
-```/bin/mongod --dbpath [path_to_data/db/]```
+```mongod```
  - Step 3: Create users and table in dbsqlite and django admin:
 ``` python manage.py syncdb```
  - Step 4: Run the SampleApp demo:
