@@ -180,7 +180,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.DecimalField: ['min_value', 'max_value'],
             mongoengine.EmailField: ['max_length'],
             mongoengine.FileField: ['max_length'],
-            mongoengine.ImageField: ['max_length'],
+            mongoengine.ImageField: [],
             mongoengine.URLField: ['max_length'],
         }
 
