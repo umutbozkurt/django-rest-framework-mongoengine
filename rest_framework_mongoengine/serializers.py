@@ -106,7 +106,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         cls = self.opts.model
         opts = get_concrete_model(cls)
         fields = []
-        fields += [getattr(opts, field) for field in opts._fields]
+        fields += [getattr(opts, field) for field in cls._fields_ordered]
 
         ret = SortedDict()
 
@@ -130,7 +130,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
     def get_dynamic_fields(self, obj):
         dynamic_fields = {}
-        if obj and obj._dynamic:
+        if obj is not None and obj._dynamic:
             for key, value in obj._dynamic_fields.items():
                 dynamic_fields[key] = self.get_field(value)
         return dynamic_fields
@@ -171,7 +171,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.ListField: ListField,
             mongoengine.EmbeddedDocumentField: EmbeddedDocumentField,
             mongoengine.DynamicField: DynamicField,
-            mongoengine.DecimalField: fields.DecimalField
+            mongoengine.DecimalField: fields.DecimalField,
+            mongoengine.UUIDField: fields.CharField
         }
 
         attribute_dict = {
@@ -191,7 +192,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         try:
             return field_mapping[model_field.__class__](**kwargs)
         except KeyError:
-            return fields.ModelField(model_field=model_field, **kwargs)
+            # Defaults to WritableField if not in field mapping
+            return fields.WritableField(**kwargs)
 
     def to_native(self, obj):
         """
@@ -202,7 +204,9 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         #Dynamic Document Support
         dynamic_fields = self.get_dynamic_fields(obj)
-        all_fields = dict(dynamic_fields, **self.fields)
+        all_fields = self._dict_class()
+        all_fields.update(self.fields)
+        all_fields.update(dynamic_fields)
 
         for field_name, field in all_fields.items():
             if field.read_only and obj is None:

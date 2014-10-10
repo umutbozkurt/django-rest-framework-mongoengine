@@ -5,10 +5,14 @@ from mongoengine import dereference
 from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from rest_framework import serializers
+from mongoengine.fields import ObjectId
+
 import sys
+
 if sys.version_info[0] >= 3:
     def unicode(val):
         return str(val)
+
 
 class MongoDocumentField(serializers.WritableField):
     MAX_RECURSION_DEPTH = 5  # default value of depth
@@ -50,7 +54,8 @@ class MongoDocumentField(serializers.WritableField):
         Recursion for (embedded) objects
         """
         if depth == 0:
-            return "Max recursion depth exceeded"
+            # Return primary key if exists, else return default text
+            return str(getattr(obj, 'pk', "Max recursion depth exceeded"))
         elif isinstance(obj, BaseDocument):
             # Document, EmbeddedDocument
             return self.transform_document(obj, depth-1)
@@ -60,9 +65,10 @@ class MongoDocumentField(serializers.WritableField):
         elif isinstance(obj, list):
             # List
             return [self.transform_object(value, depth-1) for value in obj]
+        elif obj is None:
+            return None
         else:
-            # Default to string
-            return unicode(obj)
+            return unicode(obj) if isinstance(obj, ObjectId) else obj
 
 
 class ReferenceField(MongoDocumentField):
@@ -115,10 +121,13 @@ class EmbeddedDocumentField(MongoDocumentField):
         return self.to_native(self.default())
 
     def to_native(self, obj):
-        return self.model_field.to_mongo(obj).to_dict()
+        if obj is None:
+            return None
+        else:
+            return self.model_field.to_mongo(obj)
 
-    def from_native(self, obj):
-        return self.model_field.to_python(obj)
+    def from_native(self, value):
+        return self.model_field.to_python(value)
 
 
 class DynamicField(MongoDocumentField):
@@ -126,4 +135,4 @@ class DynamicField(MongoDocumentField):
     type_label = 'DynamicField'
 
     def to_native(self, obj):
-        return self.transform_object(obj, self.depth)
+        return self.model_field.to_python(obj)

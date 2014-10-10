@@ -8,6 +8,7 @@ class User(Document):
     surname = StringField(max_length=20)
     username = StringField(max_length=30)
     email = EmailField(max_length=30)
+    UUID = UUIDField()
 
 
 class BlogExtension(EmbeddedDocument):
