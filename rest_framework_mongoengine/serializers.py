@@ -67,25 +67,39 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         return attrs
 
     def restore_object(self, attrs, instance=None):
-        if instance is not None:
+        if instance is None:
+            instance = self.opts.model()
 
-            dynamic_fields = self.get_dynamic_fields(instance)
-            all_fields = dict(dynamic_fields, **self.fields)
-            # import ipdb; ipdb.set_trace()
+        dynamic_fields = self.get_dynamic_fields(instance)
+        all_fields = dict(dynamic_fields, **self.fields)
+        
 
-            for key, val in attrs.items():
-                field = all_fields.get(key)
-                if not field or field.read_only:
-                    continue
+        for key, val in attrs.items():
+            field = all_fields.get(key)
+            if not field or field.read_only:
+                continue
 
-                key = getattr(field, 'source', None ) or key
-                try:
-                    setattr(instance, key, val)
-                except ValueError:
-                    self._errors[key] = self.error_messages['required']
+            if isinstance(field, serializers.Serializer):                
+                many = field.many
 
-        else:
-            instance = self.opts.model(**attrs)
+                def _restore(field, item):
+                    # looks like a bug, sometimes there are decerialized objects in attrs
+                    # sometimes they are just dicts 
+                    if isinstance(item, BaseDocument):
+                        return item 
+                    return field.from_native(item)
+
+                if many:                    
+                    val = [_restore(field, item) for item in val] 
+                else:
+                    val = _restore(field, val) 
+
+            key = getattr(field, 'source', None ) or key
+            try:
+                setattr(instance, key, val)
+            except ValueError:
+                self._errors[key] = self.error_messages['required']
+
         return instance
 
     def get_default_fields(self):
@@ -166,7 +180,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.DecimalField: ['min_value', 'max_value'],
             mongoengine.EmailField: ['max_length'],
             mongoengine.FileField: ['max_length'],
-            mongoengine.ImageField: ['max_length'],
+            mongoengine.ImageField: [],
             mongoengine.URLField: ['max_length'],
         }
 
