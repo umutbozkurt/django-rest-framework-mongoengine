@@ -72,7 +72,6 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         dynamic_fields = self.get_dynamic_fields(instance)
         all_fields = dict(dynamic_fields, **self.fields)
-        
 
         for key, val in attrs.items():
             field = all_fields.get(key)
@@ -94,7 +93,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
                 else:
                     val = _restore(field, val) 
 
-            key = getattr(field, 'source', None ) or key
+            key = getattr(field, 'source', None) or key
             try:
                 setattr(instance, key, val)
             except ValueError:
@@ -180,7 +179,6 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.DecimalField: ['min_value', 'max_value'],
             mongoengine.EmailField: ['max_length'],
             mongoengine.FileField: ['max_length'],
-            mongoengine.ImageField: [],
             mongoengine.URLField: ['max_length'],
         }
 
