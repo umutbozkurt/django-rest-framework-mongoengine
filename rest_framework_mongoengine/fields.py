@@ -53,18 +53,19 @@ class MongoDocumentField(serializers.WritableField):
         Models to natives
         Recursion for (embedded) objects
         """
-        if depth == 0:
-            # Return primary key if exists, else return default text
-            return str(getattr(obj, 'pk', "Max recursion depth exceeded"))
-        elif isinstance(obj, BaseDocument):
+
+        if isinstance(obj, BaseDocument):
             # Document, EmbeddedDocument
-            return self.transform_document(obj, depth-1)
+            if depth == 0:
+                # Return primary key if exists, else return default text
+                return str(getattr(obj, 'pk', "Max recursion depth exceeded"))
+            return self.transform_document(obj, depth)
         elif isinstance(obj, dict):
             # Dictionaries
-            return self.transform_dict(obj, depth-1)
+            return self.transform_dict(obj, depth)
         elif isinstance(obj, list):
             # List
-            return [self.transform_object(value, depth-1) for value in obj]
+            return [self.transform_object(value, depth) for value in obj]
         elif obj is None:
             return None
         else:
@@ -91,7 +92,7 @@ class ReferenceField(MongoDocumentField):
         return instance
 
     def to_native(self, obj):
-        return self.transform_object(obj, self.depth)
+        return self.transform_object(obj, self.depth-1)
 
 
 class ListField(MongoDocumentField):
