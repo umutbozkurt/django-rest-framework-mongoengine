@@ -8,6 +8,7 @@ class User(Document):
     surname = StringField(max_length=20)
     username = StringField(max_length=30)
     email = EmailField(max_length=30)
+    friends = ListField(ReferenceField('self'))
     UUID = UUIDField()
 
 

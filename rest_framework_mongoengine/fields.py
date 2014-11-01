@@ -7,12 +7,6 @@ from mongoengine.document import Document
 from rest_framework import serializers
 from mongoengine.fields import ObjectId
 
-import sys
-
-if sys.version_info[0] >= 3:
-    def unicode(val):
-        return str(val)
-
 
 class MongoDocumentField(serializers.WritableField):
     MAX_RECURSION_DEPTH = 5  # default value of depth
@@ -58,7 +52,7 @@ class MongoDocumentField(serializers.WritableField):
             # Document, EmbeddedDocument
             if depth == 0:
                 # Return primary key if exists, else return default text
-                return str(getattr(obj, 'pk', "Max recursion depth exceeded"))
+                return smart_str(getattr(obj, 'pk', "Max recursion depth exceeded"))
             return self.transform_document(obj, depth)
         elif isinstance(obj, dict):
             # Dictionaries
@@ -69,7 +63,7 @@ class MongoDocumentField(serializers.WritableField):
         elif obj is None:
             return None
         else:
-            return unicode(obj) if isinstance(obj, ObjectId) else obj
+            return smart_str(obj) if isinstance(obj, ObjectId) else obj
 
 
 class ReferenceField(MongoDocumentField):
