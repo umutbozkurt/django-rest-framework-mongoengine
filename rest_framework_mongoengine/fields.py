@@ -119,7 +119,7 @@ class EmbeddedDocumentField(MongoDocumentField):
         if obj is None:
             return None
         else:
-            return self.model_field.to_mongo(obj)
+            return self.transform_object(obj, self.depth)
 
     def from_native(self, value):
         return self.model_field.to_python(value)
