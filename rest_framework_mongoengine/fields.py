@@ -47,12 +47,11 @@ class MongoDocumentField(serializers.WritableField):
         Models to natives
         Recursion for (embedded) objects
         """
-
         if isinstance(obj, BaseDocument):
             # Document, EmbeddedDocument
             if depth == 0:
                 # Return primary key if exists, else return default text
-                return smart_str(getattr(obj, 'pk', "Max recursion depth exceeded"))
+                return smart_str(getattr(obj, 'pk', 'Max recursion depth exceeded'))
             return self.transform_document(obj, depth)
         elif isinstance(obj, dict):
             # Dictionaries
@@ -119,7 +118,7 @@ class EmbeddedDocumentField(MongoDocumentField):
         if obj is None:
             return None
         else:
-            return self.model_field.to_mongo(obj)
+            return self.transform_object(obj, self.depth)
 
     def from_native(self, value):
         return self.model_field.to_python(value)
