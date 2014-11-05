@@ -165,7 +165,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             mongoengine.BooleanField: fields.BooleanField,
             mongoengine.FileField: fields.FileField,
             mongoengine.ImageField: fields.ImageField,
-            mongoengine.ObjectIdField: fields.Field,
+            mongoengine.ObjectIdField: fields.WritableField,
             mongoengine.ReferenceField: ReferenceField,
             mongoengine.ListField: ListField,
             mongoengine.EmbeddedDocumentField: EmbeddedDocumentField,
