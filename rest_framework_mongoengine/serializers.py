@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 import warnings
-from django.core.exceptions import ValidationError
 from mongoengine.errors import ValidationError
 from rest_framework import serializers
 from rest_framework import fields
