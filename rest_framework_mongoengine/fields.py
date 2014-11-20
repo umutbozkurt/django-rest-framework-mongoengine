@@ -1,4 +1,5 @@
 from bson.errors import InvalidId
+from bson.dbref import DBRef
 from django.core.exceptions import ValidationError
 from django.utils.encoding import smart_str
 from mongoengine import dereference
@@ -53,6 +54,9 @@ class MongoDocumentField(serializers.WritableField):
                 # Return primary key if exists, else return default text
                 return smart_str(getattr(obj, 'pk', 'Max recursion depth exceeded'))
             return self.transform_document(obj, depth)
+        elif isinstance(obj, DBRef):
+            # DBRef
+            return self.transform_object(obj.id, depth)
         elif isinstance(obj, dict):
             # Dictionaries
             return self.transform_dict(obj, depth)
