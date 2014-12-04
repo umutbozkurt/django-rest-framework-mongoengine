@@ -85,7 +85,7 @@ class ReferenceField(MongoDocumentField):
         return instance
 
     def to_native(self, obj):
-        return self.transform_object(obj, self.depth-1)
+        return self.transform_object(obj, self.depth - 1)
 
 
 class ListField(MongoDocumentField):
@@ -96,7 +96,7 @@ class ListField(MongoDocumentField):
         return self.model_field.to_python(value)
 
     def to_native(self, obj):
-        return self.transform_object(obj, self.depth)
+        return self.transform_object(obj, self.depth - 1)
 
 
 class EmbeddedDocumentField(MongoDocumentField):
