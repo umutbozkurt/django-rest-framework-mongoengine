@@ -2,19 +2,18 @@ from bson.errors import InvalidId
 from django.core.exceptions import ValidationError
 from django.utils.encoding import smart_str
 from mongoengine import dereference
+
 from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from rest_framework import serializers
 from mongoengine.fields import ObjectId
 
 
-class MongoDocumentField(serializers.WritableField):
-    MAX_RECURSION_DEPTH = 5  # default value of depth
-
+class MongoDocumentField(serializers.Field):
     def __init__(self, *args, **kwargs):
         try:
             self.model_field = kwargs.pop('model_field')
-            self.depth = kwargs.pop('depth', self.MAX_RECURSION_DEPTH)
+            self.depth = kwargs.pop('depth')
         except KeyError:
             raise ValueError("%s requires 'model_field' kwarg" % self.type_label)
 
@@ -75,7 +74,7 @@ class ReferenceField(MongoDocumentField):
         except InvalidId:
             raise ValidationError(self.error_messages['invalid'])
 
-        instance = dereference.DeReference().__call__([dbref])[0]
+        instance = dereference.DeReference()([dbref])[0]
 
         # Check if dereference was successful
         if not isinstance(instance, Document):
@@ -92,11 +91,11 @@ class ListField(MongoDocumentField):
 
     type_label = 'ListField'
 
-    def from_native(self, value):
-        return self.model_field.to_python(value)
+    def to_internal_value(self, data):
+        return self.model_field.to_python(data)
 
-    def to_native(self, obj):
-        return self.transform_object(obj, self.depth - 1)
+    def to_representation(self, value):
+        return self.transform_object(value, self.depth - 1)
 
 
 class EmbeddedDocumentField(MongoDocumentField):
@@ -130,3 +129,14 @@ class DynamicField(MongoDocumentField):
 
     def to_native(self, obj):
         return self.model_field.to_python(obj)
+
+
+class ObjectIdField(serializers.Field):
+
+    type_label = 'ObjectIdField'
+
+    def to_representation(self, value):
+        return smart_str(value)
+
+    def to_internal_value(self, data):
+        return ObjectId(data)
