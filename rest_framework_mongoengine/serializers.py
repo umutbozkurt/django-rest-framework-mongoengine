@@ -376,6 +376,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def update(self, instance, validated_data):
+        for embedded_field in self.embedded_document_serializer_fields:
+            embedded_doc_intance = embedded_field.update(getattr(instance, embedded_field.field_name), embedded_field.validated_data)
+            setattr(instance, embedded_field.field_name, embedded_doc_intance)
+
+        return super(DocumentSerializer, self).update(instance, validated_data)
+
 
 class EmbeddedDocumentSerializer(DocumentSerializer):
 
