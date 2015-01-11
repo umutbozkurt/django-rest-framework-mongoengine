@@ -1,54 +1,48 @@
-from django.core.exceptions import ImproperlyConfigured
 from rest_framework import mixins
-from rest_framework.generics import GenericAPIView
+from rest_framework import generics as drf_generics
+
 from mongoengine.django.shortcuts import get_document_or_404
 
 
-class MongoAPIView(GenericAPIView):
+class GenericAPIView(drf_generics.GenericAPIView):
     """
-    Mixin for views manipulating mongo documents
-
+    View to play nice with our Document Serializer
     """
-    queryset = None
-    serializer_class = None
     lookup_field = 'id'
 
-    def get_queryset(self):
+    def get_object(self):
         """
-        Get the list of items for this view.
-        This must be an iterable, and may be a queryset.
-        Defaults to using `self.queryset`.
+        *** Inherited from DRF 3 GenericAPIView, swapped get_object_or_404() with get_document_or_404() ***
 
-        You may want to override this if you need to provide different
-        querysets depending on the incoming request.
+        Returns the object the view is displaying.
 
-        (Eg. return a list of items that is specific to the user)
+        You may want to override this if you need to provide non-standard
+        queryset lookups.  Eg if objects are referenced using multiple
+        keyword arguments in the url conf.
         """
-        if self.queryset is not None:
-            return self.queryset.clone()
+        queryset = self.filter_queryset(self.get_queryset())
 
-        if self.model is not None:
-            return self.get_serializer().opts.model.objects.all()
+        # Perform the lookup filtering.
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
 
-        raise ImproperlyConfigured("'%s' must define 'queryset' or 'model'"
-                                    % self.__class__.__name__)
+        assert lookup_url_kwarg in self.kwargs, (
+            'Expected view %s to be called with a URL keyword argument '
+            'named "%s". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.' %
+            (self.__class__.__name__, lookup_url_kwarg)
+        )
 
-    def get_object(self, queryset=None):
-        """
-        Get a document instance for read/update/delete requests.
-        """
-        query_key = self.lookup_url_kwarg or self.lookup_field
-        query_kwargs = {query_key: self.kwargs[query_key]}
-        queryset = self.get_queryset()
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+        obj = get_document_or_404(queryset, **filter_kwargs)
 
-        obj = get_document_or_404(queryset, **query_kwargs)
+        # May raise a permission denied
         self.check_object_permissions(self.request, obj)
 
         return obj
 
 
 class CreateAPIView(mixins.CreateModelMixin,
-                    MongoAPIView):
+                    GenericAPIView):
 
     """
     Concrete view for creating a model instance.
@@ -58,7 +52,7 @@ class CreateAPIView(mixins.CreateModelMixin,
 
 
 class ListAPIView(mixins.ListModelMixin,
-                  MongoAPIView):
+                  GenericAPIView):
     """
     Concrete view for listing a queryset.
     """
@@ -68,7 +62,7 @@ class ListAPIView(mixins.ListModelMixin,
 
 class ListCreateAPIView(mixins.ListModelMixin,
                         mixins.CreateModelMixin,
-                        MongoAPIView):
+                        GenericAPIView):
     """
     Concrete view for listing a queryset or creating a model instance.
     """
@@ -80,7 +74,7 @@ class ListCreateAPIView(mixins.ListModelMixin,
 
 
 class RetrieveAPIView(mixins.RetrieveModelMixin,
-                      MongoAPIView):
+                      GenericAPIView):
     """
     Concrete view for retrieving a model instance.
     """
@@ -89,7 +83,7 @@ class RetrieveAPIView(mixins.RetrieveModelMixin,
 
 
 class UpdateAPIView(mixins.UpdateModelMixin,
-                    MongoAPIView):
+                    GenericAPIView):
 
     """
     Concrete view for updating a model instance.
@@ -103,7 +97,7 @@ class UpdateAPIView(mixins.UpdateModelMixin,
 
 class RetrieveUpdateAPIView(mixins.RetrieveModelMixin,
                             mixins.UpdateModelMixin,
-                            MongoAPIView):
+                            GenericAPIView):
     """
     Concrete view for retrieving, updating a model instance.
     """
@@ -119,7 +113,7 @@ class RetrieveUpdateAPIView(mixins.RetrieveModelMixin,
 
 class RetrieveDestroyAPIView(mixins.RetrieveModelMixin,
                              mixins.DestroyModelMixin,
-                             MongoAPIView):
+                             GenericAPIView):
     """
     Concrete view for retrieving or deleting a model instance.
     """
@@ -133,7 +127,7 @@ class RetrieveDestroyAPIView(mixins.RetrieveModelMixin,
 class RetrieveUpdateDestroyAPIView(mixins.RetrieveModelMixin,
                                    mixins.UpdateModelMixin,
                                    mixins.DestroyModelMixin,
-                                   MongoAPIView):
+                                   GenericAPIView):
     """
     Concrete view for retrieving, updating or deleting a model instance.
     """

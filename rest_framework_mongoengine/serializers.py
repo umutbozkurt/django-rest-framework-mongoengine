@@ -1,20 +1,20 @@
 from __future__ import unicode_literals
-import warnings
-from django.core.exceptions import ImproperlyConfigured
-from django.db.models.fields import FieldDoesNotExist
+
 from mongoengine.errors import ValidationError as me_ValidationError
-from rest_framework import serializers
 from mongoengine import fields as me_fields
+
 from django.db import models
 from django.forms import widgets
+from django.core.exceptions import ImproperlyConfigured
 
 from collections import OrderedDict
-import copy
 
-from rest_framework_mongoengine.utils import get_field_info
-
-from .fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicField, ObjectIdField
+from rest_framework import serializers
 from rest_framework import fields as drf_fields
+from rest_framework_mongoengine.utils import get_field_info
+from rest_framework_mongoengine.fields import (ReferenceField, ListField, EmbeddedDocumentField, DynamicField,
+                                               ObjectIdField)
+import copy
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
@@ -98,8 +98,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     To contributors:
          Before start of development, please consider reading DRF 3 ModelSerializer implementation
-         The process order like is_valid() -> run_validation() -> to_internal_value() is crucial when
+
+         - The process order like is_valid() -> run_validation() -> to_internal_value() is crucial when
          implementing custom behavior.
+
+         - Important to understand that all Mongoengine Fields are converted to DRF fields on the go.
+         The fields that require custom implementation(like ListField), we convert them to our
+         custom DocumentField(or any subclass).
 
          All contributions are welcome.
 

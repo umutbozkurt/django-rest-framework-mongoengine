@@ -1,15 +1,25 @@
-from bson.errors import InvalidId
 from django.core.exceptions import ValidationError
 from django.utils.encoding import smart_str
-from mongoengine import dereference
 
+from rest_framework import serializers
+
+from bson.errors import InvalidId
+from mongoengine import dereference
 from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
-from rest_framework import serializers
 from mongoengine.fields import ObjectId
 
 
-class MongoDocumentField(serializers.Field):
+class DocumentField(serializers.Field):
+    """
+    Base field for Mongoengine fields that we can not convert to DRF fields.
+
+    To Contributors:
+        - You can subclass DocumentField to implement custom (de)serialization
+    """
+
+    type_label = 'DocumentField'
+
     def __init__(self, *args, **kwargs):
         try:
             self.model_field = kwargs.pop('model_field')
@@ -17,7 +27,7 @@ class MongoDocumentField(serializers.Field):
         except KeyError:
             raise ValueError("%s requires 'model_field' kwarg" % self.type_label)
 
-        super(MongoDocumentField, self).__init__(*args, **kwargs)
+        super(DocumentField, self).__init__(*args, **kwargs)
 
     def transform_document(self, document, depth):
         data = {}
@@ -63,8 +73,19 @@ class MongoDocumentField(serializers.Field):
         else:
             return smart_str(obj) if isinstance(obj, ObjectId) else obj
 
+    def to_internal_value(self, data):
+        return self.model_field.to_python(data)
 
-class ReferenceField(MongoDocumentField):
+    def to_representation(self, value):
+        return self.transform_object(value, self.depth - 1)
+
+
+class ReferenceField(DocumentField):
+    """
+    For ReferenceField.
+    We always dereference DBRef object before serialization
+    TODO: Maybe support DBRef too?
+    """
 
     type_label = 'ReferenceField'
 
@@ -87,7 +108,7 @@ class ReferenceField(MongoDocumentField):
         return self.transform_object(value, self.depth - 1)
 
 
-class ListField(MongoDocumentField):
+class ListField(DocumentField):
 
     type_label = 'ListField'
 
@@ -98,7 +119,7 @@ class ListField(MongoDocumentField):
         return self.transform_object(value, self.depth - 1)
 
 
-class EmbeddedDocumentField(MongoDocumentField):
+class EmbeddedDocumentField(DocumentField):
 
     type_label = 'EmbeddedDocumentField'
 
@@ -120,7 +141,7 @@ class EmbeddedDocumentField(MongoDocumentField):
         return self.model_field.to_python(data)
 
 
-class DynamicField(MongoDocumentField):
+class DynamicField(DocumentField):
 
     type_label = 'DynamicField'
 
