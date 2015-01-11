@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import warnings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models.fields import FieldDoesNotExist
-from mongoengine.errors import ValidationError
+from mongoengine.errors import ValidationError as me_ValidationError
 from rest_framework import serializers
 from mongoengine import fields as me_fields
 from django.core.paginator import Page
@@ -16,7 +16,6 @@ from rest_framework_mongoengine.utils import get_field_info
 
 from .fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicField, ObjectIdField
 from rest_framework import fields as drf_fields
-from rest_framework.utils.field_mapping import get_field_kwargs
 
 
 class MongoEngineModelSerializer(serializers.ModelSerializer):
@@ -48,7 +47,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         validators = getattr(getattr(self, 'Meta', None), 'validators', [])
         return validators
 
-    # def perform_validation(self, attrs):
+    # def run_validation(self, data=empty):
     #     """
     #     Rest Framework built-in validation + related model validations
     #     """
@@ -85,40 +84,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
     #
     #     return attrs
 
-    # def restore_object(self, attrs, instance=None):
-    #     if instance is None:
-    #         instance = self.opts.model()
-    #
-    #     dynamic_fields = self.get_dynamic_fields(instance)
-    #     all_fields = dict(dynamic_fields, **self.fields)
-    #
-    #     for key, val in attrs.items():
-    #         field = all_fields.get(key)
-    #         if not field or field.read_only:
-    #             continue
-    #
-    #         if isinstance(field, serializers.Serializer):
-    #             many = field.many
-    #
-    #             def _restore(field, item):
-    #                 # looks like a bug, sometimes there are decerialized objects in attrs
-    #                 # sometimes they are just dicts
-    #                 if isinstance(item, BaseDocument):
-    #                     return item
-    #                 return field.from_native(item)
-    #
-    #             if many:
-    #                 val = [_restore(field, item) for item in val]
-    #             else:
-    #                 val = _restore(field, val)
-    #
-    #         key = getattr(field, 'source', None) or key
-    #         try:
-    #             setattr(instance, key, val)
-    #         except ValueError:
-    #             self._errors[key] = self.error_messages['required']
-    #
-    #     return instance
+    # def validate(self, attrs):
+    #     return self.Meta.model.validate(attrs)
 
     def get_fields(self):
         declared_fields = copy.deepcopy(self._declared_fields)
@@ -312,6 +279,22 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
                 )
             )
             raise TypeError(msg)
+        except me_ValidationError as exc:
+            msg = (
+                'Got a `ValidationError` when calling `%s.objects.create()`. '
+                'This may be because request data satisfies serializer validations '
+                'but not Mongoengine`s. You may need to check consistency between '
+                '%s and %s.\nIf that is not the case, please open a ticket '
+                'regarding this issue on https://github.com/umutbozkurt/django-rest-framework-mongoengine/issues'
+                '\nOriginal exception was: %s' %
+                (
+                    ModelClass.__name__,
+                    ModelClass.__name__,
+                    self.__class__.__name__,
+                    exc
+                )
+            )
+            raise me_ValidationError(msg)
 
         return instance
 
