@@ -19,16 +19,18 @@ from rest_framework import fields as drf_fields
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
     """
+    *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to work automagically ***
+
     Give explicit errors when users attempt to pass writable nested data.
 
     If we don't do this explicitly they'd get a less helpful error when
     calling `.save()` on the serializer.
 
-    We don't *automatically* support these sorts of nested writes brecause
+    We don't *automatically* support these sorts of nested writes because
     there are too many ambiguities to define a default behavior.
 
     Eg. Suppose we have a `UserSerializer` with a nested profile. How should
-    we handle the case of an update, where the `profile` realtionship does
+    we handle the case of an update, where the `profile` relationship does
     not exist? Any of the following might be valid:
 
     * Raise an application error.
@@ -79,7 +81,38 @@ def raise_errors_on_nested_writes(method_name, serializer, validated_data):
 
 class DocumentSerializer(serializers.ModelSerializer):
     """
+
     Model Serializer that supports Mongoengine
+    DRF - 3 comes with pretty cool new features and more elegant and readable codebase.
+    So it was not that hard to hack the way through mongoengine compability.
+
+    To users:
+        MongoEngineModelSerializer is now DocumentSerializer
+        everything works on MongoEngineModelSerializer works on DocumentSerializer as well, even more performant.
+
+        You can also use nested DocumentSerializers, just like on DRF3 ModelSerializer.
+
+        DocumentSerializer takes care of EmbeddedDocumentField, ListField, ReferenceField automatically.
+        If you want some custom behavior, you should implement
+        a nested serializer with .create() .update() methods set up
+
+    To contributors:
+         Before start of development, please consider reading DRF 3 ModelSerializer implementation
+         The process order like is_valid() -> run_validation() -> to_internal_value() is crucial when
+         implementing custom behavior.
+
+         All contributions are welcome.
+
+         Here is a to-do list if you consider contributing
+            - implement better get_fields()
+            - make sure all kwargs (regarding validation/serialization) on models
+              passes to serializers on get_field_kwargs()
+            - check and implement ChoiceField on DRF
+            - check if DRF validators work correctly
+            - write tests
+            - check and resolve issues
+            - maybe a better way to implement transform_%s methods on fields.py
+
     """
     def __init__(self, instance=None, data=None, **kwargs):
         super(DocumentSerializer, self).__init__(instance=instance, data=data, **kwargs)
@@ -113,47 +146,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         validators = getattr(getattr(self, 'Meta', None), 'validators', [])
         return validators
 
-    # def run_validation(self, data=empty):
-    #     """
-    #     Rest Framework built-in validation + related model validations
-    #     """
-    #     for field_name, field in self.fields.items():
-    #         if field_name in self._errors:
-    #             continue
-    #
-    #         source = field.source or field_name
-    #         if self.partial and source not in attrs:
-    #             continue
-    #
-    #         if field_name in attrs and hasattr(field, 'model_field'):
-    #             try:
-    #                 field.model_field.validate(attrs[field_name])
-    #             except ValidationError as err:
-    #                 self._errors[field_name] = str(err)
-    #
-    #         try:
-    #             validate_method = getattr(self, 'validate_%s' % field_name, None)
-    #             if validate_method:
-    #                 attrs = validate_method(attrs, source)
-    #         except serializers.ValidationError as err:
-    #             self._errors[field_name] = self._errors.get(field_name, []) + list(err.messages)
-    #
-    #     if not self._errors:
-    #         try:
-    #             attrs = self.validate(attrs)
-    #         except serializers.ValidationError as err:
-    #             if hasattr(err, 'message_dict'):
-    #                 for field_name, error_messages in err.message_dict.items():
-    #                     self._errors[field_name] = self._errors.get(field_name, []) + list(error_messages)
-    #             elif hasattr(err, 'messages'):
-    #                 self._errors['non_field_errors'] = err.messages
-    #
-    #     return attrs
-
-    # def validate(self, attrs):
-    #     return self.Meta.model.validate(attrs)
-
     def is_valid(self, raise_exception=False):
+        """
+        Call super.is_valid() and then apply embedded document serializer's validations.
+        """
         valid = super(DocumentSerializer, self).is_valid(raise_exception=raise_exception)
 
         for embedded_field in self.embedded_document_serializer_fields:
@@ -163,6 +159,13 @@ class DocumentSerializer(serializers.ModelSerializer):
         return valid
 
     def get_fields(self):
+        """
+        Get fields.
+        Inherited mostly from DRF 3 get_fields()
+        and then altered for Mongoengine compability.
+        Mosts of the code could be unnecessary or irrelevant.
+        Needs a lot of refactor
+        """
         declared_fields = copy.deepcopy(self._declared_fields)
 
         ret = OrderedDict()
@@ -293,6 +296,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         return ret
 
     def get_field_kwargs(self, model_field):
+        """
+        Get kwargs that will be used for validation/serialization
+        """
         kwargs = {}
 
         if type(model_field) in (me_fields.ReferenceField, me_fields.EmbeddedDocumentField,
@@ -331,6 +337,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         return kwargs
 
     def create(self, validated_data):
+        """
+        Create an instance using queryset.create()
+        Before create() on self, call EmbeddedDocumentSerializer's create() first. If exists.
+        """
         raise_errors_on_nested_writes('create', self, validated_data)
 
         # Automagically create and set embedded documents to validated data
@@ -377,6 +387,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
+        """
+        Update embedded fields first, set relevant attributes with updated data
+        And then continue regular updating
+        """
         for embedded_field in self.embedded_document_serializer_fields:
             embedded_doc_intance = embedded_field.update(getattr(instance, embedded_field.field_name), embedded_field.validated_data)
             setattr(instance, embedded_field.field_name, embedded_doc_intance)
@@ -385,6 +399,9 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 
 class EmbeddedDocumentSerializer(DocumentSerializer):
+    """
+
+    """
 
     def create(self, validated_data):
         """
