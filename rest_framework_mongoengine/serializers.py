@@ -4,8 +4,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db.models.fields import FieldDoesNotExist
 from mongoengine.errors import ValidationError
 from rest_framework import serializers
-from rest_framework import fields
-import mongoengine
+from mongoengine import fields as me_fields
 from django.core.paginator import Page
 from django.db import models
 from django.forms import widgets
@@ -27,22 +26,22 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
     MAX_RECURSION_DEPTH = 5  # default value of depth
 
     field_mapping = {
-        mongoengine.FloatField: fields.FloatField,
-        mongoengine.IntField: fields.IntegerField,
-        mongoengine.DateTimeField: fields.DateTimeField,
-        mongoengine.EmailField: fields.EmailField,
-        mongoengine.URLField: fields.URLField,
-        mongoengine.StringField: fields.CharField,
-        mongoengine.BooleanField: fields.BooleanField,
-        mongoengine.FileField: fields.FileField,
-        mongoengine.ImageField: fields.ImageField,
-        mongoengine.ObjectIdField: ObjectIdField,
-        mongoengine.ReferenceField: ReferenceField,
-        mongoengine.ListField: ListField,
-        mongoengine.EmbeddedDocumentField: EmbeddedDocumentField,
-        mongoengine.DynamicField: DynamicField,
-        mongoengine.DecimalField: fields.DecimalField,
-        mongoengine.UUIDField: fields.CharField
+        me_fields.FloatField: drf_fields.FloatField,
+        me_fields.IntField: drf_fields.IntegerField,
+        me_fields.DateTimeField: drf_fields.DateTimeField,
+        me_fields.EmailField: drf_fields.EmailField,
+        me_fields.URLField: drf_fields.URLField,
+        me_fields.StringField: drf_fields.CharField,
+        me_fields.BooleanField: drf_fields.BooleanField,
+        me_fields.FileField: drf_fields.FileField,
+        me_fields.ImageField: drf_fields.ImageField,
+        me_fields.ObjectIdField: ObjectIdField,
+        me_fields.ReferenceField: ReferenceField,
+        me_fields.ListField: ListField,
+        me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
+        me_fields.DynamicField: DynamicField,
+        me_fields.DecimalField: drf_fields.DecimalField,
+        me_fields.UUIDField: drf_fields.CharField
     }
 
     def get_validators(self):
@@ -180,55 +179,6 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         # arguments to deal with `unique_for` dates that are required to
         # be in the input data in order to validate it.
         hidden_fields = {}
-        unique_constraint_names = set()
-            #
-            # # Include each of the `unique_for_*` field names.
-            # unique_constraint_names |= set([
-            #     model_field.unique_for_date,
-            #     model_field.unique_for_month,
-            #     model_field.unique_for_year
-            # ])
-
-        # unique_constraint_names -= set([None])
-        #
-        # # Include each of the `unique_together` field names,
-        # # so long as all the field names are included on the serializer.
-        # for parent_class in [model] + list(model._meta.parents.keys()):
-        #     for unique_together_list in parent_class._meta.unique_together:
-        #         if set(fields).issuperset(set(unique_together_list)):
-        #             unique_constraint_names |= set(unique_together_list)
-        #
-        # # Now we have all the field names that have uniqueness constraints
-        # # applied, we can add the extra 'required=...' or 'default=...'
-        # # arguments that are appropriate to these fields, or add a `HiddenField` for it.
-        # for unique_constraint_name in unique_constraint_names:
-        #     # Get the model field that is referred too.
-        #     unique_constraint_field = model._meta.get_field(unique_constraint_name)
-        #
-        #     if getattr(unique_constraint_field, 'auto_now_add', None):
-        #         default = CreateOnlyDefault(timezone.now)
-        #     elif getattr(unique_constraint_field, 'auto_now', None):
-        #         default = timezone.now
-        #     elif unique_constraint_field.has_default():
-        #         default = unique_constraint_field.default
-        #     else:
-        #         default = empty
-        #
-        #     if unique_constraint_name in model_field_mapping:
-        #         # The corresponding field is present in the serializer
-        #         if unique_constraint_name not in extra_kwargs:
-        #             extra_kwargs[unique_constraint_name] = {}
-        #         if default is empty:
-        #             if 'required' not in extra_kwargs[unique_constraint_name]:
-        #                 extra_kwargs[unique_constraint_name]['required'] = True
-        #         else:
-        #             if 'default' not in extra_kwargs[unique_constraint_name]:
-        #                 extra_kwargs[unique_constraint_name]['default'] = default
-        #     elif default is not empty:
-        #         # The corresponding field is not present in the,
-        #         # serializer. We have a default to use for it, so
-        #         # add in a hidden field that populates it.
-        #         hidden_fields[unique_constraint_name] = HiddenField(default=default)
 
         # Now determine the fields that should be included on the serializer.
         for field_name in fields:
@@ -295,49 +245,27 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         return ret
 
-    def get_default_fields(self):
-        cls = self.opts.model
-        opts = self.Meta
-        fields = [getattr(opts, field) for field in cls._fields_ordered]
-
-        ret = OrderedDict()
-
-        for model_field in fields:
-            if isinstance(model_field, mongoengine.ObjectIdField):
-                field = self.get_pk_field(model_field)
-            else:
-                field = self.get_field(model_field)
-
-            if field:
-                field.bind(model_field.name, self)
-                ret[model_field.name] = field
-
-        for field_name in self.opts.read_only_fields:
-            assert field_name in ret, "read_only_fields on '%s' included invalid item '%s'" % \
-                                      (self.__class__.__name__, field_name)
-            ret[field_name].read_only = True
-
-        return ret
-
-    def get_dynamic_fields(self, obj):
+    def get_dynamic_fields(self, document):
         dynamic_fields = {}
-        if obj is not None and obj._dynamic:
-            for key, value in obj._dynamic_fields.items():
-                dynamic_fields[key] = self.get_field_kwargs(value)
+        if document is not None and document._dynamic:
+            for name, field in document._dynamic_fields.items():
+                dynamic_fields[name] = DynamicField(field_name=name, source=name, **self.get_field_kwargs(field))
         return dynamic_fields
 
     def get_field_kwargs(self, model_field):
         kwargs = {}
 
-        if model_field.__class__ in (mongoengine.ReferenceField, mongoengine.EmbeddedDocumentField,
-                                     mongoengine.ListField, mongoengine.DynamicField):
+        if type(model_field) in (me_fields.ReferenceField, me_fields.EmbeddedDocumentField,
+                                     me_fields.ListField, me_fields.DynamicField):
             kwargs['model_field'] = model_field
             kwargs['depth'] = getattr(self.Meta, 'depth', self.MAX_RECURSION_DEPTH)
 
-        if not model_field.__class__ == mongoengine.ObjectIdField:
+        if type(model_field) is me_fields.ObjectIdField:
+            kwargs['required'] = False
+        else:
             kwargs['required'] = model_field.required
 
-        if model_field.__class__ == mongoengine.EmbeddedDocumentField:
+        if type(model_field) is me_fields.EmbeddedDocumentField:
             kwargs['document_type'] = model_field.document_type
 
         if model_field.default:
@@ -348,11 +276,11 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             kwargs['widget'] = widgets.Textarea
 
         attribute_dict = {
-            mongoengine.StringField: ['max_length'],
-            mongoengine.DecimalField: ['min_value', 'max_value'],
-            mongoengine.EmailField: ['max_length'],
-            mongoengine.FileField: ['max_length'],
-            mongoengine.URLField: ['max_length'],
+            me_fields.StringField: ['max_length'],
+            me_fields.DecimalField: ['min_value', 'max_value'],
+            me_fields.EmailField: ['max_length'],
+            me_fields.FileField: ['max_length'],
+            me_fields.URLField: ['max_length'],
         }
 
         if model_field.__class__ in attribute_dict:
@@ -385,46 +313,32 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         return instance
 
-    # def to_representation(self, instance):
-    #     """
-    #     Rest framework built-in to_native + transform_object
-    #     """
-    #     ret = self._dict_class()
-    #     ret.fields = self._dict_class()
-    #
-    #     #Dynamic Document Support
-    #     dynamic_fields = self.get_dynamic_fields(instance)
-    #     all_fields = self._dict_class()
-    #     all_fields.update(self.fields)
-    #     all_fields.update(dynamic_fields)
-    #
-    #     for field_name, field in all_fields.items():
-    #         if field.read_only and instance is None:
-    #             continue
-    #         field.initialize(parent=self, field_name=field_name)
-    #         key = self.get_field_key(field_name)
-    #         value = field.field_to_native(instance, field_name)
-    #         if not getattr(field, 'write_only', False):
-    #             ret[key] = value
-    #         ret.fields[key] = self.augment_field(field, field_name, key, value)
-    #
-    #     return ret
-    #
-    # def to_internal_value(self, data):
-    #     self._errors = {}
-    #
-    #     if data is not None:
-    #         attrs = self.restore_fields(data)
-    #         for key in data.keys():
-    #             if key not in attrs:
-    #                 attrs[key] = data[key]
-    #         if attrs is not None:
-    #             attrs = self.perform_validation(attrs)
-    #     else:
-    #         self._errors['non_field_errors'] = ['No input provided']
-    #
-    #     if not self._errors:
-    #         return self.restore_object(attrs, instance=getattr(self, 'object', None))
+    def to_representation(self, instance):
+        """
+        Object instance -> Dict of primitive datatypes.
+        Serialize regular + dynamic fields
+        """
+        ret = OrderedDict()
+        fields = [field for field in self.fields.values() if not field.write_only]
+        fields += self.get_dynamic_fields(instance).values()
+
+        for field in fields:
+            attribute = field.get_attribute(instance)
+            if attribute is None:
+                ret[field.field_name] = None
+            else:
+                ret[field.field_name] = field.to_representation(attribute)
+
+        return ret
+
+    def to_internal_value(self, data):
+        """
+        Dict of native values <- Dict of primitive datatypes.
+        """
+        ret = super(MongoEngineModelSerializer, self).to_internal_value(data)
+        [drf_fields.set_value(ret, [k], data[k]) for k in data if k not in ret]
+        return ret
+
 
     # @property
     # def data(self):
