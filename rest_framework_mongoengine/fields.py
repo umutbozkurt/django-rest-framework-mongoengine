@@ -68,9 +68,9 @@ class ReferenceField(MongoDocumentField):
 
     type_label = 'ReferenceField'
 
-    def from_native(self, value):
+    def to_internal_value(self, data):
         try:
-            dbref = self.model_field.to_python(value)
+            dbref = self.model_field.to_python(data)
         except InvalidId:
             raise ValidationError(self.error_messages['invalid'])
 
@@ -83,8 +83,8 @@ class ReferenceField(MongoDocumentField):
 
         return instance
 
-    def to_native(self, obj):
-        return self.transform_object(obj, self.depth - 1)
+    def to_representation(self, value):
+        return self.transform_object(value, self.depth - 1)
 
 
 class ListField(MongoDocumentField):
@@ -113,14 +113,14 @@ class EmbeddedDocumentField(MongoDocumentField):
     def get_default_value(self):
         return self.to_native(self.default())
 
-    def to_native(self, obj):
-        if obj is None:
+    def to_representation(self, value):
+        if value is None:
             return None
         else:
-            return self.transform_object(obj, self.depth)
+            return self.transform_object(value, self.depth)
 
-    def from_native(self, value):
-        return self.model_field.to_python(value)
+    def to_internal_value(self, data):
+        return self.model_field.to_python(data)
 
 
 class DynamicField(MongoDocumentField):
