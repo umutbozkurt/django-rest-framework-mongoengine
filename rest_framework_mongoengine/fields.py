@@ -111,11 +111,11 @@ class EmbeddedDocumentField(MongoDocumentField):
         super(EmbeddedDocumentField, self).__init__(*args, **kwargs)
 
     def get_default_value(self):
-        return self.to_native(self.default())
+        return self.to_representation(self.default())
 
     def to_representation(self, value):
         if value is None:
-            return None
+            return self.get_default_value()
         else:
             return self.transform_object(value, self.depth)
 
@@ -124,14 +124,15 @@ class EmbeddedDocumentField(MongoDocumentField):
 
 
 class DynamicField(MongoDocumentField):
+
+    type_label = 'DynamicField'
+
     def __init__(self, field_name=None, source=None, *args, **kwargs):
         super(DynamicField, self).__init__(*args, **kwargs)
         self.field_name = field_name
         self.source = source
         if source:
             self.source_attrs = self.source.split('.')
-
-    type_label = 'DynamicField'
 
     def to_representation(self, value):
         return self.model_field.to_python(value)

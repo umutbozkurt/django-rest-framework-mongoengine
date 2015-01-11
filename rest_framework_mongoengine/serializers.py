@@ -291,6 +291,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         return kwargs
 
     def create(self, validated_data):
+        serializers.raise_errors_on_nested_writes('create', self, validated_data)
+
         ModelClass = self.Meta.model
         try:
             instance = ModelClass.objects.create(**validated_data)
