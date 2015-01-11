@@ -5,7 +5,6 @@ from django.db.models.fields import FieldDoesNotExist
 from mongoengine.errors import ValidationError as me_ValidationError
 from rest_framework import serializers
 from mongoengine import fields as me_fields
-from django.core.paginator import Page
 from django.db import models
 from django.forms import widgets
 
@@ -18,10 +17,75 @@ from .fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicFie
 from rest_framework import fields as drf_fields
 
 
-class MongoEngineModelSerializer(serializers.ModelSerializer):
+def raise_errors_on_nested_writes(method_name, serializer, validated_data):
+    """
+    Give explicit errors when users attempt to pass writable nested data.
+
+    If we don't do this explicitly they'd get a less helpful error when
+    calling `.save()` on the serializer.
+
+    We don't *automatically* support these sorts of nested writes brecause
+    there are too many ambiguities to define a default behavior.
+
+    Eg. Suppose we have a `UserSerializer` with a nested profile. How should
+    we handle the case of an update, where the `profile` realtionship does
+    not exist? Any of the following might be valid:
+
+    * Raise an application error.
+    * Silently ignore the nested part of the update.
+    * Automatically create a profile instance.
+    """
+
+    # Ensure we don't have a writable nested field. For example:
+    #
+    # class UserSerializer(ModelSerializer):
+    #     ...
+    #     profile = ProfileSerializer()
+    assert not any(
+        isinstance(field, serializers.BaseSerializer) and
+        not isinstance(field, EmbeddedDocumentSerializer) and
+        (key in validated_data)
+        for key, field in serializer.fields.items()
+    ), (
+        'The `.{method_name}()` method does not support writable nested'
+        'fields by default.\nWrite an explicit `.{method_name}()` method for '
+        'serializer `{module}.{class_name}`, or set `read_only=True` on '
+        'nested serializer fields.'.format(
+            method_name=method_name,
+            module=serializer.__class__.__module__,
+            class_name=serializer.__class__.__name__
+        )
+    )
+
+    # Ensure we don't have a writable dotted-source field. For example:
+    #
+    # class UserSerializer(ModelSerializer):
+    #     ...
+    #     address = serializer.CharField('profile.address')
+    assert not any(
+        '.' in field.source and (key in validated_data)
+        for key, field in serializer.fields.items()
+    ), (
+        'The `.{method_name}()` method does not support writable dotted-source '
+        'fields by default.\nWrite an explicit `.{method_name}()` method for '
+        'serializer `{module}.{class_name}`, or set `read_only=True` on '
+        'dotted-source serializer fields.'.format(
+            method_name=method_name,
+            module=serializer.__class__.__module__,
+            class_name=serializer.__class__.__name__
+        )
+    )
+
+
+class DocumentSerializer(serializers.ModelSerializer):
     """
     Model Serializer that supports Mongoengine
     """
+    def __init__(self, instance=None, data=None, **kwargs):
+        super(DocumentSerializer, self).__init__(instance=instance, data=data, **kwargs)
+        if not hasattr(self.Meta, 'model'):
+            raise AssertionError('You should set `model` attribute on %s.' % type(self).__name__)
+
     MAX_RECURSION_DEPTH = 5  # default value of depth
 
     field_mapping = {
@@ -42,6 +106,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         me_fields.DecimalField: drf_fields.DecimalField,
         me_fields.UUIDField: drf_fields.CharField
     }
+
+    embedded_document_serializer_fields = []
 
     def get_validators(self):
         validators = getattr(getattr(self, 'Meta', None), 'validators', [])
@@ -87,6 +153,15 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
     # def validate(self, attrs):
     #     return self.Meta.model.validate(attrs)
 
+    def is_valid(self, raise_exception=False):
+        valid = super(DocumentSerializer, self).is_valid(raise_exception=raise_exception)
+
+        for embedded_field in self.embedded_document_serializer_fields:
+            embedded_field._initial_data = self.validated_data.pop(embedded_field.field_name, serializers.empty)
+            valid &= embedded_field.is_valid(raise_exception=raise_exception)
+
+        return valid
+
     def get_fields(self):
         declared_fields = copy.deepcopy(self._declared_fields)
 
@@ -128,10 +203,13 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         # We actually only need this to deal with the slightly awkward case
         # of supporting `unique_for_date`/`unique_for_month`/`unique_for_year`.
         model_field_mapping = {}
+        embedded_list = []
         for field_name in fields:
             if field_name in declared_fields:
                 field = declared_fields[field_name]
                 source = field.source or field_name
+                if isinstance(field, EmbeddedDocumentSerializer):
+                    embedded_list.append(field)
             else:
                 try:
                     source = extra_kwargs[field_name]['source']
@@ -141,6 +219,8 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             # they can't be nested attribute lookups.
             if '.' not in source and source != '*':
                 model_field_mapping[source] = field_name
+
+        self.embedded_document_serializer_fields = embedded_list
 
         # Determine if we need any additional `HiddenField` or extra keyword
         # arguments to deal with `unique_for` dates that are required to
@@ -212,13 +292,6 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         return ret
 
-    def get_dynamic_fields(self, document):
-        dynamic_fields = {}
-        if document is not None and document._dynamic:
-            for name, field in document._dynamic_fields.items():
-                dynamic_fields[name] = DynamicField(field_name=name, source=name, **self.get_field_kwargs(field))
-        return dynamic_fields
-
     def get_field_kwargs(self, model_field):
         kwargs = {}
 
@@ -258,7 +331,12 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         return kwargs
 
     def create(self, validated_data):
-        serializers.raise_errors_on_nested_writes('create', self, validated_data)
+        raise_errors_on_nested_writes('create', self, validated_data)
+
+        # Automagically create and set embedded documents to validated data
+        for embedded_field in self.embedded_document_serializer_fields:
+            embedded_doc_intance = embedded_field.create(embedded_field.validated_data)
+            validated_data[embedded_field.field_name] = embedded_doc_intance
 
         ModelClass = self.Meta.model
         try:
@@ -274,7 +352,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
                 (
                     ModelClass.__name__,
                     ModelClass.__name__,
-                    self.__class__.__name__,
+                    type(self).__name__,
                     exc
                 )
             )
@@ -290,13 +368,43 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
                 (
                     ModelClass.__name__,
                     ModelClass.__name__,
-                    self.__class__.__name__,
+                    type(self).__name__,
                     exc
                 )
             )
             raise me_ValidationError(msg)
 
         return instance
+
+
+class EmbeddedDocumentSerializer(DocumentSerializer):
+
+    def create(self, validated_data):
+        """
+        EmbeddedDocuments are not saved separately, so we create an instance of it.
+        """
+        raise_errors_on_nested_writes('create', self, validated_data)
+        return self.Meta.model(**validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        EmbeddedDocuments are not saved separately, so we just update the instance and return it.
+        """
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        return instance
+
+    def to_internal_value(self, data):
+        """
+        Dict of native values <- Dict of primitive datatypes.
+        After calling super, we handle dynamic data which is not handled by super class
+        """
+        ret = super(DocumentSerializer, self).to_internal_value(data)
+        [drf_fields.set_value(ret, [k], data[k]) for k in data if k not in ret]
+        return ret
 
     def to_representation(self, instance):
         """
@@ -305,7 +413,7 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         """
         ret = OrderedDict()
         fields = [field for field in self.fields.values() if not field.write_only]
-        fields += self.get_dynamic_fields(instance).values()
+        fields += self._get_dynamic_fields(instance).values()
 
         for field in fields:
             attribute = field.get_attribute(instance)
@@ -316,35 +424,19 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
 
         return ret
 
-    def to_internal_value(self, data):
-        """
-        Dict of native values <- Dict of primitive datatypes.
-        """
-        ret = super(MongoEngineModelSerializer, self).to_internal_value(data)
-        [drf_fields.set_value(ret, [k], data[k]) for k in data if k not in ret]
-        return ret
+    def _get_dynamic_fields(self, document):
+        dynamic_fields = {}
+        if document is not None and document._dynamic:
+            for name, field in document._dynamic_fields.items():
+                dynamic_fields[name] = DynamicField(field_name=name, source=name, **self.get_field_kwargs(field))
+        return dynamic_fields
 
-
-    # @property
-    # def data(self):
-    #     """
-    #     Returns the serialized data on the serializer.
-    #     """
-    #     if self._data is None:
-    #         obj = self.object
-    #
-    #         if self.many is not None:
-    #             many = self.many
-    #         else:
-    #             many = hasattr(obj, '__iter__') and not isinstance(obj, (mongoengine.BaseDocument, Page, dict))
-    #             if many:
-    #                 warnings.warn('Implicit list/queryset serialization is deprecated. '
-    #                               'Use the `many=True` flag when instantiating the serializer.',
-    #                               DeprecationWarning, stacklevel=2)
-    #
-    #         if many:
-    #             self._data = [self.to_native(item) for item in obj]
-    #         else:
-    #             self._data = self.to_native(obj)
-    #
-    #     return self._data
+    def _get_default_field_names(self, declared_fields, model_info):
+        """
+        EmbeddedDocuments don't have `id`s so do not include `id` to field names
+        """
+        return (
+            list(declared_fields.keys()) +
+            list(model_info.fields.keys()) +
+            list(model_info.forward_relations.keys())
+        )

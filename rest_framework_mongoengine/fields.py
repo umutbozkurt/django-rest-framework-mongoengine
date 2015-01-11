@@ -110,12 +110,9 @@ class EmbeddedDocumentField(MongoDocumentField):
 
         super(EmbeddedDocumentField, self).__init__(*args, **kwargs)
 
-    def get_default_value(self):
-        return self.to_representation(self.default())
-
     def to_representation(self, value):
         if value is None:
-            return self.get_default_value()
+            return None
         else:
             return self.transform_object(value, self.depth)
 

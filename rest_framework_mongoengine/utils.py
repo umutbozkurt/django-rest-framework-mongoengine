@@ -49,10 +49,8 @@ def get_field_info(model):
     Given a model class, returns a `FieldInfo` instance containing metadata
     about the various field types on the model.
     """
-    opts = model._meta
-
     # Deal with the primary key.
-    pk = model.id
+    pk = model.id if not issubclass(model, mongoengine.EmbeddedDocument) else None
 
     # Deal with regular fields.
     fields = OrderedDict()
@@ -61,16 +59,18 @@ def get_field_info(model):
         fields[field_name] = model._fields[field_name]
 
     # Deal with forward relationships.
+    # Pass forward relations since there is no relations on mongodb
     forward_relations = OrderedDict()
 
     # Deal with reverse relationships.
+    # Pass reverse relations since there is no relations on mongodb
     reverse_relations = OrderedDict()
 
     # Shortcut that merges both regular fields and the pk,
     # for simplifying regular field lookup.
     fields_and_pk = OrderedDict()
     fields_and_pk['pk'] = pk
-    fields_and_pk[pk.name] = pk
+    fields_and_pk[getattr(pk, 'name', 'pk')] = pk
     fields_and_pk.update(fields)
 
     # Shortcut that merges both forward and reverse relationships

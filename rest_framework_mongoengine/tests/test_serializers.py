@@ -3,7 +3,7 @@ import mongoengine as me
 from unittest import TestCase
 from bson import objectid
 
-from rest_framework_mongoengine.serializers import MongoEngineModelSerializer
+from rest_framework_mongoengine.serializers import DocumentSerializer
 from rest_framework import serializers as s
 
 
@@ -15,7 +15,7 @@ class Job(me.Document):
     weight = me.IntField(default=0)
 
 
-class JobSerializer(MongoEngineModelSerializer):
+class JobSerializer(DocumentSerializer):
     id = s.Field()
     title = s.CharField()
     status = s.ChoiceField(read_only=True)
@@ -74,19 +74,19 @@ class SomeObject(me.Document):
     codes = me.ListField(me.EmbeddedDocumentField(Secret))
 
 
-class LocationSerializer(MongoEngineModelSerializer):
+class LocationSerializer(DocumentSerializer):
     city = s.CharField()
 
     class Meta:
         model = Location
 
-class CategorySerializer(MongoEngineModelSerializer):
+class CategorySerializer(DocumentSerializer):
     id = s.CharField(max_length=24)
     class Meta:
         model = Category
         fields = ('id',)
 
-class SomeObjectSerializer(MongoEngineModelSerializer):
+class SomeObjectSerializer(DocumentSerializer):
     location = LocationSerializer(source='loc')
     categories = CategorySerializer(many=True, allow_add_remove=True)
 
