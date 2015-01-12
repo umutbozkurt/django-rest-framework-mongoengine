@@ -246,7 +246,14 @@ class DocumentSerializer(serializers.ModelSerializer):
             elif field_name in info.fields_and_pk:
                 # Create regular model fields.
                 model_field = info.fields_and_pk[field_name]
-                field_cls = self.field_mapping[model_field.__class__]
+                try:
+                    field_cls = self.field_mapping[model_field.__class__]
+                except KeyError:
+                    raise KeyError('%s is not supported, yet. Please open a ticket regarding '
+                                   'this issue and have it fixed asap.\n'
+                                   'https://github.com/umutbozkurt/django-rest-framework-mongoengine/issues/' %
+                                   type(model_field))
+
                 kwargs = self.get_field_kwargs(model_field)
                 if 'choices' in kwargs:
                     # Fields with choices get coerced into `ChoiceField`
@@ -308,7 +315,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         kwargs = {}
 
         if type(model_field) in (me_fields.ReferenceField, me_fields.EmbeddedDocumentField,
-                                     me_fields.ListField, me_fields.DynamicField, me_fields.DictField):
+                                 me_fields.ListField, me_fields.DynamicField, me_fields.DictField):
             kwargs['model_field'] = model_field
             kwargs['depth'] = getattr(self.Meta, 'depth', self.MAX_RECURSION_DEPTH)
 
