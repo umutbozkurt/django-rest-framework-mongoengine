@@ -13,7 +13,7 @@ from rest_framework import serializers
 from rest_framework import fields as drf_fields
 from rest_framework_mongoengine.utils import get_field_info
 from rest_framework_mongoengine.fields import (ReferenceField, ListField, EmbeddedDocumentField, DynamicField,
-                                               ObjectIdField)
+                                               ObjectIdField, DocumentField)
 import copy
 
 
@@ -142,7 +142,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
         me_fields.DynamicField: DynamicField,
         me_fields.DecimalField: drf_fields.DecimalField,
-        me_fields.UUIDField: drf_fields.CharField
+        me_fields.UUIDField: drf_fields.CharField,
+        me_fields.DictField: DocumentField
     }
 
     embedded_document_serializer_fields = []
@@ -307,7 +308,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         kwargs = {}
 
         if type(model_field) in (me_fields.ReferenceField, me_fields.EmbeddedDocumentField,
-                                     me_fields.ListField, me_fields.DynamicField):
+                                     me_fields.ListField, me_fields.DynamicField, me_fields.DictField):
             kwargs['model_field'] = model_field
             kwargs['depth'] = getattr(self.Meta, 'depth', self.MAX_RECURSION_DEPTH)
 
