@@ -26,3 +26,6 @@ See full documentation [here](https://pythonhosted.org/django-rest-framework-mon
 `DocumentSerializer` works just like as `DRF Model Serializer`. Your model fields are converted to relevant serializer fields automatically. If you want custom behavior, you can use `nested serializers`.
 ### EmbeddedDocumentSerializer
 `EmbeddedDocumentSerializer` is used to customize `EmbeddedDocument` behavior, and make `validations` accurately. It is mentioned extensively on the [documentation](https://pythonhosted.org/django-rest-framework-mongoengine/serializers/#embeddeddocumentserializer)
+### Generic Views
+`Generic Views` are named exactly the same to `DRF Generic Views`. Just make sure you are using `DRFME Generics`.
+`from rest_framework_mongoengine import generics`
