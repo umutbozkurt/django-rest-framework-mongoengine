@@ -9,7 +9,7 @@
         
         <link rel="shortcut icon" href="./img/favicon.ico">
 
-        <title>My Docs</title>
+        <title>DRF - Mongoengine Documentation</title>
 
         <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
         <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
@@ -33,15 +33,58 @@
         <!-- Collapsed navigation -->
         <div class="navbar-header">
             
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
 
             <!-- Main title -->
-            <a class="navbar-brand" href=".">My Docs</a>
+            <a class="navbar-brand" href=".">DRF - Mongoengine Documentation</a>
         </div>
 
         <!-- Expanded navigation -->
         <div class="navbar-collapse collapse">
             
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="serializers/">Serializers</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="generics/">Generic Views</a>
+                    </li>
+                
+                
+                </ul>
+            
 
+            
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+                <li class="disabled">
+                    <a rel="next" >
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li >
+                    <a rel="prev" href="serializers/">
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+                
+            </ul>
             
         </div>
     </div>
@@ -52,32 +95,30 @@
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="main active"><a href="#welcome-to-mkdocs">Welcome to MkDocs</a></li>
+        <li class="main active"><a href="#django-rest-framework-mongoengine">Django Rest Framework Mongoengine</a></li>
         
-            <li><a href="#commands">Commands</a></li>
-        
-            <li><a href="#project-layout">Project layout</a></li>
+            <li><a href="#changelog">Changelog</a></li>
         
     
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
 
-<h1 id="welcome-to-mkdocs">Welcome to MkDocs</h1>
-<p>For full documentation visit <a href="http://mkdocs.org">mkdocs.org</a>.</p>
-<h2 id="commands">Commands</h2>
+<h1 id="django-rest-framework-mongoengine">Django Rest Framework Mongoengine</h1>
+<p>Source code on <a href="http://github.com/umutbozkurt/django-rest-framework-mongoengine">github</a>.</p>
+<p>DRF version 3 support will be distributed under version 2.* and it will be developed on <code>master</code> branch. DRF 2 development branch is moved to <code>drf_2_support</code>.</p>
+<p>This documentation is for version 2. You can find documentation for older versions (that support DRF 2) here-&gt; [placeholder].</p>
+<h2 id="changelog">Changelog</h2>
+<p><strong><em>version 2.0</em></strong></p>
 <ul>
-<li><code>mkdocs new [dir-name]</code> - Create a new project.</li>
-<li><code>mkdocs serve</code> - Start the live-reloading docs server.</li>
-<li><code>mkdocs build</code> - Build the documentation site.</li>
-<li><code>mkdocs help</code> - Print this help message.</li>
+<li>Migrated to DRF 3</li>
+<li>Old <code>MongoEngineModelSerializer</code> is now <code>DocumentSerializer</code>.</li>
+<li>You can use nested serializers now, just like documented on DRF3 [placeholder].</li>
+<li>New <code>EmbeddedDocumentSerializer</code> for <code>EmbeddedDocument</code>.</li>
+<li>New <code>ObjectIdField</code>.</li>
+<li>Old <code>MongoDocumentField</code> is now <code>DocumentField</code></li>
+<li>Generic views refactor</li>
 </ul>
-<h2 id="project-layout">Project layout</h2>
-<pre><code>mkdocs.yml    # The configuration file.
-docs/
-    index.md  # The documentation homepage.
-    ...       # Other markdown pages, images and other files.
-</code></pre>
 </div>
             
         </div>

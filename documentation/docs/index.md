@@ -1,17 +1,18 @@
-# Welcome to MkDocs
+# Django Rest Framework Mongoengine
 
-For full documentation visit [mkdocs.org](http://mkdocs.org).
+Source code on [github](http://github.com/umutbozkurt/django-rest-framework-mongoengine).
 
-## Commands
+DRF version 3 support will be distributed under version 2.* and it will be developed on `master` branch. DRF 2 development branch is moved to `drf_2_support`.
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs help` - Print this help message.
+This documentation is for version 2. You can find documentation for older versions (that support DRF 2) here-> [placeholder].
 
-## Project layout
+## Changelog
+***version 2.0***
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+* Migrated to DRF 3
+* Old `MongoEngineModelSerializer` is now `DocumentSerializer`.
+* You can use nested serializers now, just like documented on DRF3 [placeholder].
+* New `EmbeddedDocumentSerializer` for `EmbeddedDocument`.
+* New `ObjectIdField`.
+* Old `MongoDocumentField` is now `DocumentField`
+* Generic views refactor
