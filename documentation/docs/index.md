@@ -6,6 +6,14 @@ DRF version 3 support will be distributed under version 2.* and it will be devel
 
 This documentation is for version 2. You can find documentation for older versions (that support DRF 2) here-> [placeholder].
 
+## Version 1 Documentation
+
+You can see version 1 documentation [here](https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/drf_2_support/README.md) (for DRF 2)
+
+## Known Issues
+* EmbeddedDocumentSerializer does not work automatically with `many=True` set.
+* As DRF still has issues with `depth`, DRFME also still has. Depth is not working perfectly.
+
 ## Changelog
 ***version 2.0***
 

@@ -97,12 +97,22 @@
     
         <li class="main active"><a href="#generic-views">Generic Views</a></li>
         
+            <li><a href="#sample-usage">Sample Usage</a></li>
+        
     
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
 
 <h1 id="generic-views">Generic Views</h1>
+<p>Generic views are exactly the same as DRF Generic Views.
+Just remember to import and subclass the ones from this package. There can be confusions because all named same.</p>
+<h2 id="sample-usage">Sample Usage</h2>
+<p>If you are using both DRF and DRFME generic views,</p>
+<p>It is good practise to import like</p>
+<p><code>from rest_framework import generics as drf_generics</code>
+<code>from rest_framework_mongoengine import generics as drfme_generics</code></p>
+<p>and use drfme_generics.ListAPIView, drfme_generics.ListCreateAPIView and so on.</p>
 </div>
             
         </div>

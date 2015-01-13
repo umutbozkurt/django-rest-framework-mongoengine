@@ -240,11 +240,15 @@ class PostSerializer(DocumentSerializer):
 <h2 id="embeddeddocumentserializer">EmbeddedDocumentSerializer</h2>
 <p>Unlike DocumentSerializer, behavior on <code>EmbeddedDocuments</code> are not ambiguous.
 You dont have to implement when nesting <code>EmbeddedDocumentSerializer</code>, it is done automatically for you on the go while (de)serializing.</p>
-<p><strong>Note:</strong>Calling <code>EmbeddedDocumentSerializer.save()</code> will raise an exception, because you cannot save <code>EmbeddedDocuments</code> by themselves.</p>
+<p><strong>Note:</strong>Calling <code>EmbeddedDocumentSerializer.save()</code> will raise an exception, because <code>EmbeddedDocuments</code> need a <code>Document</code> to attach to.</p>
 <h3 id="warning-about-embeddeddocumentserializermanytrue">Warning About EmbeddedDocumentSerializer(many=True)</h3>
 <p>On DRF 3, when you set serializer with <code>many=True</code> kwarg, it automatically converts to <code>ListSerializer</code>, which will lead to a nested serializer exception (from DRF). There is a workaround which is supplying <code>.create()</code> and/or <code>.update()</code> methods.</p>
 <p>For example, as you see below, custom <code>.update()</code> is provided because CommentSerializer has kwarg <code>many=True</code>.</p>
-<pre><code class="Python">class PostSerializer(DocumentSerializer):
+<pre><code class="Python">class CommentSerializer(EmbeddedDocumentSerializer):
+    class Meta:
+        model = Comment
+
+class PostSerializer(DocumentSerializer):
     comments = CommentSerializer(many=True)
     extension = ExtensionSerializer(many=False)
 
