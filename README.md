@@ -4,7 +4,7 @@ Django Rest Framework Mongoengine
 ***Mongoengine*** support for ***Django Rest Framework***.
 
 # DRF 3
-Starting from `version 2.0`, this package will continue development using `DRF 3.0` and higher. 
+Starting from `version 2.0`, this package will be developed using `DRF 3.0` and higher. 
 
 # DRF 2
 If you want to use `DRFME` with `DRF 2`, you should `version 1.*`. Development will be continued on `drf_2_support` branch.
