@@ -12,3 +12,10 @@ It is good practise to import like
 `from rest_framework_mongoengine import generics as drfme_generics`
 
 and use drfme_generics.ListAPIView, drfme_generics.ListCreateAPIView and so on.
+
+
+## Overriding get_object()
+
+When overriding `get_object()`, remember to user `get_document_or_404()` instead of `get_object_or_404()`
+
+`from mongoengine.django.shortcuts import get_document_or_404`

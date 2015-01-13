@@ -101,6 +101,8 @@
         
             <li><a href="#nested-serializers">Nested Serializers</a></li>
         
+            <li><a href="#dynamicdocumentserializer">DynamicDocumentSerializer</a></li>
+        
             <li><a href="#embeddeddocumentserializer">EmbeddedDocumentSerializer</a></li>
         
     
@@ -237,6 +239,14 @@ class PostSerializer(DocumentSerializer):
         depth = 2
 </code></pre>
 
+<h2 id="dynamicdocumentserializer">DynamicDocumentSerializer</h2>
+<p>Using <code>DynamicDocuments</code>, you can save any extra attributes without defining excplicitly on the model. See <a href="https://mongoengine-odm.readthedocs.org/guide/defining-documents.html#dynamic-document-schemas">Mongoengine docs</a> for further info.</p>
+<p><code>DynamicDocumentSerializer</code> is built to support that feature. Any extra key-value combination on <code>request.data</code> will be saved. It can be risky to save any data that comes with request, so use use it at your own risk.</p>
+<blockquote>
+<blockquote>
+<p>With great power, comes great responsibility.</p>
+</blockquote>
+</blockquote>
 <h2 id="embeddeddocumentserializer">EmbeddedDocumentSerializer</h2>
 <p>Unlike DocumentSerializer, behavior on <code>EmbeddedDocuments</code> are not ambiguous.
 You dont have to implement when nesting <code>EmbeddedDocumentSerializer</code>, it is done automatically for you on the go while (de)serializing.</p>

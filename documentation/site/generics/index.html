@@ -99,6 +99,8 @@
         
             <li><a href="#sample-usage">Sample Usage</a></li>
         
+            <li><a href="#overriding-get_object">Overriding get_object()</a></li>
+        
     
     </ul>
 </div></div>
@@ -113,6 +115,9 @@ Just remember to import and subclass the ones from this package. There can be co
 <p><code>from rest_framework import generics as drf_generics</code>
 <code>from rest_framework_mongoengine import generics as drfme_generics</code></p>
 <p>and use drfme_generics.ListAPIView, drfme_generics.ListCreateAPIView and so on.</p>
+<h2 id="overriding-get_object">Overriding get_object()</h2>
+<p>When overriding <code>get_object()</code>, remember to user <code>get_document_or_404()</code> instead of <code>get_object_or_404()</code></p>
+<p><code>from mongoengine.django.shortcuts import get_document_or_404</code></p>
 </div>
             
         </div>
