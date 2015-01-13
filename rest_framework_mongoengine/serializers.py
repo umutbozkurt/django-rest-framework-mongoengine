@@ -411,29 +411,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         return super(DocumentSerializer, self).update(instance, validated_data)
 
 
-class EmbeddedDocumentSerializer(DocumentSerializer):
+class DynamicDocumentSerializer(DocumentSerializer):
     """
 
     """
-
-    def create(self, validated_data):
-        """
-        EmbeddedDocuments are not saved separately, so we create an instance of it.
-        """
-        raise_errors_on_nested_writes('create', self, validated_data)
-        return self.Meta.model(**validated_data)
-
-    def update(self, instance, validated_data):
-        """
-        EmbeddedDocuments are not saved separately, so we just update the instance and return it.
-        """
-        raise_errors_on_nested_writes('update', self, validated_data)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        return instance
-
     def to_internal_value(self, data):
         """
         Dict of native values <- Dict of primitive datatypes.
@@ -467,6 +448,30 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
             for name, field in document._dynamic_fields.items():
                 dynamic_fields[name] = DynamicField(field_name=name, source=name, **self.get_field_kwargs(field))
         return dynamic_fields
+
+
+class EmbeddedDocumentSerializer(DocumentSerializer):
+    """
+
+    """
+
+    def create(self, validated_data):
+        """
+        EmbeddedDocuments are not saved separately, so we create an instance of it.
+        """
+        raise_errors_on_nested_writes('create', self, validated_data)
+        return self.Meta.model(**validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        EmbeddedDocuments are not saved separately, so we just update the instance and return it.
+        """
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        return instance
 
     def _get_default_field_names(self, declared_fields, model_info):
         """
