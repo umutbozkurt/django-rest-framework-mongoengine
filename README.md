@@ -3,6 +3,9 @@ Django Rest Framework Mongoengine
 
 ***Mongoengine*** support for ***Django Rest Framework***.
 
+# version 2.0
+v2.0 will be released soon. Till then, you can check documentation
+
 # DRF 3
 Starting from `version 2.0`, this package will be developed using `DRF 3.0` and higher. 
 
