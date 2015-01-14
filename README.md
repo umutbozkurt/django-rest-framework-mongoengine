@@ -27,6 +27,8 @@ INSTALLED_APPS = (
 See full documentation [here](https://pythonhosted.org/django-rest-framework-mongoengine/)
 ### DocumentSerializer
 `DocumentSerializer` works just like as `DRF Model Serializer`. Your model fields are converted to relevant serializer fields automatically. If you want custom behavior, you can use `nested serializers`.
+### DynamicDocumentSerializer
+A `DocumentSerializer` for dynamic documents.
 ### EmbeddedDocumentSerializer
 `EmbeddedDocumentSerializer` is used to customize `EmbeddedDocument` behavior, and make `validations` accurately. It is mentioned extensively on the [documentation](https://pythonhosted.org/django-rest-framework-mongoengine/serializers/#embeddeddocumentserializer)
 ### Generic Views
