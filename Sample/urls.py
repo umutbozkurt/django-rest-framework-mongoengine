@@ -5,7 +5,6 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^$',  include('homepage.urls')),
     url(r'^users/$', views.UserList.as_view()),
     url(r'^users/(?P<id>[\w]{24})/$', views.UserDetails.as_view()),
     url(r'^blogs/$', views.BlogList.as_view()),
