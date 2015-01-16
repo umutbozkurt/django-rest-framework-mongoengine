@@ -43,7 +43,7 @@ INSTALLED_APPS = (
 
     'rest_framework',
     'rest_framework_mongoengine',
-    'SampleApp'
+    'BlogApp'
 )
 
 MIDDLEWARE_CLASSES = (

@@ -50,6 +50,6 @@ coverage.xml
 *.log
 *.pot
 
-# Sphinx documentation
-docs/_build/
+# Mkdocs documentation
+documentation/site/
 
