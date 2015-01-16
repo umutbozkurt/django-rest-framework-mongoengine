@@ -42,6 +42,8 @@ class Post(Document):
 ***serializers.py***
 
 ```Python
+from rest_framework_mongoengine.serializers import DocumentSerializer
+
 class PostSerializer(DocumentSerializer):
     class Meta:
         model = Post
@@ -125,6 +127,8 @@ For using `DocumentSerializer` as ***nested serializer***, you have to implement
 ### Sample Implementation
 
 ```Python
+from rest_framework_mongoengine.serializers import DocumentSerializer, EmbeddedDocumentSerializer
+
 class ExtensionSerializer(EmbeddedDocumentSerializer):
     class Meta:
         model = BlogExtension
