@@ -413,7 +413,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 class DynamicDocumentSerializer(DocumentSerializer):
     """
-
+    DocumentSerializer adjusted for DynamicDocuments.
     """
     def to_internal_value(self, data):
         """
@@ -452,7 +452,7 @@ class DynamicDocumentSerializer(DocumentSerializer):
 
 class EmbeddedDocumentSerializer(DocumentSerializer):
     """
-
+    A DocumentSerializer adjusted to have extended control over serialization and validation of EmbeddedDocuments.
     """
 
     def create(self, validated_data):

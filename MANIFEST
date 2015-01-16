@@ -6,4 +6,6 @@ rest_framework_mongoengine/fields.py
 rest_framework_mongoengine/generics.py
 rest_framework_mongoengine/routers.py
 rest_framework_mongoengine/serializers.py
+rest_framework_mongoengine/utils.py
+rest_framework_mongoengine/validators.py
 rest_framework_mongoengine/viewsets.py
