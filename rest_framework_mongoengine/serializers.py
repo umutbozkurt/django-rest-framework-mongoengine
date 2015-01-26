@@ -119,7 +119,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             - maybe a better way to implement transform_%s methods on fields.py
 
     """
-    def __init__(self, instance=None, data=None, **kwargs):
+    def __init__(self, instance=None, data=serializers.empty, **kwargs):
         super(DocumentSerializer, self).__init__(instance=instance, data=data, **kwargs)
         if not hasattr(self.Meta, 'model'):
             raise AssertionError('You should set `model` attribute on %s.' % type(self).__name__)
