@@ -2,6 +2,7 @@ from rest_framework import mixins
 from rest_framework import generics as drf_generics
 
 from mongoengine.django.shortcuts import get_document_or_404
+from mongoengine.queryset import BaseQuerySet
 
 
 class GenericAPIView(drf_generics.GenericAPIView):
@@ -9,6 +10,17 @@ class GenericAPIView(drf_generics.GenericAPIView):
     View to play nice with our Document Serializer
     """
     lookup_field = 'id'
+
+    def get_queryset(self):
+        """
+        Re evaluate queryset, fixes #63
+        """
+        queryset = super(GenericAPIView, self).get_queryset()
+
+        if isinstance(queryset, BaseQuerySet):
+            queryset = queryset.all()
+
+        return queryset
 
     def get_object(self):
         """
