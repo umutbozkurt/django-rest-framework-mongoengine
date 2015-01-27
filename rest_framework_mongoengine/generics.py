@@ -2,7 +2,7 @@ from rest_framework import mixins
 from rest_framework import generics as drf_generics
 
 from mongoengine.django.shortcuts import get_document_or_404
-from mongoengine.queryset import BaseQuerySet
+from mongoengine.queryset.base import BaseQuerySet
 
 
 class GenericAPIView(drf_generics.GenericAPIView):
