@@ -346,6 +346,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             me_fields.EmailField: ['max_length'],
             me_fields.FileField: ['max_length'],
             me_fields.URLField: ['max_length'],
+            me_fields.BinaryField: ['max_bytes']
         }
 
         if model_field.__class__ in attribute_dict:

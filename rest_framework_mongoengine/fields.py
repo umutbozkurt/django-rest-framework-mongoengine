@@ -188,20 +188,8 @@ class BinaryField(DocumentField):
             raise ValueError('BinaryField requires "max_bytes" kwarg')
         super(BinaryField, self).__init__(**kwargs)
 
-    def __set__(self, instance, value):
-        """Handle bytearrays in python 3.1"""
-        if PY3 and isinstance(value, bytearray):
-            value = bin_type(value)
-        return super(BinaryField, self).__set__(instance, value)
-
     def to_representation(self, value):
         return smart_str(value)
 
     def to_internal_value(self, data):
-        if not isinstance(data, (bin_type, txt_type, Binary)):
-            raise ValueError('BinaryField only accepts instances of '
-                             '(%s, %s, Binary)' % (bin_type.__name__, txt_type.__name__))
-
-        if self.max_bytes is not None and len(data) > self.max_bytes:
-            raise ValueError('Binary value is too long')
-        return Binary(smart_str(data))
+        return super(BinaryField, self).to_internal_value(smart_str(data))
