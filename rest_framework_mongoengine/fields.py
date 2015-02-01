@@ -2,15 +2,12 @@ from django.core.exceptions import ValidationError
 from django.utils.encoding import smart_str
 
 from rest_framework import serializers
-
-from bson import Binary
 from bson.errors import InvalidId
 
 from mongoengine import dereference
 from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from mongoengine.fields import ObjectId
-from mongoengine.python_support import (PY3, bin_type, txt_type, str_types, StringIO)
 
 
 class DocumentField(serializers.Field):
@@ -79,7 +76,7 @@ class DocumentField(serializers.Field):
         return self.model_field.to_python(data)
 
     def to_representation(self, value):
-        return self.transform_object(value, self.depth - 1)
+        return self.transform_object(value, 1)
 
 
 class ReferenceField(DocumentField):
@@ -193,3 +190,8 @@ class BinaryField(DocumentField):
 
     def to_internal_value(self, data):
         return super(BinaryField, self).to_internal_value(smart_str(data))
+
+
+class GeoPointField(DocumentField):
+
+    type_label = 'GeoPointField'

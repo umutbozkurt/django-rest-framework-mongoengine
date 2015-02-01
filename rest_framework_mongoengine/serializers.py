@@ -13,7 +13,7 @@ from rest_framework import serializers
 from rest_framework import fields as drf_fields
 from rest_framework_mongoengine.utils import get_field_info
 from rest_framework_mongoengine.fields import (ReferenceField, ListField, EmbeddedDocumentField, DynamicField,
-                                               ObjectIdField, DocumentField, BinaryField)
+                                               ObjectIdField, DocumentField, BinaryField, GeoPointField)
 import copy
 
 
@@ -146,7 +146,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
         me_fields.DynamicField: DynamicField,
         me_fields.DictField: DocumentField,
-        me_fields.BinaryField: BinaryField
+        me_fields.BinaryField: BinaryField,
+        me_fields.GeoPointField: GeoPointField
     }
 
     field_mapping.update(_drfme_field_mapping)
