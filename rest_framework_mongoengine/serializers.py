@@ -125,7 +125,6 @@ class DocumentSerializer(serializers.ModelSerializer):
             raise AssertionError('You should set `model` attribute on %s.' % type(self).__name__)
 
     MAX_RECURSION_DEPTH = 5  # default value of depth
-
     field_mapping = {
         me_fields.FloatField: drf_fields.FloatField,
         me_fields.IntField: drf_fields.IntegerField,
@@ -136,16 +135,21 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.BooleanField: drf_fields.BooleanField,
         me_fields.FileField: drf_fields.FileField,
         me_fields.ImageField: drf_fields.ImageField,
+        me_fields.UUIDField: drf_fields.CharField,
+        me_fields.DecimalField: drf_fields.DecimalField
+    }
+
+    _drfme_field_mapping = {
         me_fields.ObjectIdField: ObjectIdField,
         me_fields.ReferenceField: ReferenceField,
         me_fields.ListField: ListField,
         me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
         me_fields.DynamicField: DynamicField,
-        me_fields.DecimalField: drf_fields.DecimalField,
-        me_fields.UUIDField: drf_fields.CharField,
         me_fields.DictField: DocumentField,
         me_fields.BinaryField: BinaryField
     }
+
+    field_mapping.update(_drfme_field_mapping)
 
     embedded_document_serializer_fields = []
 
@@ -315,9 +319,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         """
         kwargs = {}
 
-        if type(model_field) in (me_fields.ReferenceField, me_fields.EmbeddedDocumentField,
-                                 me_fields.ListField, me_fields.DynamicField, me_fields.DictField):
+        if type(model_field) in self._drfme_field_mapping:
             kwargs['model_field'] = model_field
+
+        if type(model_field) in (me_fields.ReferenceField, me_fields.ListField):
             kwargs['depth'] = getattr(self.Meta, 'depth', self.MAX_RECURSION_DEPTH)
 
         if type(model_field) is me_fields.ObjectIdField:
