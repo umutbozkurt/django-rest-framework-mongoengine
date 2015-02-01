@@ -3,11 +3,14 @@ from django.utils.encoding import smart_str
 
 from rest_framework import serializers
 
+from bson import Binary
 from bson.errors import InvalidId
+
 from mongoengine import dereference
 from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from mongoengine.fields import ObjectId
+from mongoengine.python_support import (PY3, bin_type, txt_type, str_types, StringIO)
 
 
 class DocumentField(serializers.Field):
@@ -165,3 +168,33 @@ class ObjectIdField(serializers.Field):
 
     def to_internal_value(self, data):
         return ObjectId(data)
+
+
+class BinaryField(serializers.Field):
+
+    type_label = 'BinaryField'
+
+    def __init__(self, **kwargs):
+        try:
+            self.max_bytes = kwargs.pop('max_bytes')
+        except KeyError:
+            raise ValueError('BinaryField requires "max_bytes" kwarg')
+        super(BinaryField, self).__init__(**kwargs)
+
+    def __set__(self, instance, value):
+        """Handle bytearrays in python 3.1"""
+        if PY3 and isinstance(value, bytearray):
+            value = bin_type(value)
+        return super(BinaryField, self).__set__(instance, value)
+
+    def to_representation(self, value):
+        return smart_str(value)
+
+    def to_internal_value(self, data):
+        if not isinstance(data, (bin_type, txt_type, Binary)):
+            raise ValueError('BinaryField only accepts instances of '
+                             '(%s, %s, Binary)' % (bin_type.__name__, txt_type.__name__))
+
+        if self.max_bytes is not None and len(data) > self.max_bytes:
+            raise ValueError('Binary value is too long')
+        return Binary(smart_str(data))
