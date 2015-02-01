@@ -192,6 +192,6 @@ class BinaryField(DocumentField):
         return super(BinaryField, self).to_internal_value(smart_str(data))
 
 
-class GeoPointField(DocumentField):
+class BaseGeoField(DocumentField):
 
-    type_label = 'GeoPointField'
+    type_label = 'BaseGeoField'
