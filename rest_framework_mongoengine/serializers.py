@@ -77,20 +77,20 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             if not field or field.read_only:
                 continue
 
-            if isinstance(field, serializers.Serializer):                
+            if isinstance(field, serializers.Serializer):
                 many = field.many
 
                 def _restore(field, item):
                     # looks like a bug, sometimes there are decerialized objects in attrs
-                    # sometimes they are just dicts 
+                    # sometimes they are just dicts
                     if isinstance(item, BaseDocument):
-                        return item 
+                        return item
                     return field.from_native(item)
 
-                if many:                    
-                    val = [_restore(field, item) for item in val] 
+                if many:
+                    val = [_restore(field, item) for item in val]
                 else:
-                    val = _restore(field, val) 
+                    val = _restore(field, val)
 
             key = getattr(field, 'source', None) or key
             try:
@@ -123,6 +123,12 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
             "read_only_fields on '%s' included invalid item '%s'" %\
             (self.__class__.__name__, field_name)
             ret[field_name].read_only = True
+
+        for field_name in self.opts.write_only_fields:
+            assert field_name in ret,\
+            "write_only_fields on '%s' included invalid item '%s'" %\
+            (self.__class__.__name__, field_name)
+            ret[field_name].write_only = True
 
         return ret
 
