@@ -446,7 +446,11 @@ class DynamicDocumentSerializer(DocumentSerializer):
         fields += self._get_dynamic_fields(instance).values()
 
         for field in fields:
-            attribute = field.get_attribute(instance)
+            try:
+                attribute = field.get_attribute(instance)
+            except serializers.SkipField:
+                continue
+
             if attribute is None:
                 ret[field.field_name] = None
             else:
