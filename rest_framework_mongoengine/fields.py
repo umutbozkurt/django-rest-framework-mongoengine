@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.utils.encoding import smart_str
+from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
 from bson.errors import InvalidId
@@ -85,6 +86,10 @@ class ReferenceField(DocumentField):
     We always dereference DBRef object before serialization
     TODO: Maybe support DBRef too?
     """
+    default_error_messages = {
+        'invalid_dbref': _('Unable to convert to internal value.'),
+        'invalid_doc': _('DBRef invalid dereference.'),
+    }
 
     type_label = 'ReferenceField'
 
@@ -96,13 +101,13 @@ class ReferenceField(DocumentField):
         try:
             dbref = self.model_field.to_python(data)
         except InvalidId:
-            raise ValidationError(self.error_messages['invalid'])
+            raise ValidationError(self.error_messages['invalid_dbref'])
 
         instance = dereference.DeReference()([dbref])[0]
 
         # Check if dereference was successful
         if not isinstance(instance, Document):
-            msg = self.error_messages['invalid']
+            msg = self.error_messages['invalid_doc']
             raise ValidationError(msg)
 
         return instance
