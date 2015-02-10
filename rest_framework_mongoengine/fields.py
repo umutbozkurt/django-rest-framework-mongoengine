@@ -6,6 +6,7 @@ from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from rest_framework import serializers
 from mongoengine.fields import ObjectId
+import bson
 
 
 class MongoDocumentField(serializers.WritableField):
