@@ -6,6 +6,7 @@ from mongoengine.base.document import BaseDocument
 from mongoengine.document import Document
 from rest_framework import serializers
 from mongoengine.fields import ObjectId
+import bson
 
 
 class MongoDocumentField(serializers.WritableField):
@@ -85,6 +86,10 @@ class ReferenceField(MongoDocumentField):
         return instance
 
     def to_native(self, obj):
+        #if type is DBRef it means Mongo can't find the actual reference object
+        #prevent the JSON serializable error by setting the object to None
+        if type(obj) == bson.dbref.DBRef:
+            obj = None
         return self.transform_object(obj, self.depth - 1)
 
 
