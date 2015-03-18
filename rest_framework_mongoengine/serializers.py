@@ -341,7 +341,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             kwargs['required'] = False
             kwargs['default'] = model_field.default
 
-        if model_field.null:
+        if hasattr(model_field, 'null') and model_field.null:
             kwargs['allow_null'] = True
 
         if model_field.__class__ == models.TextField:
