@@ -12,7 +12,10 @@ setup(
     keywords=['mongoengine', 'serializer', 'django rest framework'],
     author='Umut Bozkurt',
     author_email='umutbozkurt92@gmail.com',
-    requires=['mongoengine', 'djangorestframework'],
+    requires=[
+        'mongoengine',
+        'djangorestframework>=3.1.0'
+    ],
     classifiers=['Development Status :: 5 - Production/Stable',
                  'License :: OSI Approved :: MIT License',
                  'Natural Language :: English',
