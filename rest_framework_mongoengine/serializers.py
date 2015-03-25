@@ -125,6 +125,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             raise AssertionError('You should set `model` attribute on %s.' % type(self).__name__)
 
     MAX_RECURSION_DEPTH = 5  # default value of depth
+
     field_mapping = {
         me_fields.FloatField: drf_fields.FloatField,
         me_fields.IntField: drf_fields.IntegerField,
@@ -268,6 +269,10 @@ class DocumentSerializer(serializers.ModelSerializer):
                     # Fields with choices get coerced into `ChoiceField`
                     # instead of using their regular typed field.
                     field_cls = drf_fields.ChoiceField
+                    kwargs = {
+                        key: kwargs[key] for key in kwargs
+                        if key in ['required', 'allow_blank', 'allow_null', 'choices']
+                    }
                 if not issubclass(field_cls, drf_fields.CharField) and not issubclass(field_cls, drf_fields.ChoiceField):
                     # `allow_blank` is only valid for textual fields.
                     kwargs.pop('allow_blank', None)
@@ -341,6 +346,9 @@ class DocumentSerializer(serializers.ModelSerializer):
             kwargs['required'] = False
             kwargs['default'] = model_field.default
 
+        if model_field.choices:
+            kwargs['choices'] = model_field.choices
+
         if hasattr(model_field, 'null') and model_field.null:
             kwargs['allow_null'] = True
 
@@ -348,7 +356,9 @@ class DocumentSerializer(serializers.ModelSerializer):
             kwargs['widget'] = widgets.Textarea
 
         attribute_dict = {
-            me_fields.StringField: ['max_length'],
+            me_fields.StringField: ['min_length', 'max_length'],
+            me_fields.IntField: ['min_value', 'max_value'],
+            me_fields.FloatField: ['min_value', 'max_value'],
             me_fields.DecimalField: ['min_value', 'max_value'],
             me_fields.EmailField: ['max_length'],
             me_fields.FileField: ['max_length'],
