@@ -14,7 +14,7 @@ setup(
     author_email='umutbozkurt92@gmail.com',
     requires=[
         'mongoengine',
-        'djangorestframework>=3.1.0'
+        'djangorestframework'
     ],
     classifiers=['Development Status :: 5 - Production/Stable',
                  'License :: OSI Approved :: MIT License',
