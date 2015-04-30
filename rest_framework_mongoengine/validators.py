@@ -15,6 +15,15 @@ class UniqueValidator(validators.UniqueValidator):
         queryset = self.exclude_current_instance(queryset)
         if queryset.first():
             raise ValidationError(self.message)
+            
+    def exclude_current_instance(self, queryset):
+        """
+        If an instance is being updated, then do not include
+        that instance itself as a uniqueness conflict.
+        """
+        if self.instance is not None:
+            return queryset.filter(pk__ne=self.instance.pk)
+        return queryset        
 
 
 class UniqueTogetherValidator(validators.UniqueTogetherValidator):
