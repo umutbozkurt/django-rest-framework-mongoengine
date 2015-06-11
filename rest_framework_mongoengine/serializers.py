@@ -156,6 +156,11 @@ class DocumentSerializer(serializers.ModelSerializer):
     field_mapping.update(_drfme_field_mapping)
 
     embedded_document_serializer_fields = []
+    def _include_additional_options(self, *args, **kwargs):
+        return self.get_extra_kwargs()
+
+    def _get_default_field_names(self, *args, **kwargs):
+        return self.get_field_names(*args, **kwargs)
 
     def get_validators(self):
         validators = getattr(getattr(self, 'Meta', None), 'validators', [])
@@ -204,14 +209,14 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         assert not (fields and exclude), "Cannot set both 'fields' and 'exclude'."
 
-        extra_kwargs = self.get_extra_kwargs()
+        extra_kwargs = self._include_additional_options(extra_kwargs)
 
         # # Retrieve metadata about fields & relationships on the model class.
         info = get_field_info(model)
 
         # Use the default set of field names if none is supplied explicitly.
         if fields is None:
-            fields = self.get_field_names(declared_fields, info)
+            fields = self._get_default_field_names(declared_fields, info)
             exclude = getattr(self.Meta, 'exclude', None)
             if exclude is not None:
                 for field_name in exclude:
