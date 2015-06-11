@@ -204,7 +204,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         assert not (fields and exclude), "Cannot set both 'fields' and 'exclude'."
 
-        extra_kwargs = self.get_extra_
+        extra_kwargs = self.get_extra_kwargs()
 
         # # Retrieve metadata about fields & relationships on the model class.
         info = get_field_info(model)
