@@ -11,6 +11,7 @@ from django.forms import widgets
 from django.utils.datastructures import SortedDict
 from rest_framework.compat import get_concrete_model
 from .fields import ReferenceField, ListField, EmbeddedDocumentField, DynamicField
+import bson
 
 
 class MongoEngineModelSerializerOptions(serializers.ModelSerializerOptions):
@@ -204,6 +205,10 @@ class MongoEngineModelSerializer(serializers.ModelSerializer):
         """
         ret = self._dict_class()
         ret.fields = self._dict_class()
+
+        #handle DBRef's
+        if type(obj) == bson.dbref.DBRef:
+           return ret
 
         #Dynamic Document Support
         dynamic_fields = self.get_dynamic_fields(obj)
