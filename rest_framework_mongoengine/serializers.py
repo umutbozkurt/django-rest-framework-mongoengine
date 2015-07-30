@@ -204,7 +204,12 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         assert not (fields and exclude), "Cannot set both 'fields' and 'exclude'."
 
-        extra_kwargs = self._include_additional_options(extra_kwargs)
+        # Since rest_framework ~= 3.1.3 '_include_additional_options' is renamed
+        # to 'get_extra_kwargs'
+        try:
+            extra_kwargs = self._include_additional_options(extra_kwargs)
+        except AttributeError:
+            extra_kwargs = self.get_extra_kwargs()
 
         # # Retrieve metadata about fields & relationships on the model class.
         info = get_field_info(model)
