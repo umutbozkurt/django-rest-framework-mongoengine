@@ -216,7 +216,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         # Use the default set of field names if none is supplied explicitly.
         if fields is None:
-            fields = self._get_default_field_names(declared_fields, info)
+            # Since rest_framework ~= 3.1.3 '_get_default_field_names' is made
+            # public attribute.
+            try:
+                fields = self._get_default_field_names(declared_fields, info)
+            except AttributeError:
+                fields = self.get_default_field_names(declared_fields, info)
+
             exclude = getattr(self.Meta, 'exclude', None)
             if exclude is not None:
                 for field_name in exclude:
