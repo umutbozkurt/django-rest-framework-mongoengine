@@ -4,6 +4,7 @@ from django.utils import six
 
 from mongoengine.base.common import get_document
 from mongoengine.queryset import QuerySet
+from mongoengine.errors import ValidationError
 import mongoengine
 
 from rest_framework.compat import OrderedDict
