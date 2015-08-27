@@ -204,14 +204,25 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         assert not (fields and exclude), "Cannot set both 'fields' and 'exclude'."
 
-        extra_kwargs = self._include_additional_options(extra_kwargs)
+        # Since rest_framework ~= 3.1.3 '_include_additional_options' is renamed
+        # to 'get_extra_kwargs'
+        try:
+            extra_kwargs = self._include_additional_options(extra_kwargs)
+        except AttributeError:
+            extra_kwargs = self.get_extra_kwargs()
 
         # # Retrieve metadata about fields & relationships on the model class.
         info = get_field_info(model)
 
         # Use the default set of field names if none is supplied explicitly.
         if fields is None:
-            fields = self._get_default_field_names(declared_fields, info)
+            # Since rest_framework ~= 3.1.3 '_get_default_field_names' is made
+            # public attribute.
+            try:
+                fields = self._get_default_field_names(declared_fields, info)
+            except AttributeError:
+                fields = self.get_default_field_names(declared_fields, info)
+
             exclude = getattr(self.Meta, 'exclude', None)
             if exclude is not None:
                 for field_name in exclude:

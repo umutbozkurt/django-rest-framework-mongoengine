@@ -3,6 +3,8 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
 
 from mongoengine.base.common import get_document
+from mongoengine.queryset import QuerySet
+from mongoengine.errors import ValidationError
 import mongoengine
 
 from rest_framework.compat import OrderedDict
@@ -81,3 +83,24 @@ def get_field_info(model):
     )
 
     return FieldInfo(pk, fields, forward_relations, reverse_relations, fields_and_pk, relations)
+
+def get_document_or_404(cls, *args, **kwargs):
+    """
+    Uses get() to return an document, or raises a Http404 exception if the document
+    does not exist.
+
+    cls may be a Document or QuerySet object. All other passed
+    arguments and keyword arguments are used in the get() query.
+
+    Note: Like with get(), an MultipleObjectsReturned will be raised if more than one
+    object is found.
+
+    Inspired by django.shortcuts.*
+    """
+    queryset = cls if isinstance(cls, QuerySet) else cls.objects
+
+    try:
+        return queryset.get(*args, **kwargs)
+    except (queryset._document.DoesNotExist, ValidationError):
+        from django.http import Http404
+        raise Http404('No %s matches the given query.' % queryset._document._class_name)
