@@ -16,6 +16,6 @@ and use drfme_generics.ListAPIView, drfme_generics.ListCreateAPIView and so on.
 
 ## Overriding get_object()
 
-When overriding `get_object()`, remember to user `get_document_or_404()` instead of `get_object_or_404()`
+Since Django `get_object_or_404()` shortcut catches only Django ORM DoesNotExist exception and mongoengine has similar, but separatec exceptions, we should replace `get_object_or_404()` usage with try..catch block.
 
-`from mongoengine.django.shortcuts import get_document_or_404`
+For history purposes: there was `get_document_or_404` shortcut. But since 0.10 mongoengine has dropped Django helpers support.
