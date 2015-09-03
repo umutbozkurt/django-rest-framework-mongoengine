@@ -1,7 +1,6 @@
 from rest_framework import mixins
 from rest_framework import generics as drf_generics
 
-from mongoengine.django.shortcuts import get_document_or_404
 from mongoengine.queryset.base import BaseQuerySet
 
 
@@ -24,7 +23,7 @@ class GenericAPIView(drf_generics.GenericAPIView):
 
     def get_object(self):
         """
-        *** Inherited from DRF 3 GenericAPIView, swapped get_object_or_404() with get_document_or_404() ***
+        *** Inherited from DRF 3 GenericAPIView. ***
 
         Returns the object the view is displaying.
 
@@ -46,6 +45,11 @@ class GenericAPIView(drf_generics.GenericAPIView):
 
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
         obj = get_document_or_404(queryset, **filter_kwargs)
+        try:
+            return queryset.get(*args, **kwargs)
+        except (queryset._document.DoesNotExist, ValidationError):
+            from django.http import Http404
+        raise Http404('No %s matches the given query.' % queryset._document._class_name)
 
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
