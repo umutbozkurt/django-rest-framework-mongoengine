@@ -157,6 +157,9 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     embedded_document_serializer_fields = []
 
+    def _include_additional_options(self, *args, **kwargs):
+        return self.get_extra_kwargs()
+
     def get_validators(self):
         validators = getattr(getattr(self, 'Meta', None), 'validators', [])
         return validators
