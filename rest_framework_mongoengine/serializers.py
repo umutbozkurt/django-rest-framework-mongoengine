@@ -190,7 +190,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         fields = getattr(self.Meta, 'fields', None)
         exclude = getattr(self.Meta, 'exclude', None)
         depth = getattr(self.Meta, 'depth', 0)
-        extra_kwargs = getattr(self.Meta, 'extra_kwargs', {})
+        extra_kwargs = self.get_extra_kwargs()
 
         if fields and not isinstance(fields, (list, tuple)):
             raise TypeError(
@@ -206,14 +206,12 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         assert not (fields and exclude), "Cannot set both 'fields' and 'exclude'."
 
-        extra_kwargs = self._include_additional_options(extra_kwargs)
-
         # # Retrieve metadata about fields & relationships on the model class.
         info = get_field_info(model)
 
         # Use the default set of field names if none is supplied explicitly.
         if fields is None:
-            fields = self._get_default_field_names(declared_fields, info)
+            fields = self.get_default_field_names(declared_fields, info)
             exclude = getattr(self.Meta, 'exclude', None)
             if exclude is not None:
                 for field_name in exclude:
@@ -342,6 +340,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         if type(model_field) is me_fields.EmbeddedDocumentField:
             kwargs['document_type'] = model_field.document_type
+            kwargs['depth'] = getattr(self.Meta, 'depth', self.MAX_RECURSION_DEPTH)
 
         if model_field.default:
             kwargs['required'] = False
@@ -460,7 +459,11 @@ class DynamicDocumentSerializer(DocumentSerializer):
         fields += self._get_dynamic_fields(instance).values()
 
         for field in fields:
-            attribute = field.get_attribute(instance)
+            try:
+                attribute = field.get_attribute(instance)
+            except serializers.SkipField:
+                continue
+
             if attribute is None:
                 ret[field.field_name] = None
             else:
