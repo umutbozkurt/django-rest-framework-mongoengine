@@ -471,10 +471,20 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
     A DocumentSerializer adjusted to have extended control over serialization and validation of EmbeddedDocuments.
     """
 
+    def make_embedded_validated_data(self, validated_data):
+        """
+        Create EmbeddedDocuments which are embedded in one EmbeddedDocument
+        """
+        for embedded_field in self.embedded_document_serializer_fields:
+            embedded_doc_intance = embedded_field.create(embedded_field.validated_data)
+            validated_data[embedded_field.field_name] = embedded_doc_intance
+        return validated_data
+
     def create(self, validated_data):
         """
         EmbeddedDocuments are not saved separately, so we create an instance of it.
         """
+        validated_data = self.make_embedded_validated_data(validated_data)
         raise_errors_on_nested_writes('create', self, validated_data)
         return self.Meta.model(**validated_data)
 
@@ -482,6 +492,7 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
         """
         EmbeddedDocuments are not saved separately, so we just update the instance and return it.
         """
+        validated_data = self.make_embedded_validated_data(validated_data)
         raise_errors_on_nested_writes('update', self, validated_data)
 
         for attr, value in validated_data.items():
