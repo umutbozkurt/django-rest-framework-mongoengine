@@ -178,7 +178,7 @@ class ObjectIdField(DocumentField):
 
     def to_internal_value(self, data):
         try:
-            return ObjectId(unicode(data))
+            return ObjectId(smart_str(data))
         except Exception as e:
             raise serializers.ValidationError(e.message)
 
