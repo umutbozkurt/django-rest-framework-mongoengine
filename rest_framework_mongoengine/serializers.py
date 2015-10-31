@@ -129,27 +129,36 @@ class DocumentSerializer(serializers.ModelSerializer):
     MAX_RECURSION_DEPTH = 5  # default value of depth
 
     field_mapping = {
-        me_fields.FloatField: drf_fields.FloatField,
-        me_fields.IntField: drf_fields.IntegerField,
-        me_fields.DateTimeField: drf_fields.DateTimeField,
-        me_fields.EmailField: drf_fields.EmailField,
-        me_fields.URLField: drf_fields.URLField,
         me_fields.StringField: drf_fields.CharField,
-        me_fields.BooleanField: drf_fields.BooleanField,
-        me_fields.FileField: drf_fields.FileField,
-        me_fields.ImageField: drf_fields.ImageField,
-        me_fields.UUIDField: drf_fields.CharField,
+        me_fields.URLField: drf_fields.URLField,
+        me_fields.EmailField: drf_fields.EmailField,
+        me_fields.IntField: drf_fields.IntegerField,
+        me_fields.LongField: drf_fields.IntegerField,
+        me_fields.FloatField: drf_fields.FloatField,
         me_fields.DecimalField: drf_fields.DecimalField,
+        me_fields.BooleanField: drf_fields.BooleanField,
+        me_fields.DateTimeField: drf_fields.DateTimeField,
+        me_fields.ComplexDateTimeField: drf_fields.DateTimeField,
+        me_fields.DynamicField: DocumentField,
+
+        me_fields.ListField: drf_fields.ListField, # TODO
+        me_fields.DictField: drf_fields.DictField, # TODO
+
+        me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
+        me_fields.GenericEmbeddedDocumentField: EmbeddedDocumentField,
+
         me_fields.ObjectIdField: ObjectIdField,
         me_fields.ReferenceField: ReferenceField,
-        me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
-        me_fields.DynamicField: DynamicField,
-        me_fields.DictField: DocumentField,
+        me_fields.CachedReferenceField: ReferenceField,
+        me_fields.GenericReferenceField: ReferenceField,
+
         me_fields.BinaryField: BinaryField,
-        me_fields.GeoPointField: BaseGeoField,
-        me_fields.PointField: BaseGeoField,
-        me_fields.PolygonField: BaseGeoField,
-        me_fields.LineStringField: BaseGeoField,
+        me_fields.FileField: drf_fields.FileField,
+        me_fields.ImageField: drf_fields.ImageField,
+
+        me_fields.SequenceField: DocumentField, # TODO
+        me_fields.UUIDField: drf_fields.UUIDField,
+        me_fields.GeoJsonBaseField: BaseGeoField
     }
 
     embedded_document_serializer_fields = []

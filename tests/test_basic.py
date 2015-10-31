@@ -9,8 +9,6 @@ from __future__ import unicode_literals
 
 import decimal
 
-from unittest import SkipTest
-
 from django.core.exceptions import ImproperlyConfigured
 
 from mongoengine import Document, fields
@@ -60,6 +58,12 @@ class RegularFieldsModel(Document):
     uuid_field = fields.UUIDField()
     id_field = fields.ObjectIdField()
     seq_field = fields.SequenceField()
+    dynamic_field = fields.DynamicField()
+
+    # TODO
+    # bin_field = fields.BinaryField()
+    # file_field = fields.FileField()
+    # image_field = fields.ImageField()
 
     def method(self):
         return 'method'
@@ -119,6 +123,7 @@ class TestRegularFieldMappings(TestCase):
                 uuid_field = UUIDField(required=False)
                 id_field = ObjectIdField(required=False)
                 seq_field = IntegerField(read_only=True)
+                dynamic_field = Document()
         """)
 
         self.assertEqual(unicode_repr(TestSerializer()), expected)
