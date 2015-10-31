@@ -20,8 +20,7 @@ from rest_framework import serializers
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
-def dedent(blocktext):
-    return '\n'.join([line[12:] for line in blocktext.splitlines()[1:-1]])
+from .utils import dedent
 
 # Tests for regular field mappings.
 # ---------------------------------

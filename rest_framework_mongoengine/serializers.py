@@ -1,5 +1,6 @@
 import copy
 from collections import OrderedDict
+import pytest
 
 from mongoengine import fields as me_fields
 from mongoengine.errors import ValidationError as me_ValidationError
@@ -7,11 +8,22 @@ from mongoengine.errors import ValidationError as me_ValidationError
 from rest_framework import serializers
 from rest_framework import fields as drf_fields
 from rest_framework.utils.field_mapping import ClassLookupDict
+from rest_framework.compat import unicode_to_repr
 
-from .fields import (ReferenceField, EmbeddedDocumentField, DynamicField,
-                                               ObjectIdField, DocumentField, BinaryField, BaseGeoField)
+from .fields import (ReferenceField,
+                     EmbeddedDocumentField,
+                     DynamicField,
+                     ObjectIdField,
+                     DocumentField,
+                     BinaryField,
+                     BaseGeoField)
 
-from .utils import is_abstract_model, get_field_info, get_field_kwargs
+from .utils import (is_abstract_model,
+                    get_field_info,
+                    get_field_kwargs,
+                    get_relation_kwargs,
+                    get_nested_relation_kwargs)
+from .repr import serializer_repr
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
@@ -94,26 +106,17 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.DateTimeField: drf_fields.DateTimeField,
         me_fields.ComplexDateTimeField: drf_fields.DateTimeField,
         me_fields.DynamicField: DynamicField,
-
-        me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
-        me_fields.GenericEmbeddedDocumentField: EmbeddedDocumentField,
-
         me_fields.ObjectIdField: ObjectIdField,
-        me_fields.ReferenceField: ReferenceField,
-        me_fields.CachedReferenceField: ReferenceField,
-        me_fields.GenericReferenceField: ReferenceField,
-
         me_fields.BinaryField: BinaryField,
         me_fields.FileField: drf_fields.FileField,
         me_fields.ImageField: drf_fields.ImageField,
-
         me_fields.SequenceField: drf_fields.IntegerField,
         me_fields.UUIDField: drf_fields.UUIDField,
         me_fields.GeoJsonBaseField: BaseGeoField
     }
 
+    serializer_related_field = ReferenceField
     # induct failure if they occasionally used somewhere
-    serializer_related_field = None
     serializer_related_to_field = None
     serializer_url_field = None
 
@@ -125,9 +128,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         raise_errors_on_nested_writes('create', self, validated_data)
 
         # Automagically create and set embedded documents to validated data
-        for embedded_field in self.embedded_document_serializer_fields:
-            embedded_doc_intance = embedded_field.create(embedded_field.validated_data)
-            validated_data[embedded_field.field_name] = embedded_doc_intance
+        # for embedded_field in self.embedded_document_serializer_fields:
+        #     embedded_doc_intance = embedded_field.create(embedded_field.validated_data)
+        #     validated_data[embedded_field.field_name] = embedded_doc_intance
 
         ModelClass = self.Meta.model
         try:
@@ -173,9 +176,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         Update embedded fields first, set relevant attributes with updated data
         And then continue regular updating
         """
-        for embedded_field in self.embedded_document_serializer_fields:
-            embedded_doc_intance = embedded_field.update(getattr(instance, embedded_field.field_name), embedded_field.validated_data)
-            setattr(instance, embedded_field.field_name, embedded_doc_intance)
+        # for embedded_field in self.embedded_document_serializer_fields:
+        #     embedded_doc_intance = embedded_field.update(getattr(instance, embedded_field.field_name), embedded_field.validated_data)
+        #     setattr(instance, embedded_field.field_name, embedded_doc_intance)
 
         return super(DocumentSerializer, self).update(instance, validated_data)
 
@@ -257,21 +260,24 @@ class DocumentSerializer(serializers.ModelSerializer):
     #     `Meta.exclude` options if they have been specified.
     #     """
     #     # use upstream
-    #     pass
 
-    # def get_default_field_names(self, declared_fields, model_info):
-    #     """
-    #     Return the default list of field names that will be used if the
-    #     `Meta.fields` option is not specified.
-    #     """
-    #     # use upstream
-    #     pass
+    def get_default_field_names(self, declared_fields, model_info):
+        """
+        Return the default list of field names that will be used if the
+        `Meta.fields` option is not specified.
+        """
+        return (
+            [model_info.pk.name] +
+            list(declared_fields.keys()) +
+            list(model_info.fields.keys()) +
+            list(model_info.references.keys()) +
+            list(model_info.embedded.keys())
+        )
 
     def build_field(self, field_name, info, model_class, nested_depth):
         """
         Return a two tuple of (cls, kwargs) to build a serializer field with.
         """
-        # TODO
         if field_name in info.fields_and_pk:
             model_field = info.fields_and_pk[field_name]
             if isinstance(model_field, me_fields.ComplexBaseField):
@@ -279,13 +285,12 @@ class DocumentSerializer(serializers.ModelSerializer):
             else:
                 return self.build_standard_field(field_name, model_field)
 
-        # TODO: handle reference fields in similar way
-        # if field_name in info.relations:
-        #     relation_info = info.relations[field_name]
-        #     if not nested_depth:
-        #         return self.build_relational_field(field_name, relation_info)
-        #     else:
-        #         return self.build_nested_field(field_name, relation_info, nested_depth)
+        if field_name in info.references:
+            relation_info = info.references[field_name]
+            if not nested_depth:
+                return self.build_reference_field(field_name, relation_info)
+            else:
+                return self.build_nested_field(field_name, relation_info, nested_depth)
         # TODO: handle embeddedfields here
 
         if hasattr(model_class, field_name):
@@ -363,10 +368,31 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def build_reference_field(self, field_name, relation_info):
         """
-        Create fields for forward relationships.
+        Create fields for references.
         """
-        # TODO from prototype build_relational_field
-        pass
+        field_class = self.serializer_related_field
+        field_kwargs = get_relation_kwargs(field_name, relation_info)
+
+        return field_class, field_kwargs
+
+    def build_nested_field(self, field_name, relation_info, nested_depth):
+        """
+        Create nested fields for references.
+        """
+        if relation_info.related_model:
+            class NestedSerializer(DocumentSerializer):
+                class Meta:
+                    model = relation_info.related_model
+                    depth = nested_depth - 1
+
+            field_class = NestedSerializer
+            field_kwargs = get_nested_relation_kwargs(relation_info)
+        else:
+            field_class = DocumentField
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+            field_kwargs.pop('required')
+            field_kwargs['read_only'] = True
+        return field_class, field_kwargs
 
     def build_embedded_field(self, field_name, relation_info):
         """
@@ -437,6 +463,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         # TODO
         return []
 
+    def __repr__(self):
+        return unicode_to_repr(serializer_repr(self, indent=1))
 
 class DynamicDocumentSerializer(DocumentSerializer):
     # TODO

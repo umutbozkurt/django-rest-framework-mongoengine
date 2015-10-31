@@ -7,6 +7,7 @@ from mongoengine import Document, fields
 
 from rest_framework_mongoengine import serializers
 
+from .utils import dedent
 
 class MockModel(Document):
     foo = fields.StringField()

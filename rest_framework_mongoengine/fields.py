@@ -1,14 +1,20 @@
-from django.core.exceptions import ValidationError
+from collections import OrderedDict
+
+from django.utils import six
 from django.utils.encoding import smart_str
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from rest_framework.fields import empty
+
+from bson import ObjectId, DBRef
 from bson.errors import InvalidId
 
-from mongoengine import dereference
+from mongoengine.queryset import QuerySet, QuerySetManager
 from mongoengine.base.document import BaseDocument
-from mongoengine.document import Document
-from mongoengine.fields import ObjectId
+from mongoengine import fields as me_fields
+from mongoengine.errors import DoesNotExist
 
 
 class DocumentField(serializers.Field):
@@ -80,41 +86,102 @@ class DocumentField(serializers.Field):
         return self.transform_object(value, 1)
 
 
-class ReferenceField(DocumentField):
-    """
-    For ReferenceField.
-    We always dereference DBRef object before serialization
-    TODO: Maybe support DBRef too?
-    """
-    default_error_messages = {
-        'invalid_dbref': _('Unable to convert to internal value.'),
-        'invalid_doc': _('DBRef invalid dereference.'),
-    }
+class ObjectIdField(serializers.Field):
+    type_label = 'ObjectIdField'
 
-    type_label = 'ReferenceField'
-
-    def __init__(self, *args, **kwargs):
-        self.depth = kwargs.pop('depth')
-        super(ReferenceField, self).__init__(*args, **kwargs)
+    def to_representation(self, value):
+        return smart_str(value)
 
     def to_internal_value(self, data):
         try:
-            dbref = self.model_field.to_python(data)
-        except InvalidId:
-            raise ValidationError(self.error_messages['invalid_dbref'])
+            return ObjectId(smart_str(data))
+        except Exception as e:
+            raise serializers.ValidationError(e)
 
-        instance = dereference.DeReference()([dbref])[0]
 
-        # Check if dereference was successful
-        if not isinstance(instance, Document):
-            msg = self.error_messages['invalid_doc']
-            raise ValidationError(msg)
+class ReferenceField(serializers.Field):
+    """
+    The field replicates DRF's `PrimaryKeyRelatedField` (w/out `many`).
+    In particular, it checks value against existant objects and also provides choices.
 
-        return instance
+    It serializes/parses str(bson.ObjectId). Internal value is bson.DBRef.
+    """
+    type_label = 'ReferenceField'
+    default_error_messages = {
+        'does_not_exist': _('Invalid id "{pk_value}" - object does not exist.'),
+        'incorrect_type': _('Incorrect type. Expected ObjectId value, received {data_type}.'),
+    }
+    queryset = None
+    pk_field_class = ObjectIdField
+
+    def __init__(self, **kwargs):
+        self.queryset = kwargs.pop('queryset', self.queryset)
+        self.pk_field = self.pk_field_class()
+
+        assert self.queryset is not None or kwargs.get('read_only', None), (
+            'Reference field must provide a `queryset` argument, '
+            'or set read_only=`True`.'
+        )
+        assert not (self.queryset is not None and kwargs.get('read_only', None)), (
+            'Reference field should not provide a `queryset` argument, '
+            'when setting read_only=`True`.'
+        )
+        super().__init__(**kwargs)
+
+    def run_validation(self, data=empty):
+        # We force empty strings to None values for relational fields.
+        if data == '':
+            data = None
+        return super().run_validation(data)
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if isinstance(queryset, (QuerySet, QuerySetManager)):
+            # Ensure queryset is re-evaluated whenever used.
+            # Note that actually a `Manager` class may also be used as the
+            # queryset argument. This occurs on ModelSerializer fields,
+            # as it allows us to generate a more expressive 'repr' output
+            # for the field.
+            # Eg: 'MyRelationship(queryset=ExampleModel.objects.all())'
+            queryset = queryset.all()
+        return queryset
+
+    @property
+    def choices(self):
+        queryset = self.get_queryset()
+        if queryset is None:
+            # Ensure that field.choices returns something sensible
+            # even when accessed with a read-only field.
+            return {}
+
+        return OrderedDict([
+            (
+                six.text_type(self.to_representation(item)),
+                self.display_value(item)
+            )
+            for item in queryset
+        ])
+
+    @property
+    def grouped_choices(self):
+        return self.choices
+
+    def display_value(self, instance):
+        return six.text_type(instance)
+
+    def to_internal_value(self, datum):
+        try:
+            oid = self.pk_field.to_internal_value(datum)
+        except ValidationError:
+            self.fail('incorrect_type', data_type=type(datum).__name__)
+
+        try:
+            return self.get_queryset().only('id').get(id=oid).to_dbref()
+        except DoesNotExist:
+            self.fail('does_not_exist', pk_value=oid)
 
     def to_representation(self, value):
-        return self.transform_object(value, self.depth - 1)
-
+        return self.pk_field.to_representation(value.id)
 
 
 class EmbeddedDocumentField(DocumentField):
@@ -154,19 +221,6 @@ class DynamicField(DocumentField):
     def to_representation(self, value):
         return self.model_field.to_python(value)
 
-
-class ObjectIdField(serializers.Field):
-
-    type_label = 'ObjectIdField'
-
-    def to_representation(self, value):
-        return smart_str(value)
-
-    def to_internal_value(self, data):
-        try:
-            return ObjectId(smart_str(data))
-        except Exception as e:
-            raise serializers.ValidationError(e.message)
 
 
 class BinaryField(DocumentField):
