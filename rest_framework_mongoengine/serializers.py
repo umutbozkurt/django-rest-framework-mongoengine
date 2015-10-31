@@ -95,9 +95,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.ComplexDateTimeField: drf_fields.DateTimeField,
         me_fields.DynamicField: DynamicField,
 
-        me_fields.ListField: drf_fields.ListField, # TODO
-        me_fields.DictField: drf_fields.DictField, # TODO
-
         me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
         me_fields.GenericEmbeddedDocumentField: EmbeddedDocumentField,
 
@@ -338,15 +335,27 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_kwargs.pop('default', None)
             field_class = drf_fields.NullBooleanField
 
-
         return field_class, field_kwargs
 
     def build_compound_field(self, field_name, model_field):
         """
         Create regular model fields.
         """
-        # TODO
-        pass
+        if isinstance(model_field, me_fields.ListField):
+            field_class = drf_fields.ListField
+        elif isinstance(model_field, me_fields.DictField):
+            field_class = drf_fields.DictField
+        else:
+            return self.build_unknown_field(field_name, model_field.owner_document)
+
+        field_kwargs = get_field_kwargs(field_name, model_field)
+        field_kwargs.pop('model_field', None)
+
+        if model_field.field is not None:
+            child_class, child_kwargs = self.build_standard_field('child', model_field.field)
+            field_kwargs['child'] = child_class(**child_kwargs)
+
+        return field_class, field_kwargs
 
     def build_reference_field(self, field_name, relation_info):
         """
