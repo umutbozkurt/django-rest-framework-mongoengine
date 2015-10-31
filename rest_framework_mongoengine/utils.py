@@ -5,8 +5,7 @@ from django.utils import six
 from mongoengine.base.common import get_document
 import mongoengine
 
-from rest_framework.compat import OrderedDict
-from rest_framework.utils import field_mapping
+from collections import OrderedDict
 import inspect
 
 

@@ -1,2 +1,2 @@
-mongoengine>=0.8.7
-djangorestframework>=3.0.0
+djangorestframework~=3.0
+mongoengine~=0.9.0
