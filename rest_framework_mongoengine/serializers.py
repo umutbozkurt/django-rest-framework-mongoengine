@@ -351,8 +351,12 @@ class DocumentSerializer(serializers.ModelSerializer):
         field_kwargs = get_field_kwargs(field_name, model_field)
         field_kwargs.pop('model_field', None)
 
-        if model_field.field is not None:
-            child_class, child_kwargs = self.build_standard_field('child', model_field.field)
+        child_field = model_field.field
+        if child_field is not None:
+            if isinstance(child_field, me_fields.ComplexBaseField):
+                child_class, child_kwargs = self.build_compound_field('child', child_field)
+            else:
+                child_class, child_kwargs = self.build_standard_field('child', child_field)
             field_kwargs['child'] = child_class(**child_kwargs)
 
         return field_class, field_kwargs

@@ -9,9 +9,6 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 from .test_1basic import dedent
 
 class BasicCompoundFieldsModel(Document):
-    """
-    A model class for testing compound fields.
-    """
     list_field = fields.ListField()
     int_list_field = fields.ListField(fields.IntField())
     dict_field = fields.DictField()
@@ -20,19 +17,18 @@ class BasicCompoundFieldsModel(Document):
 
 
 class OptionsCompoundFieldsModel(Document):
-    """
-    A model class for testing compound fields.
-    """
     int_list_field = fields.ListField(fields.IntField(min_value=3, max_value=7))
+
+
+class NestedCompoundFieldsModel(Document):
+    dict_list_field = fields.ListField(fields.DictField())
+    list_dict_field = fields.MapField(fields.ListField())
 
 
 class TestCompundFieldMappings(TestCase):
     maxDiff = 10000
 
-    def test_basic_fields(self):
-        """
-        Model fields should map to their equivelent serializer fields.
-        """
+    def test_basic(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = BasicCompoundFieldsModel
@@ -49,9 +45,6 @@ class TestCompundFieldMappings(TestCase):
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
     def test_suboptions(self):
-        """
-        Model fields should map to their equivelent serializer fields.
-        """
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = OptionsCompoundFieldsModel
@@ -60,5 +53,18 @@ class TestCompundFieldMappings(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 int_list_field = ListField(child=IntegerField(max_value=7, min_value=3, required=False), required=False)
+        """)
+        self.assertEqual(unicode_repr(TestSerializer()), expected)
+
+    def test_nested(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = NestedCompoundFieldsModel
+
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                dict_list_field = ListField(child=DictField(required=False), required=False)
+                list_dict_field = DictField(child=ListField(required=False), required=False)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
