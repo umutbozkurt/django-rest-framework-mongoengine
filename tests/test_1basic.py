@@ -8,6 +8,7 @@ an appropriate set of serializer fields for each case.
 from __future__ import unicode_literals
 
 import decimal
+import pytest
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -49,7 +50,6 @@ class RegularFieldsModel(Document):
     email_field = fields.EmailField()
     int_field = fields.IntField()
     long_field = fields.LongField()
-    decimal_field = fields.DecimalField()
     float_field = fields.FloatField()
     boolean_field = fields.BooleanField()
     nullboolean_field = fields.BooleanField(null=True)
@@ -58,25 +58,16 @@ class RegularFieldsModel(Document):
     uuid_field = fields.UUIDField()
     id_field = fields.ObjectIdField()
     seq_field = fields.SequenceField()
-    dynamic_field = fields.DynamicField()
+    decimal_field = fields.DecimalField()
 
     # TODO
+    # dynamic_field = fields.DynamicField()
     # bin_field = fields.BinaryField()
     # file_field = fields.FileField()
     # image_field = fields.ImageField()
 
     def method(self):
         return 'method'
-
-
-class CompoundFieldsModel(Document):
-    """
-    A model class for testing compound fields.
-    """
-    list_field = fields.ListField()
-    int_list_field = fields.ListField(fields.IntField())
-    dict_field = fields.DictField()
-    int_dict_field =  fields.MapField(fields.IntField())
 
 
 COLOR_CHOICES = (('red', 'Red'), ('blue', 'Blue'), ('green', 'Green'))
@@ -95,6 +86,7 @@ class ChoicesModel(Document):
     choices_field_with_nonstandard_args = fields.DecimalField(precision=1, choices=DECIMAL_CHOICES, verbose_name='A label')
 
 
+
 class TestRegularFieldMappings(TestCase):
     maxDiff = 10000
 
@@ -109,13 +101,12 @@ class TestRegularFieldMappings(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                str_field = CharField(max_length=None, min_length=None, required=False)
-                url_field = URLField(max_length=None, required=False)
-                email_field = EmailField(max_length=None, required=False)
-                int_field = IntegerField(max_value=None, min_value=None, required=False)
-                long_field = IntegerField(max_value=None, min_value=None, required=False)
-                decimal_field = DecimalField(decimal_places=2, max_digits=2, max_value=None, min_value=None, required=False)
-                float_field = FloatField(max_value=None, min_value=None, required=False)
+                str_field = CharField(required=False)
+                url_field = URLField(required=False)
+                email_field = EmailField(required=False)
+                int_field = IntegerField(required=False)
+                long_field = IntegerField(required=False)
+                float_field = FloatField(required=False)
                 boolean_field = BooleanField(required=False)
                 nullboolean_field = NullBooleanField(required=False)
                 date_field = DateTimeField(required=False)
@@ -123,7 +114,7 @@ class TestRegularFieldMappings(TestCase):
                 uuid_field = UUIDField(required=False)
                 id_field = ObjectIdField(required=False)
                 seq_field = IntegerField(read_only=True)
-                dynamic_field = Document()
+                decimal_field = DecimalField(decimal_places=2, max_digits=65536, required=False)
         """)
 
         self.assertEqual(unicode_repr(TestSerializer()), expected)
@@ -136,33 +127,14 @@ class TestRegularFieldMappings(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                required_field = IntegerField(max_value=None, min_value=None, required=True)
-                null_field = IntegerField(allow_null=True, max_value=None, min_value=None, required=False)
+                required_field = IntegerField(required=True)
+                null_field = IntegerField(allow_null=True, required=False)
                 choices_field = ChoiceField(choices=(('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')), required=False)
                 length_limit_field = CharField(max_length=12, min_length=3, required=False)
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)
-                decimal_field = DecimalField(decimal_places=4, max_digits=8, max_value=9999, min_value=None, required=False)
+                decimal_field = DecimalField(decimal_places=4, max_digits=8, max_value=9999, required=False)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
-
-    def test_compound_fields(self):
-        """
-        Model fields should map to their equivelent serializer fields.
-        """
-        class TestSerializer(DocumentSerializer):
-            class Meta:
-                model = CompoundFieldsModel
-
-        expected = dedent("""
-            TestSerializer():
-                id = ObjectIdField(read_only=True)
-                list_field = ListField()
-                int_list_field = ListField(child=IntegerField())
-                dict_field = DictField()
-                int_dict_field =  DictField(child=IntegerField())
-        """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
-
 
     def test_method_field(self):
         """
@@ -225,7 +197,7 @@ class TestRegularFieldMappings(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                str_field = CharField(default='extra', max_length=None, min_length=None)
+                str_field = CharField(default='extra')
         """)
         self.assertEqual(repr(TestSerializer()), expected)
 
@@ -257,8 +229,13 @@ class TestRegularFieldMappings(TestCase):
                 model = RegularFieldsModel
                 fields = ('id',)
 
-        with self.assertRaises(ImproperlyConfigured):
+        with self.assertRaises(AssertionError) as excinfo:
             TestSerializer().fields
+        expected = (
+            "The field 'missing' was declared on serializer TestSerializer, "
+            "but has not been included in the 'fields' option."
+        )
+        assert str(excinfo.exception) == expected
 
     def test_missing_superclass_field_not_included(self):
         """
@@ -308,7 +285,6 @@ class TestRegularFieldMappings(TestCase):
         ExampleSerializer()
 
     def test_fields_and_exclude_behavior(self):
-        raise SkipTest("not supported")
         class ImplicitFieldsSerializer(DocumentSerializer):
             class Meta:
                 model = RegularFieldsModel
