@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import pytest
 
 from mongoengine.errors import ValidationError as me_ValidationError
 from mongoengine import fields as me_fields
@@ -12,7 +13,7 @@ from collections import OrderedDict
 from rest_framework import serializers
 from rest_framework import fields as drf_fields
 from rest_framework_mongoengine.utils import get_field_info
-from rest_framework_mongoengine.fields import (ReferenceField, ListField, EmbeddedDocumentField, DynamicField,
+from rest_framework_mongoengine.fields import (ReferenceField, EmbeddedDocumentField, DynamicField,
                                                ObjectIdField, DocumentField, BinaryField, BaseGeoField)
 import copy
 
@@ -138,13 +139,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.FileField: drf_fields.FileField,
         me_fields.ImageField: drf_fields.ImageField,
         me_fields.UUIDField: drf_fields.CharField,
-        me_fields.DecimalField: drf_fields.DecimalField
-    }
-
-    _drfme_field_mapping = {
+        me_fields.DecimalField: drf_fields.DecimalField,
         me_fields.ObjectIdField: ObjectIdField,
         me_fields.ReferenceField: ReferenceField,
-        me_fields.ListField: ListField,
         me_fields.EmbeddedDocumentField: EmbeddedDocumentField,
         me_fields.DynamicField: DynamicField,
         me_fields.DictField: DocumentField,
@@ -154,8 +151,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.PolygonField: BaseGeoField,
         me_fields.LineStringField: BaseGeoField,
     }
-
-    field_mapping.update(_drfme_field_mapping)
 
     embedded_document_serializer_fields = []
     def _include_additional_options(self, *args, **kwargs):
@@ -332,16 +327,14 @@ class DocumentSerializer(serializers.ModelSerializer):
         """
         kwargs = {}
 
-        if type(model_field) in self._drfme_field_mapping:
+        if isinstance(model_field, DocumentField):
             kwargs['model_field'] = model_field
 
         if type(model_field) in (me_fields.ReferenceField, me_fields.ListField):
             kwargs['depth'] = getattr(self.Meta, 'depth', self.MAX_RECURSION_DEPTH)
 
-        if type(model_field) is me_fields.ObjectIdField:
-            kwargs['required'] = False
-        else:
-            kwargs['required'] = model_field.required
+        if model_field.db_field == '_id' or model_field.primary_key:
+            kwargs['read_only'] = True
 
         if type(model_field) is me_fields.EmbeddedDocumentField:
             kwargs['document_type'] = model_field.document_type

@@ -116,20 +116,6 @@ class ReferenceField(DocumentField):
         return self.transform_object(value, self.depth - 1)
 
 
-class ListField(DocumentField):
-
-    type_label = 'ListField'
-
-    def __init__(self, *args, **kwargs):
-        self.depth = kwargs.pop('depth')
-        super(ListField, self).__init__(*args, **kwargs)
-
-    def to_internal_value(self, data):
-        return self.model_field.to_python(data)
-
-    def to_representation(self, value):
-        return self.transform_object(value, self.depth - 1)
-
 
 class EmbeddedDocumentField(DocumentField):
 
@@ -169,7 +155,7 @@ class DynamicField(DocumentField):
         return self.model_field.to_python(value)
 
 
-class ObjectIdField(DocumentField):
+class ObjectIdField(serializers.Field):
 
     type_label = 'ObjectIdField'
 
