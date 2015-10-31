@@ -1,6 +1,7 @@
 djangorestframework~=3.0
 pymongo~=2.0
 mongoengine~=0.9.0
+blinker~=1.0
 Django~=1.8.0
 pytest~=2.0
 pytest-django~=2.0
