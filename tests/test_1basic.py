@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import decimal
 import pytest
+from bson import ObjectId
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -19,8 +20,37 @@ from rest_framework.compat import unicode_repr
 from rest_framework import serializers
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
+from rest_framework_mongoengine.fields import ObjectIdField, BinaryField, DynamicField
 
-from .utils import dedent
+from .utils import dedent, FieldValues
+
+# Tests for fields.
+# ---------------------------------
+
+class TestObjectIdField(FieldValues):
+    field = ObjectIdField()
+    valid_inputs = {
+        ObjectId('56353a4aa21aab2c49d86ebb'): ObjectId('56353a4aa21aab2c49d86ebb'),
+        '56353a4aa21aab2c49d86ebb': ObjectId('56353a4aa21aab2c49d86ebb')
+    }
+    invalid_inputs = {
+        123: ['"123" is not a valid ObjectId'],
+        'xxx': ['"xxx" is not a valid ObjectId']
+    }
+    outputs = {
+        ObjectId('56353a4aa21aab2c49d86ebb'): '56353a4aa21aab2c49d86ebb',
+        '56353a4aa21aab2c49d86ebb': '56353a4aa21aab2c49d86ebb'
+    }
+
+class TestBinaryField(TestCase):
+    def test_skipped(self):
+        pytest.skip("TODO")
+
+class TestDynamicField(TestCase):
+    def test_skipped(self):
+        pytest.skip("TODO")
+
+
 
 # Tests for regular field mappings.
 # ---------------------------------

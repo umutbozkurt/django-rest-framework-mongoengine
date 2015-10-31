@@ -13,7 +13,7 @@ from bson.errors import InvalidId
 
 from mongoengine.queryset import QuerySet, QuerySetManager
 from mongoengine.base.document import BaseDocument
-from mongoengine import fields as me_fields
+from mongoengine import Document, fields as me_fields
 from mongoengine.errors import DoesNotExist
 
 
@@ -95,8 +95,8 @@ class ObjectIdField(serializers.Field):
     def to_internal_value(self, data):
         try:
             return ObjectId(smart_str(data))
-        except Exception as e:
-            raise serializers.ValidationError(e)
+        except InvalidId:
+            raise serializers.ValidationError("\"%s\" is not a valid ObjectId" % smart_str(data))
 
 
 class ReferenceField(serializers.Field):
@@ -109,22 +109,22 @@ class ReferenceField(serializers.Field):
     type_label = 'ReferenceField'
     default_error_messages = {
         'does_not_exist': _('Invalid id "{pk_value}" - object does not exist.'),
-        'incorrect_type': _('Incorrect type. Expected ObjectId value, received {data_type}.'),
+        'incorrect_type': _('Incorrect type. Expected str|ObjectId|DBRef|Document value, received {data_type}.'),
     }
     queryset = None
     pk_field_class = ObjectIdField
 
-    def __init__(self, **kwargs):
-        self.queryset = kwargs.pop('queryset', self.queryset)
+    def __init__(self, model=None, **kwargs):
+        if model is not None:
+            self.queryset = model.objects
+        else:
+            self.queryset = kwargs.pop('queryset', self.queryset)
+
         self.pk_field = self.pk_field_class()
 
         assert self.queryset is not None or kwargs.get('read_only', None), (
-            'Reference field must provide a `queryset` argument, '
+            'Reference field must provide a `queryset` or `model` argument, '
             'or set read_only=`True`.'
-        )
-        assert not (self.queryset is not None and kwargs.get('read_only', None)), (
-            'Reference field should not provide a `queryset` argument, '
-            'when setting read_only=`True`.'
         )
         super().__init__(**kwargs)
 
@@ -169,19 +169,26 @@ class ReferenceField(serializers.Field):
     def display_value(self, instance):
         return six.text_type(instance)
 
-    def to_internal_value(self, datum):
-        try:
-            oid = self.pk_field.to_internal_value(datum)
-        except ValidationError:
+    def get_id(self, datum):
+        if isinstance(datum, ObjectId):
+            return datum
+        elif isinstance(datum, (Document, DBRef)):
+            return datum.id
+        elif isinstance(datum, six.string_types):
+            return self.pk_field.to_internal_value(datum)
+        else:
             self.fail('incorrect_type', data_type=type(datum).__name__)
 
+    def to_internal_value(self, datum):
+        oid = self.get_id(datum)
         try:
             return self.get_queryset().only('id').get(id=oid).to_dbref()
         except DoesNotExist:
             self.fail('does_not_exist', pk_value=oid)
 
-    def to_representation(self, value):
-        return self.pk_field.to_representation(value.id)
+    def to_representation(self, datum):
+        oid = self.get_id(datum)
+        return self.pk_field.to_representation(oid)
 
 
 class EmbeddedDocumentField(DocumentField):

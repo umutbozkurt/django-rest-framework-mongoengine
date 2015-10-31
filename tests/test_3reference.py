@@ -4,7 +4,7 @@ from collections import OrderedDict
 from django.test import TestCase
 from django.utils.encoding import smart_str
 
-from bson import ObjectId
+from bson import ObjectId, DBRef
 from mongoengine import Document, fields as me_fields
 from rest_framework.compat import unicode_repr
 from rest_framework.test import APISimpleTestCase
@@ -13,11 +13,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_mongoengine.serializers import DocumentSerializer
 from rest_framework_mongoengine.fields import ReferenceField
 
-from .utils import dedent, MockObject, MockQueryset, BadType
+from .utils import dedent, BadType, FieldValues
 
 
 class ReferencedModel(Document):
-    foo = me_fields.StringField()
+    name = me_fields.StringField()
+
 
 class RefFieldsModel(Document):
     ref = me_fields.ReferenceField(ReferencedModel)
@@ -25,38 +26,82 @@ class RefFieldsModel(Document):
     cached = me_fields.CachedReferenceField(ReferencedModel)
     # gen_ref_field = me_fields.GenericReferenceField()
 
+
 class ReferencingModel(Document):
     ref = me_fields.ReferenceField(ReferencedModel)
 
+
+someobjectid = ObjectId('563547d9a21aab31b7e73ac9')
+somedbref = DBRef('referenced_model', someobjectid)
+
+class TestReferenceFieldValue(FieldValues, TestCase):
+    field = ReferenceField(ReferencedModel)
+
+    @classmethod
+    def setUpClass(cls):
+        ReferencedModel.objects.create(id=someobjectid)
+
+    @classmethod
+    def tearDownClass(cls):
+        ReferencedModel.drop_collection()
+
+    valid_inputs = {
+        somedbref: somedbref,
+        someobjectid: somedbref,
+        str(someobjectid): somedbref
+    }
+    invalid_inputs = {
+        123: ['Incorrect type. Expected str|ObjectId|DBRef|Document value, received int.'],
+        'xxx': ['"xxx" is not a valid ObjectId']
+    }
+    outputs = {
+        somedbref: str(someobjectid),
+        someobjectid: str(someobjectid),
+        str(someobjectid): str(someobjectid)
+    }
+
+
 class TestReferenceField(APISimpleTestCase):
     def setUp(self):
-        self.queryset = MockQueryset([
-            MockObject(id=ObjectId(), name='foo'),
-            MockObject(id=ObjectId(), name='bar'),
-            MockObject(id=ObjectId(), name='baz')
-        ])
-        self.instance = self.queryset.items[2]
-        self.field = ReferenceField(queryset=self.queryset)
+        self.objects = [
+            ReferencedModel.objects.create(name='foo'),
+            ReferencedModel.objects.create(name='bar'),
+            ReferencedModel.objects.create(name='baz')
+        ]
+        self.instance = self.objects[1]
+
+    def tearDown(self):
+        ReferencedModel.drop_collection()
+
+    def test_init_with_model(self):
+        ReferenceField(ReferencedModel)
+
+    def test_init_with_queryset(self):
+        ReferenceField(queryset=ReferencedModel.objects.all())
 
     def test_pk_related_lookup_exists(self):
-        instance = self.field.to_internal_value(self.instance.id)
+        field = ReferenceField(ReferencedModel)
+        instance = field.to_internal_value(self.instance.id)
         assert instance == self.instance.to_dbref()
 
     def test_pk_related_lookup_does_not_exist(self):
         oid = ObjectId()
+        field = ReferenceField(ReferencedModel)
         with pytest.raises(ValidationError) as excinfo:
-            self.field.to_internal_value(oid)
+            field.to_internal_value(oid)
         msg = excinfo.value.detail[0]
         assert msg == 'Invalid id "%s" - object does not exist.' % oid
 
     def test_pk_related_lookup_invalid_type(self):
+        field = ReferenceField(ReferencedModel)
         with pytest.raises(ValidationError) as excinfo:
-            self.field.to_internal_value(BadType())
+            field.to_internal_value(BadType())
         msg = excinfo.value.detail[0]
-        assert msg == 'Incorrect type. Expected ObjectId value, received BadType.'
+        assert msg == 'Incorrect type. Expected str|ObjectId|DBRef|Document value, received BadType.'
 
     def test_pk_representation(self):
-        representation = self.field.to_representation(self.instance)
+        field = ReferenceField(ReferencedModel)
+        representation = field.to_representation(self.instance)
         assert representation == smart_str(self.instance.id)
 
 
@@ -88,13 +133,13 @@ class TestMapping(TestCase):
                 id = ObjectIdField(read_only=True)
                 ref = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
-                    foo = CharField(required=False)
+                    name = CharField(required=False)
                 dbref = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
-                    foo = CharField(required=False)
+                    name = CharField(required=False)
                 cached = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
-                    foo = CharField(required=False)
+                    name = CharField(required=False)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
@@ -157,7 +202,7 @@ class TestRelationalFieldDisplayValue(TestCase):
 class TestIntegration(TestCase):
     def setUp(self):
         self.target = ReferencedModel.objects.create(
-            foo='Foo'
+            name='Foo'
         )
         self.instance = ReferencingModel.objects.create(
             ref=self.target,
@@ -186,7 +231,7 @@ class TestIntegration(TestCase):
                 model = ReferencingModel
 
         new_target = ReferencedModel.objects.create(
-            foo="Bar"
+            name="Bar"
         )
         data = {
             'ref': new_target.id
@@ -213,7 +258,7 @@ class TestIntegration(TestCase):
                 model = ReferencingModel
 
         new_target = ReferencedModel.objects.create(
-            foo="Bar"
+            name="Bar"
         )
         data = {
             'ref': new_target.id
