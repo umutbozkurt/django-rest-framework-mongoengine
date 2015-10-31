@@ -112,7 +112,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.ImageField: drf_fields.ImageField,
         me_fields.SequenceField: drf_fields.IntegerField,
         me_fields.UUIDField: drf_fields.UUIDField,
-        me_fields.GeoJsonBaseField: BaseGeoField
+        me_fields.GeoJsonBaseField: BaseGeoField,
+        me_fields.BaseField: DocumentField
     }
 
     serializer_related_field = ReferenceField

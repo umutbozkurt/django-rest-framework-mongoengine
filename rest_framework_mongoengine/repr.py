@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import re
 
 from mongoengine.queryset import QuerySet
+from mongoengine.fields import BaseField
 from rest_framework.compat import unicode_repr
 
 
@@ -14,10 +15,21 @@ def manager_repr(value):
     model = value._document
     return '%s.objects.all()' % (model.__name__,)
 
+def mongo_field_repr(value):
+    # mimic django models.Field.__repr__
+    path = '%s.%s' % (value.__class__.__module__, value.__class__.__name__)
+    name = getattr(value, 'name', None)
+    if name is not None:
+        return '<%s: %s>' % (path, name)
+    return '<%s>' % path
+
 
 def smart_repr(value):
     if isinstance(value, QuerySet):
         return manager_repr(value)
+
+    if isinstance(value, BaseField):
+        return mongo_field_repr(value)
 
     value = unicode_repr(value)
 
@@ -73,8 +85,6 @@ def serializer_repr(serializer, indent, force_many=None):
             ret += serializer_repr(field, indent + 1)
         elif hasattr(field, 'child'):
             ret += list_repr(field, indent + 1)
-        elif hasattr(field, 'child_relation'):
-            ret += field_repr(field.child_relation, force_many=field.child_relation)
         else:
             ret += field_repr(field)
 

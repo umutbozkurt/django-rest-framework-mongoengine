@@ -59,6 +59,8 @@ class RegularFieldsModel(Document):
     seq_field = fields.SequenceField()
     decimal_field = fields.DecimalField()
 
+    custom_field = CustomField()
+
     # TODO
     # dynamic_field = fields.DynamicField()
     # bin_field = fields.BinaryField()
@@ -114,6 +116,7 @@ class TestRegularFieldMappings(TestCase):
                 id_field = ObjectIdField(required=False)
                 seq_field = IntegerField(read_only=True)
                 decimal_field = DecimalField(decimal_places=2, max_digits=65536, required=False)
+                custom_field = DocumentField(model_field=<tests.test_1basic.CustomField: custom_field>, required=False)
         """)
 
         self.assertEqual(unicode_repr(TestSerializer()), expected)

@@ -19,21 +19,26 @@ from mongoengine.errors import DoesNotExist
 
 class DocumentField(serializers.Field):
     """
+    The field replicates DRF's `ModelField`.
     Base field for Mongoengine fields that we can not convert to DRF fields.
 
-    To Users:
-        - You can subclass DocumentField to implement custom (de)serialization
+    A generic field that can be used against an arbitrary model field.
+
+    This is used by `DocumentSerializer` when dealing with custom model fields,
+    that do not have a serializer field to be mapped to.
     """
 
     type_label = 'DocumentField'
 
-    def __init__(self, *args, **kwargs):
-        try:
-            self.model_field = kwargs.pop('model_field')
-        except KeyError:
-            raise ValueError("%s requires 'model_field' kwarg" % self.type_label)
+    def __init__(self, model_field, **kwargs):
+        self.model_field = model_field
+        super().__init__(**kwargs)
 
-        super(DocumentField, self).__init__(*args, **kwargs)
+    def to_internal_value(self, data):
+        return self.model_field.to_python(data)
+
+    def to_representation(self, value):
+        return self.transform_object(value, 1)
 
     def transform_document(self, document, depth):
         data = {}
@@ -79,11 +84,6 @@ class DocumentField(serializers.Field):
         else:
             return smart_str(obj) if isinstance(obj, ObjectId) else obj
 
-    def to_internal_value(self, data):
-        return self.model_field.to_python(data)
-
-    def to_representation(self, value):
-        return self.transform_object(value, 1)
 
 
 class ObjectIdField(serializers.Field):
