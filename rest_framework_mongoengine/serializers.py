@@ -398,11 +398,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_class = self.serializer_related_field
             field_kwargs = get_relation_kwargs(field_name, relation_info)
         else:
-            field_class = DocumentField
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
-            field_kwargs.pop('required')
-            field_kwargs['read_only'] = True
-            field_kwargs['depth'] = max(0,nested_depth-1)
+            field_class = self.serializer_related_field
+            field_kwargs = get_nested_relation_kwargs(relation_info)
 
         return field_class, field_kwargs
 
@@ -420,11 +417,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_class = NestedRefSerializer
             field_kwargs = get_nested_relation_kwargs(relation_info)
         else:
-            field_class = DocumentField
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
-            field_kwargs.pop('required')
-            field_kwargs['read_only'] = True
-            field_kwargs['depth'] = max(0,nested_depth-1)
+            field_class = self.serializer_related_field
+            field_kwargs = get_nested_relation_kwargs(relation_info)
         return field_class, field_kwargs
 
     def build_embedded_field(self, field_name, relation_info, nested_depth):

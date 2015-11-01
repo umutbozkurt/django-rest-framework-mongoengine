@@ -30,6 +30,8 @@ class RefFieldsModel(Document):
 class ReferencingModel(Document):
     ref = me_fields.ReferenceField(ReferencedModel)
 
+class GenericReferencingModel(Document):
+    generic = me_fields.GenericReferenceField()
 
 someobjectid = ObjectId('563547d9a21aab31b7e73ac9')
 somedbref = DBRef('referenced_model', someobjectid)
@@ -119,7 +121,7 @@ class TestMapping(TestCase):
                 ref = ReferenceField(queryset=ReferencedModel.objects.all())
                 dbref = ReferenceField(queryset=ReferencedModel.objects.all())
                 cached = ReferenceField(queryset=ReferencedModel.objects.all())
-                generic = DocumentField(depth=0, model_field=<mongoengine.fields.GenericReferenceField: generic>, read_only=True)
+                generic = ReferenceField(read_only=True)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
@@ -141,7 +143,7 @@ class TestMapping(TestCase):
                 cached = NestedRefSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
-                generic = DocumentField(depth=0, model_field=<mongoengine.fields.GenericReferenceField: generic>, read_only=True)
+                generic = ReferenceField(read_only=True)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
@@ -206,28 +208,68 @@ class TestIntegration(TestCase):
         self.target = ReferencedModel.objects.create(
             name='Foo'
         )
-        self.instance = ReferencingModel.objects.create(
-            ref=self.target,
-        )
 
     def tearDown(self):
         ReferencedModel.drop_collection()
         ReferencingModel.drop_collection()
 
-    def test_pk_retrival(self):
+    def test_retrival(self):
+        instance = ReferencingModel.objects.create(ref=self.target)
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingModel
                 depth = 0
 
-        serializer = TestSerializer(self.instance)
+        serializer = TestSerializer(instance)
         expected = {
-            'id': str(self.instance.id),
+            'id': str(instance.id),
             'ref': str(self.target.id),
         }
         self.assertEqual(serializer.data, expected)
 
-    def test_pk_create(self):
+    def test_retrival_deep(self):
+        instance = ReferencingModel.objects.create(ref=self.target)
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingModel
+                depth = 1
+
+        serializer = TestSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'ref': { 'id': str(self.target.id), 'name': "Foo" }
+        }
+        self.assertEqual(serializer.data, expected)
+
+    def test_retrival_generic(self):
+        instance = GenericReferencingModel.objects.create(generic=self.target)
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = GenericReferencingModel
+                depth = 0
+
+        serializer = TestSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'generic': str(self.target.id),
+        }
+        self.assertEqual(serializer.data, expected)
+
+    def test_retrival_generic_deep(self):
+        instance = GenericReferencingModel.objects.create(generic=self.target)
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = GenericReferencingModel
+                depth = 1
+
+        serializer = TestSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'generic': str(self.target.id),
+        }
+        self.assertEqual(serializer.data, expected)
+
+    def test_create(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingModel
@@ -254,7 +296,8 @@ class TestIntegration(TestCase):
         }
         self.assertEqual(serializer.data, expected)
 
-    def test_pk_update(self):
+    def test_update(self):
+        instance = ReferencingModel.objects.create(ref=self.target)
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingModel
@@ -267,7 +310,7 @@ class TestIntegration(TestCase):
         }
 
         # Serializer should validate okay.
-        serializer = TestSerializer(self.instance, data=data)
+        serializer = TestSerializer(instance, data=data)
         assert serializer.is_valid()
 
         # Creating the instance, relationship attributes should be set.
