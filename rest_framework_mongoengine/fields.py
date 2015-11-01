@@ -76,6 +76,9 @@ class DocumentField(serializers.Field):
             return smart_repr(obj)
         elif isinstance(obj, BaseDocument):
             return self.transform_document(obj, depth)
+        elif isinstance(obj, DBRef):
+            # DBRef
+            return self.transform_object(obj.id, depth)
         elif isinstance(obj, dict):
             # Dictionaries
             return self.transform_dict(obj, depth)
