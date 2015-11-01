@@ -16,7 +16,7 @@ from rest_framework_mongoengine.validators import UniqueValidator
 
 FieldInfo = namedtuple('FieldResult', [
     'pk',  # Model field instance
-    'fields',  # Dict of field name -> model field instance
+    'fields',  # Dict of field name -> model field instance, contains fieldname.child for compound fields
     'references',  # Dict of field name -> RelationInfo
     'fields_and_pk',  # Shortcut for 'pk' + 'fields'
     'embedded' # Dict of field name -> RelationInfo
@@ -96,14 +96,21 @@ def get_field_info(model):
 
     embedded = OrderedDict()
 
-    for field_name in model._fields_ordered:
-        field = model._fields[field_name]
+    def add_field(name, field):
         if isinstance(field, REFERENCING_FIELD_TYPES):
-            references[field_name] = get_relation_info(field)
+            references[name] = get_relation_info(field)
         elif isinstance(field, EMBEDDING_FIELD_TYPES):
-            embedded[field_name] = get_relation_info(field)
+            embedded[name] = get_relation_info(field)
+        elif isinstance(field, COMPOUND_FIELD_TYPES):
+            fields[name] = field
+            if field.field:
+                add_field(name + '.child', field.field)
         else:
-            fields[field_name] = model._fields[field_name]
+            fields[name] = field
+
+    for field_name in model._fields_ordered:
+        add_field(field_name, model._fields[field_name])
+
 
     # Shortcut that merges both regular fields and the pk,
     # for simplifying regular field lookup.

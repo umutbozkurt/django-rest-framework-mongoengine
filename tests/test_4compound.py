@@ -23,6 +23,7 @@ class OptionsCompoundFieldsModel(Document):
 class NestedCompoundFieldsModel(Document):
     dict_list_field = fields.ListField(fields.DictField())
     list_dict_field = fields.MapField(fields.ListField())
+    list_dict_list_field = fields.ListField(fields.MapField(fields.ListField()))
 
 
 class TestCompundFieldMappings(TestCase):
@@ -66,5 +67,6 @@ class TestCompundFieldMappings(TestCase):
                 id = ObjectIdField(read_only=True)
                 dict_list_field = ListField(child=DictField(required=False), required=False)
                 list_dict_field = DictField(child=ListField(required=False), required=False)
+                list_dict_list_field = ListField(child=DictField(child=ListField(required=False), required=False), required=False)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
