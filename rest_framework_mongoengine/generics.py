@@ -2,6 +2,7 @@ from rest_framework import mixins
 from rest_framework import generics as drf_generics
 
 from mongoengine.queryset.base import BaseQuerySet
+from mongoengine import ValidationError
 
 
 class GenericAPIView(drf_generics.GenericAPIView):
