@@ -151,6 +151,51 @@ class TestRegularFieldMappings(TestCase):
 
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
+    def test_meta_fields(self):
+        """
+        Serializer should respect Meta.fields
+        """
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RegularFieldsModel
+                fields = ('id', 'str_field')
+
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                str_field = CharField(required=False)
+        """)
+
+        self.assertEqual(unicode_repr(TestSerializer()), expected)
+
+    def test_meta_exclude(self):
+        """
+        Serializer should respect Meta.exclude
+        """
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RegularFieldsModel
+                exclude = ('decimal_field', 'custom_field')
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                str_field = CharField(required=False)
+                url_field = URLField(required=False)
+                email_field = EmailField(required=False)
+                int_field = IntegerField(required=False)
+                long_field = IntegerField(required=False)
+                float_field = FloatField(required=False)
+                boolean_field = BooleanField(required=False)
+                nullboolean_field = NullBooleanField(required=False)
+                date_field = DateTimeField(required=False)
+                complexdate_field = DateTimeField(required=False)
+                uuid_field = UUIDField(required=False)
+                id_field = ObjectIdField(required=False)
+                seq_field = IntegerField(read_only=True)
+        """)
+
+        self.assertEqual(unicode_repr(TestSerializer()), expected)
+
     def test_field_options(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
