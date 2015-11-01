@@ -32,6 +32,8 @@ class RecursiveEmbeddingModel(Document):
     embedded = fields.EmbeddedDocumentField(SelfEmbeddedModel)
 
 
+
+
 class TestMapping(TestCase):
     def test_embedded_serializer(self):
         class TestSerializer(EmbeddedDocumentSerializer):
@@ -230,3 +232,26 @@ class TestIntegration(TestCase):
             'embedded': { 'foo': "Foo", 'bar': "Baz"}
         }
         self.assertEqual(serializer.data, expected)
+
+
+class ValidatingEmbeddedModel(EmbeddedDocument):
+    foo = fields.StringField(min_length=3)
+
+class ValidatingEmbeddingModel(Document):
+    embedded = fields.EmbeddedDocumentField(ValidatingEmbeddedModel)
+
+class ValidatingSerializer(DocumentSerializer):
+    class Meta:
+        model = ValidatingEmbeddingModel
+        depth = 1
+
+class TestValidation(TestCase):
+    def test_validation_is_executed(self):
+        serializer = ValidatingSerializer(data={'embedded':{'foo': 'Fo'}})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('embedded', serializer.errors)
+        self.assertIn('foo', serializer.errors['embedded'])
+
+    def test_validation_passing(self):
+        serializer = ValidatingSerializer(data={'embedded':{'foo': 'Foo'}})
+        self.assertTrue(serializer.is_valid())
