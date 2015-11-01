@@ -1,7 +1,20 @@
 from django.utils.translation import ugettext_lazy as _
+from mongoengine.errors import ValidationError as mongo_ValidationError
 from rest_framework import validators
 from rest_framework.exceptions import ValidationError
 
+class MongoValidationWrapper():
+    def __init__(self, model_field):
+        self.field = model_field
+
+    def __call__(self, value):
+        try:
+            if self.field.validation:
+                self.field.validation(value)
+            if self.field.validate:
+                self.field.validate(value)
+        except mongo_ValidationError as e:
+            raise ValidationError(e)
 
 class UniqueValidator(validators.UniqueValidator):
     """
@@ -15,7 +28,7 @@ class UniqueValidator(validators.UniqueValidator):
         queryset = self.exclude_current_instance(queryset)
         if queryset.first():
             raise ValidationError(self.message)
-            
+
     def exclude_current_instance(self, queryset):
         """
         If an instance is being updated, then do not include
@@ -23,7 +36,7 @@ class UniqueValidator(validators.UniqueValidator):
         """
         if self.instance is not None:
             return queryset.filter(pk__ne=self.instance.pk)
-        return queryset        
+        return queryset
 
 
 class UniqueTogetherValidator(validators.UniqueTogetherValidator):

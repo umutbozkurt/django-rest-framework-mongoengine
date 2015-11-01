@@ -1,18 +1,13 @@
-import inspect
 from collections import OrderedDict, namedtuple
 
-from django.core import validators
-from django.core.exceptions import ImproperlyConfigured
-from django.utils import six
 from django.utils.text import capfirst
 
-from rest_framework.utils.field_mapping import needs_label, get_detail_view_name
+from rest_framework.utils.field_mapping import needs_label
 
-from mongoengine.base.common import get_document
 import mongoengine
 from mongoengine import fields as me_fields
 
-from rest_framework_mongoengine.validators import UniqueValidator
+from rest_framework_mongoengine.validators import MongoValidationWrapper
 
 FieldInfo = namedtuple('FieldResult', [
     'pk',  # Model field instance
@@ -135,9 +130,7 @@ def get_field_kwargs(field_name, model_field):
     Creates a default instance of a basic non-relational field.
     """
     kwargs = {}
-    validator_kwarg = []
-    if model_field.validation:
-        validator_kwarg.append(model_field.validation)
+    validators = []
 
     # The following will only be used by ModelField classes.
     # Gets removed for everything else.
@@ -204,8 +197,8 @@ def get_field_kwargs(field_name, model_field):
     #         message=None)
     #     validator_kwarg.append(validator)
 
-    if validator_kwarg:
-        kwargs['validators'] = validator_kwarg
+    if validators:
+        kwargs['validators'] = validators
 
     return kwargs
 
