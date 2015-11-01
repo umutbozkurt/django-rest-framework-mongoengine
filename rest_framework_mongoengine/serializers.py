@@ -312,7 +312,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         if field_name in info.references:
             relation_info = info.references[field_name]
             if not nested_depth:
-                return self.build_reference_field(field_name, relation_info)
+                return self.build_reference_field(field_name, relation_info, nested_depth)
             else:
                 return self.build_dereference_field(field_name, relation_info, nested_depth)
 
@@ -389,12 +389,20 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return field_class, field_kwargs
 
-    def build_reference_field(self, field_name, relation_info):
+    def build_reference_field(self, field_name, relation_info, nested_depth):
         """
         Create fields for references.
+        DRF: build_relational_field
         """
-        field_class = self.serializer_related_field
-        field_kwargs = get_relation_kwargs(field_name, relation_info)
+        if relation_info.related_model:
+            field_class = self.serializer_related_field
+            field_kwargs = get_relation_kwargs(field_name, relation_info)
+        else:
+            field_class = DocumentField
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+            field_kwargs.pop('required')
+            field_kwargs['read_only'] = True
+            field_kwargs['depth'] = max(0,nested_depth-1)
 
         return field_class, field_kwargs
 

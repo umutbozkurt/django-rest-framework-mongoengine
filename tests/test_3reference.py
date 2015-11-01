@@ -24,7 +24,7 @@ class RefFieldsModel(Document):
     ref = me_fields.ReferenceField(ReferencedModel)
     dbref = me_fields.ReferenceField(ReferencedModel, dbref=True)
     cached = me_fields.CachedReferenceField(ReferencedModel)
-    # gen_ref_field = me_fields.GenericReferenceField()
+    generic = me_fields.GenericReferenceField()
 
 
 class ReferencingModel(Document):
@@ -119,6 +119,7 @@ class TestMapping(TestCase):
                 ref = ReferenceField(queryset=ReferencedModel.objects.all())
                 dbref = ReferenceField(queryset=ReferencedModel.objects.all())
                 cached = ReferenceField(queryset=ReferencedModel.objects.all())
+                generic = DocumentField(depth=0, model_field=<mongoengine.fields.GenericReferenceField: generic>, read_only=True)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
@@ -140,6 +141,7 @@ class TestMapping(TestCase):
                 cached = NestedRefSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
+                generic = DocumentField(depth=0, model_field=<mongoengine.fields.GenericReferenceField: generic>, read_only=True)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
