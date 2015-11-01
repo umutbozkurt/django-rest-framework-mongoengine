@@ -16,6 +16,7 @@ from mongoengine.base.document import BaseDocument
 from mongoengine import Document, fields as me_fields
 from mongoengine.errors import DoesNotExist
 
+from rest_framework_mongoengine.repr import smart_repr
 
 class DocumentField(serializers.Field):
     """
@@ -26,19 +27,23 @@ class DocumentField(serializers.Field):
 
     This is used by `DocumentSerializer` when dealing with custom model fields,
     that do not have a serializer field to be mapped to.
+
+    Delegates parsing to model_field.to_python.
+    Representation is recursive with fallback to smart_repr.
     """
 
     type_label = 'DocumentField'
 
-    def __init__(self, model_field, **kwargs):
+    def __init__(self, model_field, depth=0, **kwargs):
         self.model_field = model_field
+        self.depth = depth
         super().__init__(**kwargs)
 
     def to_internal_value(self, data):
         return self.model_field.to_python(data)
 
     def to_representation(self, value):
-        return self.transform_object(value, 1)
+        return self.transform_object(value, self.depth)
 
     def transform_document(self, document, depth):
         data = {}
@@ -67,11 +72,9 @@ class DocumentField(serializers.Field):
         Models to natives
         Recursion for (embedded) objects
         """
-        if isinstance(obj, BaseDocument):
-            # Document, EmbeddedDocument
-            if depth == 0:
-                # Return primary key if exists, else return default text
-                return smart_str(getattr(obj, 'pk', 'Max recursion depth exceeded'))
+        if depth == 0:
+            return smart_repr(obj)
+        elif isinstance(obj, BaseDocument):
             return self.transform_document(obj, depth)
         elif isinstance(obj, dict):
             # Dictionaries
@@ -82,7 +85,7 @@ class DocumentField(serializers.Field):
         elif obj is None:
             return None
         else:
-            return smart_str(obj) if isinstance(obj, ObjectId) else obj
+            return smart_repr(obj)
 
 
 
@@ -189,29 +192,6 @@ class ReferenceField(serializers.Field):
     def to_representation(self, datum):
         oid = self.get_id(datum)
         return self.pk_field.to_representation(oid)
-
-
-class EmbeddedDocumentField(DocumentField):
-
-    type_label = 'EmbeddedDocumentField'
-
-    def __init__(self, *args, **kwargs):
-        try:
-            self.document_type = kwargs.pop('document_type')
-        except KeyError:
-            raise ValueError("EmbeddedDocumentField requires 'document_type' kwarg")
-
-        self.depth = kwargs.pop('depth')
-        super(EmbeddedDocumentField, self).__init__(*args, **kwargs)
-
-    def to_representation(self, value):
-        if value is None:
-            return None
-        else:
-            return self.transform_object(value, self.depth)
-
-    def to_internal_value(self, data):
-        return self.model_field.to_python(data)
 
 
 class DynamicField(DocumentField):

@@ -3,11 +3,14 @@ Helper functions for creating user-friendly representations
 of serializer classes and serializer fields.
 """
 from __future__ import unicode_literals
+from django.utils import six
+from django.utils.encoding import force_str
 
 import re
 
 from mongoengine.queryset import QuerySet
 from mongoengine.fields import BaseField
+from mongoengine.base import BaseDocument
 from rest_framework.compat import unicode_repr
 
 
@@ -23,12 +26,23 @@ def mongo_field_repr(value):
         return '<%s: %s>' % (path, name)
     return '<%s>' % path
 
+def mongo_doc_repr(value):
+    # mimic django models.Model.__repr__
+    try:
+        u = six.text_type(value)
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        u = '[Bad Unicode data]'
+    return force_str('<%s: %s>' % (value.__class__.__name__, u))
+
 
 def smart_repr(value):
     if isinstance(value, QuerySet):
         return manager_repr(value)
 
     if isinstance(value, BaseField):
+        return mongo_field_repr(value)
+
+    if isinstance(value, BaseDocument):
         return mongo_field_repr(value)
 
     value = unicode_repr(value)

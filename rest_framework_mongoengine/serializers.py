@@ -11,7 +11,6 @@ from rest_framework.utils.field_mapping import ClassLookupDict
 from rest_framework.compat import unicode_to_repr
 
 from .fields import (ReferenceField,
-                     EmbeddedDocumentField,
                      DynamicField,
                      ObjectIdField,
                      DocumentField,
@@ -126,6 +125,19 @@ class DocumentSerializer(serializers.ModelSerializer):
     serializer_related_to_field = None
     serializer_url_field = None
 
+    def is_valid(self, raise_exception=False):
+        """
+        Call super.is_valid() and then apply embedded document serializer's validations.
+        """
+        valid = super().is_valid(raise_exception=raise_exception)
+
+        for name in self.field_info.embedded.keys():
+            field = self.fields[name]
+            field.initial_data = self.validated_data.pop(name, serializers.empty)
+            valid &= field.is_valid(raise_exception=raise_exception)
+
+        return valid
+
     def create(self, validated_data):
         """
         Create an instance using queryset.create()
@@ -134,9 +146,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         raise_errors_on_nested_writes('create', self, validated_data)
 
         # Automagically create and set embedded documents to validated data
-        # for embedded_field in self.embedded_document_serializer_fields:
-        #     embedded_doc_intance = embedded_field.create(embedded_field.validated_data)
-        #     validated_data[embedded_field.field_name] = embedded_doc_intance
+        for name in self.field_info.embedded.keys():
+            field = self.fields[name]
+            embedded_doc_intance = field.create(field.validated_data)
+            validated_data[name] = embedded_doc_intance
 
         ModelClass = self.Meta.model
         try:
@@ -182,12 +195,14 @@ class DocumentSerializer(serializers.ModelSerializer):
         Update embedded fields first, set relevant attributes with updated data
         And then continue regular updating
         """
-        # for embedded_field in self.embedded_document_serializer_fields:
-        #     embedded_doc_intance = embedded_field.update(getattr(instance, embedded_field.field_name), embedded_field.validated_data)
-        #     setattr(instance, embedded_field.field_name, embedded_doc_intance)
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        for name in self.field_info.embedded.keys():
+            field = self.fields[name]
+            embedded_doc_intance = field.update(getattr(instance, name), field.validated_data)
+            setattr(instance, name, embedded_doc_intance)
 
         return super(DocumentSerializer, self).update(instance, validated_data)
-
 
     def get_fields(self):
         """
@@ -219,8 +234,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             assert depth <= 10, "'depth' may not be greater than 10."
 
         # Retrieve metadata about fields & relationships on the model class.
-        info = get_field_info(model)
-        field_names = self.get_field_names(declared_fields, info)
+        self.field_info = get_field_info(model)
+        field_names = self.get_field_names(declared_fields, self.field_info)
         # Determine any extra field arguments and hidden fields that
         # should be included
         extra_kwargs = self.get_extra_kwargs()
@@ -241,7 +256,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
             # Determine the serializer field class and keyword arguments.
             field_class, field_kwargs = self.build_field(
-                field_name, info, model, depth
+                field_name, self.field_info, model, depth
             )
 
             # Include any kwargs defined in `Meta.extra_kwargs`
@@ -305,7 +320,9 @@ class DocumentSerializer(serializers.ModelSerializer):
             else:
                 return self.build_dereference_field(field_name, relation_info, nested_depth)
 
-        # TODO: handle embeddedfields here
+        if field_name in info.embedded:
+            relation_info = info.embedded[field_name]
+            return self.build_embedded_field(field_name, relation_info, nested_depth)
 
         if hasattr(model_class, field_name):
             return self.build_property_field(field_name, model_class)
@@ -388,28 +405,45 @@ class DocumentSerializer(serializers.ModelSerializer):
     def build_dereference_field(self, field_name, relation_info, nested_depth):
         """
         Create nested fields for references.
+        DRF::build_nested_field
         """
         if relation_info.related_model:
-            class NestedSerializer(DocumentSerializer):
+            class NestedRefSerializer(DocumentSerializer):
                 class Meta:
                     model = relation_info.related_model
                     depth = nested_depth - 1
 
-            field_class = NestedSerializer
+            field_class = NestedRefSerializer
             field_kwargs = get_nested_relation_kwargs(relation_info)
         else:
             field_class = DocumentField
             field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
             field_kwargs.pop('required')
             field_kwargs['read_only'] = True
+            field_kwargs['depth'] = max(0,nested_depth-1)
         return field_class, field_kwargs
 
-    def build_embedded_field(self, field_name, relation_info):
+    def build_embedded_field(self, field_name, relation_info, nested_depth):
         """
         Create fields for embedded documents.
+        The same as nested, but writeable.
         """
-        # TODO from prototype build_nested_field
-        pass
+        if relation_info.related_model and nested_depth:
+            class NestedEmbSerializer(EmbeddedDocumentSerializer):
+                class Meta:
+                    model = relation_info.related_model
+                    depth = nested_depth - 1
+
+            field_class = NestedEmbSerializer
+            field_kwargs = get_nested_relation_kwargs(relation_info)
+            field_kwargs.pop('read_only',None)
+        else:
+            field_class = DocumentField
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+            field_kwargs.pop('required')
+            field_kwargs['read_only'] = True
+            field_kwargs['depth'] = max(0,nested_depth-1)
+        return field_class, field_kwargs
 
 
     # def build_property_field(self, field_name, model_class):
@@ -476,11 +510,37 @@ class DocumentSerializer(serializers.ModelSerializer):
     def __repr__(self):
         return unicode_to_repr(serializer_repr(self, indent=1))
 
-class DynamicDocumentSerializer(DocumentSerializer):
-    # TODO
-    pass
-
 
 class EmbeddedDocumentSerializer(DocumentSerializer):
+    def create(self, validated_data):
+        """
+        EmbeddedDocuments are not saved separately, so we create an instance of it.
+        """
+        raise_errors_on_nested_writes('create', self, validated_data)
+        return self.Meta.model(**validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        EmbeddedDocuments are not saved separately, so we just update the instance and return it.
+        """
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        return instance
+
+    def get_default_field_names(self, declared_fields, model_info):
+        """
+        EmbeddedDocuments don't have `id`s so do not include `id` to field names
+        """
+        return (
+            list(declared_fields.keys()) +
+            list(model_info.fields.keys()) +
+            list(model_info.references.keys()) +
+            list(model_info.embedded.keys())
+        )
+
+class DynamicDocumentSerializer(DocumentSerializer):
     # TODO
     pass

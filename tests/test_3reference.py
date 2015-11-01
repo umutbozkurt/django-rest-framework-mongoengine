@@ -131,13 +131,13 @@ class TestMapping(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                ref = NestedSerializer(read_only=True):
+                ref = NestedRefSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
-                dbref = NestedSerializer(read_only=True):
+                dbref = NestedRefSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
-                cached = NestedSerializer(read_only=True):
+                cached = NestedRefSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
         """)
