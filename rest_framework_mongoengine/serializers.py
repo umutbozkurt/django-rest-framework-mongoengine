@@ -1,6 +1,5 @@
 import copy
 from collections import OrderedDict
-import pytest
 
 from mongoengine import fields as me_fields
 from mongoengine.errors import ValidationError as me_ValidationError
@@ -21,11 +20,8 @@ from .utils import (is_abstract_model,
                     get_field_info,
                     get_field_kwargs,
                     get_relation_kwargs,
-                    get_relation_info,
                     get_nested_relation_kwargs,
-                    COMPOUND_FIELD_TYPES,
-                    REFERENCING_FIELD_TYPES,
-                    EMBEDDING_FIELD_TYPES)
+                    COMPOUND_FIELD_TYPES)
 
 from .repr import serializer_repr
 

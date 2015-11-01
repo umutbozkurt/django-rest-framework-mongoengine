@@ -108,13 +108,10 @@ class TestMapping(TestCase):
                 id = ObjectIdField(read_only=True)
                 embedded = NestedEmbSerializer():
                     foo = CharField(required=False)
-                    bar = CharField(required=False)
                     embedded = NestedEmbSerializer():
                         foo = CharField(required=False)
-                        bar = CharField(required=False)
                         embedded = NestedEmbSerializer():
                             foo = CharField(required=False)
-                            bar = CharField(required=False)
                             embedded = DocumentField(depth=0, model_field=<mongoengine.fields.EmbeddedDocumentField: embedded>, read_only=True)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
@@ -136,7 +133,7 @@ class TestIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'embedded': { 'foo': "Foo" },
+            'embedded': { 'foo': "Foo", 'bar': None },
         }
         self.assertEqual(serializer.data, expected)
 
@@ -187,7 +184,7 @@ class TestIntegration(TestCase):
                 depth = 1
 
         data = {
-            'embedded': { 'foo': "Bar" }
+            'embedded': { 'foo': "Foo" }
         }
 
         # Serializer should validate okay.
@@ -196,12 +193,12 @@ class TestIntegration(TestCase):
 
         # Creating the instance, relationship attributes should be set.
         instance = serializer.save()
-        assert instance.embedded.foo == "Bar"
+        assert instance.embedded.foo == "Foo"
 
         # Representation should be correct.
         expected = {
             'id': str(instance.id),
-            'embedded': { 'foo': "Bar"}
+            'embedded': { 'foo': "Foo", 'bar': None}
         }
         self.assertEqual(serializer.data, expected)
 
