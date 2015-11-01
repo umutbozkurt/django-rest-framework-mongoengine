@@ -63,6 +63,17 @@ EMBEDDING_FIELD_TYPES = (
     me_fields.GenericEmbeddedDocumentField
 )
 
+COMPOUND_FIELD_TYPES = (
+    me_fields.DictField,
+    me_fields.ListField
+)
+
+def get_relation_info(model_field):
+    return RelationInfo(
+        model_field=model_field,
+        related_model=getattr(model_field, 'document_type', None),
+    )
+
 
 def get_field_info(model):
     """
@@ -88,18 +99,11 @@ def get_field_info(model):
     for field_name in model._fields_ordered:
         field = model._fields[field_name]
         if isinstance(field, REFERENCING_FIELD_TYPES):
-            references[field_name] = RelationInfo(
-                model_field=field,
-                related_model=getattr(field, 'document_type', None),
-            )
+            references[field_name] = get_relation_info(field)
         elif isinstance(field, EMBEDDING_FIELD_TYPES):
-            embedded[field_name] = RelationInfo(
-                model_field=field,
-                related_model=getattr(field, 'document_type', None),
-            )
+            embedded[field_name] = get_relation_info(field)
         else:
             fields[field_name] = model._fields[field_name]
-
 
     # Shortcut that merges both regular fields and the pk,
     # for simplifying regular field lookup.

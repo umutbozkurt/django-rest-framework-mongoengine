@@ -22,7 +22,12 @@ from .utils import (is_abstract_model,
                     get_field_info,
                     get_field_kwargs,
                     get_relation_kwargs,
-                    get_nested_relation_kwargs)
+                    get_relation_info,
+                    get_nested_relation_kwargs,
+                    COMPOUND_FIELD_TYPES,
+                    REFERENCING_FIELD_TYPES,
+                    EMBEDDING_FIELD_TYPES)
+
 from .repr import serializer_repr
 
 
@@ -281,8 +286,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         """
         if field_name in info.fields_and_pk:
             model_field = info.fields_and_pk[field_name]
-            if isinstance(model_field, me_fields.ComplexBaseField):
-                return self.build_compound_field(field_name, model_field)
+            if isinstance(model_field, COMPOUND_FIELD_TYPES):
+                return self.build_compound_field(field_name, model_field, nested_depth)
             else:
                 return self.build_standard_field(field_name, model_field)
 
@@ -291,13 +296,34 @@ class DocumentSerializer(serializers.ModelSerializer):
             if not nested_depth:
                 return self.build_reference_field(field_name, relation_info)
             else:
-                return self.build_nested_field(field_name, relation_info, nested_depth)
+                return self.build_dereference_field(field_name, relation_info, nested_depth)
+
         # TODO: handle embeddedfields here
 
         if hasattr(model_class, field_name):
             return self.build_property_field(field_name, model_class)
 
         return self.build_unknown_field(field_name, model_class)
+
+    def build_nested_field(self, field_name, model_field, nested_depth):
+        """
+        Create field inside compound, missing from model_info
+        """
+        if isinstance(model_field, REFERENCING_FIELD_TYPES):
+            relation_info = get_relation_info(model_field)
+            if not nested_depth:
+                return self.build_reference_field(field_name, relation_info)
+            else:
+                return self.build_dereference_field(field_name, relation_info, nested_depth)
+
+        if isinstance(model_field, EMBEDDING_FIELD_TYPES):
+            relation_info = get_relation_info(model_field)
+            return self.build_embedded_field(field_name, relation_info)
+
+        if isinstance(model_field, COMPOUND_FIELD_TYPES):
+            return self.build_compound_field(field_name, model_field, nested_depth)
+        else:
+            return self.build_standard_field(field_name, model_field)
 
     def build_standard_field(self, field_name, model_field):
         """
@@ -343,7 +369,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return field_class, field_kwargs
 
-    def build_compound_field(self, field_name, model_field):
+    def build_compound_field(self, field_name, model_field, nested_depth):
         """
         Create regular model fields.
         """
@@ -359,11 +385,9 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         child_field = model_field.field
         if child_field is not None:
-            if isinstance(child_field, me_fields.ComplexBaseField):
-                child_class, child_kwargs = self.build_compound_field('child', child_field)
-            else:
-                child_class, child_kwargs = self.build_standard_field('child', child_field)
-            field_kwargs['child'] = child_class(**child_kwargs)
+            child_class, child_kwargs = self.build_nested_field(field_name+'.child', child_field, nested_depth)
+            child = child_class(**child_kwargs)
+            field_kwargs['child'] = child
 
         return field_class, field_kwargs
 
@@ -376,7 +400,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return field_class, field_kwargs
 
-    def build_nested_field(self, field_name, relation_info, nested_depth):
+    def build_dereference_field(self, field_name, relation_info, nested_depth):
         """
         Create nested fields for references.
         """

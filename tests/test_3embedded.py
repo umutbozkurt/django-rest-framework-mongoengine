@@ -11,6 +11,10 @@ class EmbeddingModel(Document):
     embedded_field = fields.EmbeddedDocumentField(EmbeddedModel)
     generic_embedded_field = fields.GenericEmbeddedDocumentField()
 
+
+class TestField(TestCase):
+    pass
+
 class TestMapping(TestCase):
     def test_mapping(self):
         pytest.skip("TODO")
