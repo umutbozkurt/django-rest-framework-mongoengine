@@ -52,8 +52,6 @@ INSTALLED_APPS = (
 
 ## Maintainers
 
-@Jcbobo88
-
 @qwiglydee
 
 Feel free to mail me if you consider being a maintainer.
