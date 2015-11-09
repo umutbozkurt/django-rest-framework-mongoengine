@@ -37,7 +37,7 @@ class DocumentField(serializers.Field):
     def __init__(self, model_field, depth=0, **kwargs):
         self.model_field = model_field
         self.depth = depth
-        super().__init__(**kwargs)
+        super(DocumentField,self).__init__(**kwargs)
 
     def to_internal_value(self, data):
         return self.model_field.to_python(data)
@@ -132,13 +132,13 @@ class ReferenceField(serializers.Field):
             'Reference field must provide a `queryset` or `model` argument, '
             'or set read_only=`True`.'
         )
-        super().__init__(**kwargs)
+        super(ReferenceField,self).__init__(**kwargs)
 
     def run_validation(self, data=empty):
         # We force empty strings to None values for relational fields.
         if data == '':
             data = None
-        return super().run_validation(data)
+        return super(ReferenceField,self).run_validation(data)
 
     def get_queryset(self):
         queryset = self.queryset

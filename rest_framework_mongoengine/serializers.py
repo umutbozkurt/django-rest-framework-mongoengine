@@ -125,7 +125,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         """
         Call super.is_valid() and then apply embedded document serializer's validations.
         """
-        valid = super().is_valid(raise_exception=raise_exception)
+        valid = super(DocumentSerializer,self).is_valid(raise_exception=raise_exception)
 
         for name in self.field_info.embedded.keys():
             field = self.fields[name]

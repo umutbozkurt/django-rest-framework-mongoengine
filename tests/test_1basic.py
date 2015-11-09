@@ -15,6 +15,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 from mongoengine import Document, fields
 from django.test import TestCase
+from django.utils import six
 
 from rest_framework.compat import unicode_repr
 from rest_framework import serializers
@@ -211,6 +212,13 @@ class TestRegularFieldMappings(TestCase):
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)
                 decimal_field = DecimalField(decimal_places=4, max_digits=8, max_value=9999, required=False)
         """)
+        if six.PY2:
+            # This particular case is too awkward to resolve fully across
+            # both py2 and py3.
+            expected = expected.replace(
+                "('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')",
+                "(u'red', u'Red'), (u'blue', u'Blue'), (u'green', u'Green')"
+            )
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
     def test_method_field(self):
