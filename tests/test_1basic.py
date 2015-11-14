@@ -7,9 +7,12 @@ an appropriate set of serializer fields for each case.
 """
 from __future__ import unicode_literals
 
-import decimal
-import pytest
+from datetime import datetime
+from uuid import UUID
+from decimal import Decimal
 from bson import ObjectId
+
+import pytest
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -71,7 +74,7 @@ class AutoFieldModel(Document):
     auto_field = fields.SequenceField(primary_key=True)
 
 
-class RegularFieldsModel(Document):
+class RegularModel(Document):
     """
     A model class for testing regular flat fields.
     """
@@ -87,7 +90,6 @@ class RegularFieldsModel(Document):
     complexdate_field = fields.ComplexDateTimeField()
     uuid_field = fields.UUIDField()
     id_field = fields.ObjectIdField()
-    seq_field = fields.SequenceField()
     decimal_field = fields.DecimalField()
 
     custom_field = CustomField()
@@ -103,7 +105,7 @@ class RegularFieldsModel(Document):
 
 
 COLOR_CHOICES = (('red', 'Red'), ('blue', 'Blue'), ('green', 'Green'))
-DECIMAL_CHOICES = (('low', decimal.Decimal('0.1')), ('medium', decimal.Decimal('0.5')), ('high', decimal.Decimal('0.9')))
+DECIMAL_CHOICES = (('low', Decimal('0.1')), ('medium', Decimal('0.5')), ('high', Decimal('0.9')))
 
 
 class FieldOptionsModel(Document):
@@ -128,7 +130,7 @@ class TestRegularFieldMappings(TestCase):
         """
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
 
         expected = dedent("""
             TestSerializer():
@@ -145,7 +147,6 @@ class TestRegularFieldMappings(TestCase):
                 complexdate_field = DateTimeField(required=False)
                 uuid_field = UUIDField(required=False)
                 id_field = ObjectIdField(required=False)
-                seq_field = IntegerField(read_only=True)
                 decimal_field = DecimalField(decimal_places=2, max_digits=65536, required=False)
                 custom_field = DocumentField(model_field=<tests.test_1basic.CustomField: custom_field>, required=False)
         """)
@@ -158,7 +159,7 @@ class TestRegularFieldMappings(TestCase):
         """
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 fields = ('id', 'str_field')
 
         expected = dedent("""
@@ -175,7 +176,7 @@ class TestRegularFieldMappings(TestCase):
         """
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 exclude = ('decimal_field', 'custom_field')
         expected = dedent("""
             TestSerializer():
@@ -192,7 +193,6 @@ class TestRegularFieldMappings(TestCase):
                 complexdate_field = DateTimeField(required=False)
                 uuid_field = UUIDField(required=False)
                 id_field = ObjectIdField(required=False)
-                seq_field = IntegerField(read_only=True)
         """)
 
         self.assertEqual(unicode_repr(TestSerializer()), expected)
@@ -228,7 +228,7 @@ class TestRegularFieldMappings(TestCase):
         """
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 fields = ('id', 'method')
 
         expected = dedent("""
@@ -275,7 +275,7 @@ class TestRegularFieldMappings(TestCase):
         """
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 fields = ('id', 'str_field')
                 extra_kwargs = {'str_field': {'default': 'extra'}}
 
@@ -294,12 +294,12 @@ class TestRegularFieldMappings(TestCase):
         """
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 fields = ('id', 'invalid')
 
         with self.assertRaises(ImproperlyConfigured) as excinfo:
             TestSerializer().fields
-        expected = 'Field name `invalid` is not valid for model `RegularFieldsModel`.'
+        expected = 'Field name `invalid` is not valid for model `RegularModel`.'
         assert str(excinfo.exception) == expected
 
     def test_missing_field(self):
@@ -311,7 +311,7 @@ class TestRegularFieldMappings(TestCase):
             missing = serializers.ReadOnlyField()
 
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 fields = ('id',)
 
         with self.assertRaises(AssertionError) as excinfo:
@@ -331,13 +331,13 @@ class TestRegularFieldMappings(TestCase):
             missing = serializers.ReadOnlyField()
 
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
 
         class ChildSerializer(TestSerializer):
             missing = serializers.ReadOnlyField()
 
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 fields = ('id',)
 
         ChildSerializer().fields
@@ -351,13 +351,13 @@ class TestRegularFieldMappings(TestCase):
             missing = serializers.ReadOnlyField()
 
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
 
         class ChildSerializer(TestSerializer):
             missing = serializers.ReadOnlyField()
 
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 exclude = ('missing',)
 
         ChildSerializer().fields
@@ -372,14 +372,197 @@ class TestRegularFieldMappings(TestCase):
     def test_fields_and_exclude_behavior(self):
         class ImplicitFieldsSerializer(DocumentSerializer):
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
 
         class ExplicitFieldsSerializer(DocumentSerializer):
             class Meta:
-                model = RegularFieldsModel
+                model = RegularModel
                 fields = '__all__'
 
         implicit = ImplicitFieldsSerializer()
         explicit = ExplicitFieldsSerializer()
 
         assert implicit.data == explicit.data
+
+
+
+class TestIntegration(TestCase):
+    maxDiff = 0
+
+    def tearDown(self):
+        RegularModel.drop_collection()
+
+    def test_retrival(self):
+        instance = RegularModel.objects.create(
+            str_field = "str",
+            url_field = "http://qwe.qw/",
+            email_field = "qwe@qwe.qw",
+            int_field = 42,
+            long_field = 9223372036854775807,
+            float_field = 42e-10,
+            boolean_field = True,
+            nullboolean_field = None,
+            date_field = datetime(2015,11,14,6,13,14,123000),
+            complexdate_field = datetime(2015,11,14,6,13,14,123456),
+            uuid_field = UUID("36195645-d9d8-4c86-bd88-29143cdb7ad4"),
+            id_field = ObjectId("56467a4ba21aab16872f5867"),
+            decimal_field = Decimal(1) / Decimal(3)
+        )
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RegularModel
+
+        serializer = TestSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'str_field': "str",
+            'url_field': "http://qwe.qw/",
+            'email_field': "qwe@qwe.qw",
+            'int_field': 42,
+            'long_field': 9223372036854775807,
+            'float_field': 42e-10,
+            'boolean_field': True,
+            'nullboolean_field': None,
+            'date_field': "2015-11-14T06:13:14.123000",
+            'complexdate_field': "2015-11-14T06:13:14.123456",
+            'uuid_field': "36195645-d9d8-4c86-bd88-29143cdb7ad4",
+            'id_field': "56467a4ba21aab16872f5867",
+            'decimal_field': "0.33", # default DRF rounding
+            'custom_field': None
+        }
+        assert serializer.data == expected
+        # self.assertEqual(serializer.data, expected)
+
+    def test_create(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RegularModel
+
+        data = {
+            'str_field': "str",
+            'url_field': "http://qwe.qw/",
+            'email_field': "qwe@qwe.qw",
+            'int_field': 42,
+            'long_field': 9223372036854775807,
+            'float_field': 42e-10,
+            'boolean_field': True,
+            'nullboolean_field': None,
+            'date_field': "2015-11-14T06:13:14.123000",
+            'complexdate_field': "2015-11-14T06:13:14.123456",
+            'uuid_field': "36195645-d9d8-4c86-bd88-29143cdb7ad4",
+            'id_field': "56467a4ba21aab16872f5867",
+            'decimal_field': "0.33",
+        }
+
+        serializer = TestSerializer(data=data)
+        assert serializer.is_valid()
+
+        instance = serializer.save()
+        assert instance.str_field == "str"
+        assert instance.url_field == "http://qwe.qw/"
+        assert instance.email_field == "qwe@qwe.qw"
+        assert instance.int_field == 42
+        assert instance.long_field == 9223372036854775807
+        assert instance.float_field == 42e-10
+        assert instance.boolean_field == True
+        assert instance.nullboolean_field == None
+        assert instance.date_field == datetime(2015,11,14,6,13,14,123000)
+        assert instance.complexdate_field == datetime(2015,11,14,6,13,14,123456)
+        assert instance.uuid_field == UUID("36195645-d9d8-4c86-bd88-29143cdb7ad4")
+        assert instance.id_field == ObjectId("56467a4ba21aab16872f5867")
+        assert instance.decimal_field == Decimal("0.33")
+
+        expected = {
+            'id': str(instance.id),
+            'str_field': "str",
+            'url_field': "http://qwe.qw/",
+            'email_field': "qwe@qwe.qw",
+            'int_field': 42,
+            'long_field': 9223372036854775807,
+            'float_field': 42e-10,
+            'boolean_field': True,
+            'nullboolean_field': None,
+            'date_field': "2015-11-14T06:13:14.123000",
+            'complexdate_field': "2015-11-14T06:13:14.123456",
+            'uuid_field': "36195645-d9d8-4c86-bd88-29143cdb7ad4",
+            'id_field': "56467a4ba21aab16872f5867",
+            'decimal_field': "0.33",
+            'custom_field': None
+        }
+        assert serializer.data == expected
+        # self.assertEqual(serializer.data, expected)
+
+    def test_update(self):
+        instance = RegularModel.objects.create(
+            str_field = "str",
+            url_field = "http://qwe.qw/",
+            email_field = "qwe@qwe.qw",
+            int_field = 42,
+            long_field = 9223372036854775807,
+            float_field = 42e-10,
+            boolean_field = True,
+            nullboolean_field = None,
+            date_field = datetime(2015,11,14,6,13,14,123000),
+            complexdate_field = datetime(2015,11,14,6,13,14,123456),
+            uuid_field = UUID("36195645-d9d8-4c86-bd88-29143cdb7ad4"),
+            id_field = ObjectId("56467a4ba21aab16872f5867"),
+            decimal_field = Decimal(1) / Decimal(3)
+        )
+
+
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RegularModel
+
+        data = {
+            'str_field': "str1",
+            'url_field': "http://qwe1.qw/",
+            'email_field': "qwe1@qwe.qw",
+            'int_field': 41,
+            'long_field': 9223372036854775801,
+            'float_field': 41e-10,
+            'boolean_field': False,
+            'nullboolean_field': True,
+            'date_field': "2015-11-14T06:13:14.121000",
+            'complexdate_field': "2015-11-14T06:13:14.123451",
+            'uuid_field': "36195645-d9d8-4c86-bd88-29143cdb7ad1",
+            'id_field': "56467a4ba21aab16872f5861",
+            'decimal_field': "0.31",
+        }
+
+        serializer = TestSerializer(instance, data=data)
+        assert serializer.is_valid()
+
+        instance = serializer.save()
+        assert instance.str_field == "str1"
+        assert instance.url_field == "http://qwe1.qw/"
+        assert instance.email_field == "qwe1@qwe.qw"
+        assert instance.int_field == 41
+        assert instance.long_field == 9223372036854775801
+        assert instance.float_field == 41e-10
+        assert instance.boolean_field == False
+        assert instance.nullboolean_field == True
+        assert instance.date_field == datetime(2015,11,14,6,13,14,121000)
+        assert instance.complexdate_field == datetime(2015,11,14,6,13,14,123451)
+        assert instance.uuid_field == UUID("36195645-d9d8-4c86-bd88-29143cdb7ad1")
+        assert instance.id_field == ObjectId("56467a4ba21aab16872f5861")
+        assert instance.decimal_field == Decimal("0.31")
+
+        expected = {
+            'id': str(instance.id),
+            'str_field': "str1",
+            'url_field': "http://qwe1.qw/",
+            'email_field': "qwe1@qwe.qw",
+            'int_field': 41,
+            'long_field': 9223372036854775801,
+            'float_field': 41e-10,
+            'boolean_field': False,
+            'nullboolean_field': True,
+            'date_field': "2015-11-14T06:13:14.121000",
+            'complexdate_field': "2015-11-14T06:13:14.123451",
+            'uuid_field': "36195645-d9d8-4c86-bd88-29143cdb7ad1",
+            'id_field': "56467a4ba21aab16872f5861",
+            'decimal_field': "0.31",
+            'custom_field': None
+        }
+        self.assertEqual(serializer.data, expected)
