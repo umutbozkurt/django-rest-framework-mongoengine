@@ -16,7 +16,7 @@ from rest_framework.compat import unicode_repr
 
 def manager_repr(value):
     model = value._document
-    return '%s.objects.all()' % (model.__name__,)
+    return '%s.objects' % (model.__name__,)
 
 def mongo_field_repr(value):
     # mimic django models.Field.__repr__

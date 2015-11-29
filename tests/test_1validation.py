@@ -13,10 +13,6 @@ class ValidatingModel(Document):
     name = fields.StringField()
 
 
-# Tests for validating method
-# ---------------------------
-
-
 class ValidationMethodSerializer(DocumentSerializer):
     class Meta:
         model = ValidatingModel
