@@ -9,42 +9,95 @@ from rest_framework import serializers
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 
-class ShouldValidateModel(Document):
-    should_validate_field = fields.StringField()
+class ValidatingModel(Document):
+    name = fields.StringField()
 
 
-class ShouldValidateModelSerializer(DocumentSerializer):
-    renamed = serializers.CharField(source='should_validate_field', required=False)
+# Tests for validating method
+# ---------------------------
+
+
+class ValidationMethodSerializer(DocumentSerializer):
+    class Meta:
+        model = ValidatingModel
+
+    def validate_name(self, value):
+        if len(value) < 3:
+            raise serializers.ValidationError('Minimum 3 characters.')
+        return value.title()
+
+
+class RenamedValidationMethodSerializer(DocumentSerializer):
+    class Meta:
+        model = ValidatingModel
+
+    renamed = serializers.CharField(source='name', required=False)
 
     def validate_renamed(self, value):
         if len(value) < 3:
             raise serializers.ValidationError('Minimum 3 characters.')
-        return value
+        return value.title()
 
+
+def custom_field_validator(value):
+    if len(value) < 3:
+        raise serializers.ValidationError('Minimum 3 characters.')
+    # cannot transform value
+
+
+class FieldValidatorSerializer(DocumentSerializer):
     class Meta:
-        model = ShouldValidateModel
-        fields = ('renamed',)
+        model = ValidatingModel
+
+    name = serializers.CharField(validators=[custom_field_validator])
 
 
-class TestPreSaveValidationExclusionsSerializer(TestCase):
-    def test_renamed_fields_are_model_validated(self):
-        """
-        Ensure fields with 'source' applied do get still get model validation.
-        """
-        # We've set `required=False` on the serializer, but the model
-        # does not have `blank=True`, so this serializer should not validate.
-        serializer = ShouldValidateModelSerializer(data={'renamed': ''})
-        self.assertEqual(serializer.is_valid(), False)
-        self.assertIn('renamed', serializer.errors)
-        self.assertNotIn('should_validate_field', serializer.errors)
+def custom_model_validator(data):
+    if len(data['name']) < 3:
+        raise serializers.ValidationError('Minimum 3 characters.')
 
 
-class TestCustomValidationMethods(TestCase):
-    def test_custom_validation_method_is_executed(self):
-        serializer = ShouldValidateModelSerializer(data={'renamed': 'fo'})
+class ModelValidatorSerializer(DocumentSerializer):
+    class Meta:
+        model = ValidatingModel
+        validators = [custom_model_validator]
+
+
+class TestValidating(TestCase):
+    def test_validation_method_is_executed(self):
+        serializer = ValidationMethodSerializer(data={'name': "fo"})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('name', serializer.errors)
+
+    def test_validation_method_passing(self):
+        serializer = ValidationMethodSerializer(data={'name': "foo"})
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data['name'], "Foo")
+
+    def test_renamed_validation_method_is_executed(self):
+        serializer = RenamedValidationMethodSerializer(data={'renamed': "fo"})
         self.assertFalse(serializer.is_valid())
         self.assertIn('renamed', serializer.errors)
 
-    def test_custom_validation_method_passing(self):
-        serializer = ShouldValidateModelSerializer(data={'renamed': 'foo'})
+    def test_renamed_validation_method_passing(self):
+        serializer = RenamedValidationMethodSerializer(data={'renamed': "foo"})
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data['name'], "Foo")
+
+    def test_validator_is_executed(self):
+        serializer = FieldValidatorSerializer(data={'name': "fo"})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('name', serializer.errors)
+
+    def test_validator_passing(self):
+        serializer = FieldValidatorSerializer(data={'name': "foo"})
+        self.assertTrue(serializer.is_valid())
+
+    def test_validators_is_executed(self):
+        serializer = ModelValidatorSerializer(data={'name': "fo"})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('non_field_errors', serializer.errors)
+
+    def test_validators_passing(self):
+        serializer = ModelValidatorSerializer(data={'name': "foo"})
         self.assertTrue(serializer.is_valid())
