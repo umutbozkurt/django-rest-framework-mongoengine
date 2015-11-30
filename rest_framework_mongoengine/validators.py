@@ -47,7 +47,6 @@ class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherVali
         queryset = self.queryset
         queryset = self.filter_queryset(attrs, queryset)
         queryset = self.exclude_current_instance(queryset)
-
         # Ignore validation if any field is None
         checked_values = [
             value for field, value in attrs.items() if field in self.fields

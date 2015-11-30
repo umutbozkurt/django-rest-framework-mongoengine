@@ -7,7 +7,7 @@ from rest_framework.utils.field_mapping import needs_label
 import mongoengine
 from mongoengine import fields as me_fields
 
-from rest_framework_mongoengine.validators import MongoValidationWrapper
+from rest_framework_mongoengine.validators import UniqueValidator
 
 FieldInfo = namedtuple('FieldResult', [
     'pk',  # Model field instance
@@ -130,7 +130,6 @@ def get_field_kwargs(field_name, model_field):
     Creates a default instance of a basic non-relational field.
     """
     kwargs = {}
-    validators = []
 
     # The following will only be used by ModelField classes.
     # Gets removed for everything else.
@@ -191,15 +190,6 @@ def get_field_kwargs(field_name, model_field):
     if min_value is not None and isinstance(model_field, NUMERIC_FIELD_TYPES):
         kwargs['min_value'] = min_value
 
-    # if getattr(model_field, 'unique', False):
-    #     validator = UniqueValidator(
-    #         queryset=model_field.model._default_manager,
-    #         message=None)
-    #     validator_kwarg.append(validator)
-
-    if validators:
-        kwargs['validators'] = validators
-
     return kwargs
 
 
@@ -231,7 +221,7 @@ def get_relation_kwargs(field_name, relation_info):
         if model_field.null:
             kwargs['allow_null'] = True
         if getattr(model_field, 'unique', False):
-            validator = UniqueValidator(queryset=model_field.model._default_manager)
+            validator = UniqueValidator(queryset=model_field.model.objects)
             kwargs['validators'] = [validator]
 
     return kwargs
@@ -240,3 +230,6 @@ def get_relation_kwargs(field_name, relation_info):
 def get_nested_relation_kwargs(relation_info):
     kwargs = {'read_only': True}
     return kwargs
+
+def has_default(model_field):
+    return model_field.default is not None or model_field.null

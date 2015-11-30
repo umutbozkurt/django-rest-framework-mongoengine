@@ -9,6 +9,9 @@ from rest_framework import fields as drf_fields
 from rest_framework.utils.field_mapping import ClassLookupDict
 from rest_framework.compat import unicode_to_repr
 
+from rest_framework_mongoengine.validators import UniqueValidator, UniqueTogetherValidator
+
+
 from .fields import (ReferenceField,
                      DynamicField,
                      ObjectIdField,
@@ -21,6 +24,7 @@ from .utils import (is_abstract_model,
                     get_field_kwargs,
                     get_relation_kwargs,
                     get_nested_relation_kwargs,
+                    has_default,
                     COMPOUND_FIELD_TYPES)
 
 from .repr import serializer_repr
@@ -235,9 +239,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         # Determine any extra field arguments and hidden fields that
         # should be included
         extra_kwargs = self.get_extra_kwargs()
-        extra_kwargs, hidden_fields = self.get_uniqueness_extra_kwargs(
-            field_names, declared_fields, extra_kwargs
-        )
+        extra_kwargs, hidden_fields = self.get_uniqueness_extra_kwargs(field_names, extra_kwargs)
 
         # Determine the fields that should be included on the serializer.
         fields = OrderedDict()
@@ -255,7 +257,6 @@ class DocumentSerializer(serializers.ModelSerializer):
                 field_name, self.field_info, model, depth
             )
 
-            # Include any kwargs defined in `Meta.extra_kwargs`
             extra_field_kwargs = extra_kwargs.get(field_name, {})
             field_kwargs = self.include_extra_kwargs(
                 field_kwargs, extra_field_kwargs
@@ -470,16 +471,70 @@ class DocumentSerializer(serializers.ModelSerializer):
     #     """
     #     # use mainstream
 
-    def get_uniqueness_extra_kwargs(self, field_names, declared_fields, extra_kwargs):
+    def get_uniqueness_extra_kwargs(self, field_names, extra_kwargs):
         """
         Return any additional field options that need to be included as a
         result of uniqueness constraints on the model. This is returned as
         a two-tuple of:
 
         ('dict of updated extra kwargs', 'mapping of hidden fields')
+
+        extra_kwargs contains 'default', 'required', 'validators=[UniqValidator]'
+        hidden_fields contains fields involved in constraints, but missing in serializer fields
         """
-        # TODO
-        return extra_kwargs, {}
+        model = self.Meta.model
+
+        uniq_extra_kwargs = {}
+
+        hidden_fields = {}
+
+        field_names = set(field_names)
+        unique_fields = set()
+        unique_together_fields = set()
+
+        # include `unique_with` from model indexes
+        # so long as all the field names are included on the serializer.
+        for idx in model._meta['index_specs']:
+            if not idx.get('unique',False):
+                continue
+            field_set = set(map(lambda e: e[0], idx['fields']))
+            if field_names.issuperset(field_set):
+                if len(field_set) == 1:
+                    unique_fields |= field_set
+                else:
+                    unique_together_fields |= field_set
+
+        for field_name in unique_fields:
+            uniq_extra_kwargs[field_name] = {
+                'required': True,
+                'validators': [UniqueValidator(queryset=model.objects)]
+            }
+
+        for field_name in unique_together_fields:
+            fld = model._fields[field_name]
+            if has_default(fld):
+                default = fld.default
+            else:
+                default = serializers.empty
+
+            if field_name in field_names:
+                if default is serializers.empty:
+                    uniq_extra_kwargs[field_name] = { 'required': True }
+                else:
+                    uniq_extra_kwargs[field_name] = { 'default': default }
+            elif default is not serializers.empty:
+                hidden_fields[field_name] = HiddenField(default=default)
+
+        # Update `extra_kwargs` with any new options.
+        for key, value in uniq_extra_kwargs.items():
+            if key in extra_kwargs:
+                if key == 'validators' and key in extra_kwargs:
+                    extra_kwargs[key].append(value)
+                extra_kwargs[key].update(value)
+            else:
+                extra_kwargs[key] = value
+
+        return extra_kwargs, hidden_fields
 
     # def get_validators(self):
     #     """
@@ -491,18 +546,25 @@ class DocumentSerializer(serializers.ModelSerializer):
         """
         Determine a default set of validators for any unique_together contraints.
         """
-        # TODO
-        return []
+        model = self.Meta.model
+        validators = []
+        field_names = set(self.get_field_names(self._declared_fields, self.field_info))
+
+        for idx in model._meta['index_specs']:
+            if not idx.get('unique',False):
+                continue
+            field_set = tuple(map(lambda e: e[0], idx['fields']))
+            if len(field_set) > 1 and field_names.issuperset(set(field_set)):
+                validators.append(UniqueTogetherValidator(
+                    queryset=model.objects,
+                    fields=field_set
+                ))
+        return validators
 
     def get_unique_for_date_validators(self):
         """
-        Determine a default set of validators for the following contraints:
-
-        * unique_for_date
-        * unique_for_month
-        * unique_for_year
+        Not supported in mongo
         """
-        # TODO
         return []
 
     def __repr__(self):
