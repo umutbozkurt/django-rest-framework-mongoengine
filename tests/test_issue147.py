@@ -24,14 +24,12 @@ class EmbeddedThingSerializer(EmbeddedDocumentSerializer):
 class ExplicitSerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingThing
-        depth = 1
     embedded = drf_fields.ListField(child=EmbeddedThingSerializer())
 
 
 class ExplicitManySerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingThing
-        depth = 1
     embedded = EmbeddedThingSerializer(many=True)
 
 
@@ -39,7 +37,6 @@ class ImplicitSerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingThing
         depth = 1
-
 
 class Issue147Test(TestCase):
     def test_explicit_pass(self):
