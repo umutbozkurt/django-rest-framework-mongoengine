@@ -592,3 +592,38 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
             list(model_info.references.keys()) +
             list(model_info.embedded.keys())
         )
+
+
+class DynamicDocumentSerializer(DocumentSerializer):
+    """
+    DocumentSerializer extended for DynamicDocuments to handle DynamicFields.
+    """
+    def to_representation(self, instance):
+        """
+        Adds dynamic fields
+        """
+        ret = super(DynamicDocumentSerializer,self).to_representation(instance)
+
+        for field_name, field in self._map_dynamic_fields(instance).items():
+            attribute = getattr(instance, field_name)
+
+            if attribute is None:
+                # We skip `to_representation` for `None` values so that
+                # fields do not have to explicitly deal with that case.
+                ret[field_name] = None
+            else:
+                ret[field_name] = field.to_representation(attribute)
+
+        return ret
+
+    def to_internal_value(self, data):
+        ret = super(DocumentSerializer, self).to_internal_value(data)
+        [drf_fields.set_value(ret, [k], data[k]) for k in data if k not in ret]
+        return ret
+
+    def _map_dynamic_fields(self, document):
+        dynamic_fields = {}
+        if document._dynamic:
+            for name, field in document._dynamic_fields.items():
+                dynamic_fields[name] = DynamicField(**get_field_kwargs(name, field))
+        return dynamic_fields

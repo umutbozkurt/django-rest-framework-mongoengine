@@ -91,7 +91,6 @@ class DocumentField(serializers.Field):
             return smart_repr(obj)
 
 
-
 class ObjectIdField(serializers.Field):
     type_label = 'ObjectIdField'
 
@@ -201,16 +200,8 @@ class DynamicField(DocumentField):
 
     type_label = 'DynamicField'
 
-    def __init__(self, field_name=None, source=None, *args, **kwargs):
-        super(DynamicField, self).__init__(*args, **kwargs)
-        self.field_name = field_name
-        self.source = source
-        if source:
-            self.source_attrs = self.source.split('.')
-
     def to_representation(self, value):
         return self.model_field.to_python(value)
-
 
 
 class BinaryField(DocumentField):

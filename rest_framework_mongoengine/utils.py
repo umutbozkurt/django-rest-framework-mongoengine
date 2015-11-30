@@ -106,7 +106,6 @@ def get_field_info(model):
     for field_name in model._fields_ordered:
         add_field(field_name, model._fields[field_name])
 
-
     # Shortcut that merges both regular fields and the pk,
     # for simplifying regular field lookup.
     fields_and_pk = OrderedDict()
