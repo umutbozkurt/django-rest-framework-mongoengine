@@ -118,9 +118,9 @@ class TestMapping(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                ref = ReferenceField(queryset=ReferencedModel.objects.all())
-                dbref = ReferenceField(queryset=ReferencedModel.objects.all())
-                cached = ReferenceField(queryset=ReferencedModel.objects.all())
+                ref = ReferenceField(queryset=ReferencedModel.objects)
+                dbref = ReferenceField(queryset=ReferencedModel.objects)
+                cached = ReferenceField(queryset=ReferencedModel.objects)
                 generic = ReferenceField(read_only=True)
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)

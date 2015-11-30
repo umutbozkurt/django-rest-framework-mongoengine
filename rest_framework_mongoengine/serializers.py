@@ -494,9 +494,8 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         # include `unique_with` from model indexes
         # so long as all the field names are included on the serializer.
-        for idx in model._meta['index_specs']:
-            if not idx.get('unique',False):
-                continue
+        uniq_indexes = filter(lambda i: i.get('unique',False), model._meta.get('index_specs',[]))
+        for idx in uniq_indexes:
             field_set = set(map(lambda e: e[0], idx['fields']))
             if field_names.issuperset(field_set):
                 if len(field_set) == 1:
@@ -550,7 +549,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         validators = []
         field_names = set(self.get_field_names(self._declared_fields, self.field_info))
 
-        for idx in model._meta['index_specs']:
+        uniq_indexes = filter(lambda i: i.get('unique',False), model._meta.get('index_specs',[]))
+        for idx in uniq_indexes:
             if not idx.get('unique',False):
                 continue
             field_set = tuple(map(lambda e: e[0], idx['fields']))
