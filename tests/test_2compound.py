@@ -156,10 +156,10 @@ class TestIntegration(TestCase):
         assert serializer.is_valid()
 
         instance = serializer.save()
-        assert instance.list_field == ["0",1,2.0] 
-        assert instance.int_list_field == [9,1,2] 
-        assert instance.dict_field == {'a':"0", 'b':1,'c':2.0, 'd': 3} 
-        assert instance.int_dict_field == {'a':0,'b':1,'c':2, 'd':3} 
+        assert instance.list_field == ["0",1,2.0]
+        assert instance.int_list_field == [9,1,2]
+        assert instance.dict_field == {'a':"0", 'b':1,'c':2.0, 'd': 3}
+        assert instance.int_dict_field == {'a':0,'b':1,'c':2, 'd':3}
         assert instance.int_map_field == {'a':0,'b':1,'c':2, 'd':3}
 
         expected = {
@@ -171,3 +171,19 @@ class TestIntegration(TestCase):
             'int_map_field': {'a':0,'b':1,'c':2, 'd':3}
         }
         self.assertEqual(serializer.data, expected)
+
+
+class ValidatingSerializer(DocumentSerializer):
+    class Meta:
+        model = OptionsCompoundFieldsModel
+
+
+class TestCompoundValidation(TestCase):
+    def test_validation_is_executed(self):
+        serializer = ValidatingSerializer(data={'int_list_field':[1,2,3]})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('int_list_field', serializer.errors)
+
+    def test_validation_passing(self):
+        serializer = ValidatingSerializer(data={'int_list_field':[3,4,5]})
+        self.assertTrue(serializer.is_valid())

@@ -132,6 +132,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         valid = super(DocumentSerializer,self).is_valid(raise_exception=raise_exception)
 
         for name in self.field_info.embedded.keys():
+            if name.endswith('.child'):
+                continue
             field = self.fields[name]
             field.initial_data = self.validated_data.pop(name, serializers.empty)
             valid &= field.is_valid(raise_exception=raise_exception)
@@ -301,7 +303,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             model_field = info.fields_and_pk[field_name]
             if isinstance(model_field, COMPOUND_FIELD_TYPES):
                 child_name = field_name+'.child'
-                if child_name in info.fields:
+                if child_name in info.fields or child_name in info.embedded:
                     child_class, child_kwargs = self.build_field(child_name, info, model_class, nested_depth)
                     child_field = child_class(**child_kwargs)
                 else:

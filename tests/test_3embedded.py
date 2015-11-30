@@ -18,6 +18,9 @@ class EmbeddingModel(Document):
     embedded = fields.EmbeddedDocumentField(EmbeddedModel)
     # generic_embedded_field = fields.GenericEmbeddedDocumentField()
 
+class ListEmbeddingModel(Document):
+    embedded_list = fields.EmbeddedDocumentListField(EmbeddedModel)
+
 class NestedEmbeddedModel(EmbeddedDocument):
     embedded = fields.EmbeddedDocumentField(EmbeddedModel)
 
@@ -32,9 +35,7 @@ class RecursiveEmbeddingModel(Document):
     embedded = fields.EmbeddedDocumentField(SelfEmbeddedModel)
 
 
-
-
-class TestMapping(TestCase):
+class TestEmbeddedMapping(TestCase):
     def test_embedded_serializer(self):
         class TestSerializer(EmbeddedDocumentSerializer):
             class Meta:
@@ -55,6 +56,20 @@ class TestMapping(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 embedded = NestedEmbSerializer():
+                    foo = CharField(required=False)
+                    bar = CharField(required=False)
+        """)
+        self.assertEqual(unicode_repr(TestSerializer()), expected)
+
+    def test_mapping_list(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ListEmbeddingModel
+                depth = 1
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                embedded_list = NestedEmbSerializer(many=True, required=False):
                     foo = CharField(required=False)
                     bar = CharField(required=False)
         """)
@@ -119,7 +134,7 @@ class TestMapping(TestCase):
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
 
-class TestIntegration(TestCase):
+class TestEmbeddedIntegration(TestCase):
     def tearDown(self):
         EmbeddingModel.drop_collection()
 
@@ -235,7 +250,7 @@ class TestIntegration(TestCase):
 
 
 class ValidatingEmbeddedModel(EmbeddedDocument):
-    foo = fields.StringField(min_length=3)
+    text = fields.StringField(min_length=3)
 
 class ValidatingEmbeddingModel(Document):
     embedded = fields.EmbeddedDocumentField(ValidatingEmbeddedModel)
@@ -245,13 +260,31 @@ class ValidatingSerializer(DocumentSerializer):
         model = ValidatingEmbeddingModel
         depth = 1
 
-class TestValidation(TestCase):
-    def test_validation_is_executed(self):
-        serializer = ValidatingSerializer(data={'embedded':{'foo': 'Fo'}})
+class ValidatingListEmbeddingModel(Document):
+    embedded_list = fields.EmbeddedDocumentListField(ValidatingEmbeddedModel)
+
+class ValidatingListSerializer(DocumentSerializer):
+    class Meta:
+        model = ValidatingListEmbeddingModel
+        depth = 1
+
+class TestEmbeddedValidation(TestCase):
+    def test_validation_failing(self):
+        serializer = ValidatingSerializer(data={'embedded':{'text': 'Fo'}})
         self.assertFalse(serializer.is_valid())
         self.assertIn('embedded', serializer.errors)
-        self.assertIn('foo', serializer.errors['embedded'])
+        self.assertIn('text', serializer.errors['embedded'])
 
     def test_validation_passing(self):
-        serializer = ValidatingSerializer(data={'embedded':{'foo': 'Foo'}})
+        serializer = ValidatingSerializer(data={'embedded':{'text': 'Text'}})
+        self.assertTrue(serializer.is_valid())
+
+    def test_list_validation_failing(self):
+        serializer = ValidatingListSerializer(data={'embedded_list':[{'text': 'Fo'}]})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('embedded_list', serializer.errors)
+        self.assertIn('text', serializer.errors['embedded_list'])
+
+    def test_list_validation_passing(self):
+        serializer = ValidatingListSerializer(data={'embedded_list':[{'text': 'Text'}]})
         self.assertTrue(serializer.is_valid())
