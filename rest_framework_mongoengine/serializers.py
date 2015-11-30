@@ -512,17 +512,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         for field_name in unique_together_fields:
             fld = model._fields[field_name]
             if has_default(fld):
-                default = fld.default
+                uniq_extra_kwargs[field_name] = { 'default': fld.default }
             else:
-                default = serializers.empty
-
-            if field_name in field_names:
-                if default is serializers.empty:
-                    uniq_extra_kwargs[field_name] = { 'required': True }
-                else:
-                    uniq_extra_kwargs[field_name] = { 'default': default }
-            elif default is not serializers.empty:
-                hidden_fields[field_name] = HiddenField(default=default)
+                uniq_extra_kwargs[field_name] = { 'required': True }
 
         # Update `extra_kwargs` with any new options.
         for key, value in uniq_extra_kwargs.items():
@@ -600,7 +592,3 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
             list(model_info.references.keys()) +
             list(model_info.embedded.keys())
         )
-
-class DynamicDocumentSerializer(DocumentSerializer):
-    # TODO
-    pass

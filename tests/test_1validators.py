@@ -239,6 +239,7 @@ class UniqueTogetherModel(Document):
     name = fields.StringField()
     code = fields.IntField()
 
+
 class TestUniqueTogetherSerializer(TestCase):
     def tearDown(self):
         ValidatingModel.drop_collection()
@@ -263,8 +264,8 @@ class TestUniqueTogetherSerializer(TestCase):
 
     def test_excluded_fields(self):
         """
-        When model fields are not included in a serializer, then uniqueness
-        validators should not be added for that field.
+        When model fields are not included in a serializer and have no defaults,
+        then uniqueness validators should not be added for that field.
         """
         class UniqueTogetherSerializer(DocumentSerializer):
             class Meta:
@@ -277,35 +278,5 @@ class TestUniqueTogetherSerializer(TestCase):
             UniqueTogetherSerializer():
                 id = ObjectIdField(read_only=True)
                 name = CharField(required=False)
-        """)
-        assert repr(serializer) == expected
-
-    def test_default_fields(self):
-        """
-        When model fields are not included in a serializer, then uniqueness
-        validators should not be added for that field.
-        """
-        class UniqueTogetherModel(Document):
-            meta = {
-                'indexes': [
-                    { 'fields': ['name','code'], 'unique': True }
-                ]
-            }
-            name = fields.StringField(default='foo')
-            code = fields.IntField()
-
-        class UniqueTogetherSerializer(DocumentSerializer):
-            class Meta:
-                model = UniqueTogetherModel
-
-        serializer = UniqueTogetherSerializer()
-
-        expected = dedent("""
-            UniqueTogetherSerializer():
-                id = ObjectIdField(read_only=True)
-                name = CharField(default='foo')
-                code = IntegerField(required=True)
-                class Meta:
-                    validators = [<UniqueTogetherValidator(queryset=UniqueTogetherModel.objects, fields=('name', 'code'))>]
         """)
         assert repr(serializer) == expected
