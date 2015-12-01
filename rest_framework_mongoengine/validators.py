@@ -1,4 +1,5 @@
-from django.utils.translation import ugettext_lazy as _
+from __future__ import unicode_literals
+
 from mongoengine.errors import ValidationError as mongo_ValidationError
 from rest_framework import validators
 from rest_framework.exceptions import ValidationError

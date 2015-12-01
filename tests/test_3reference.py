@@ -147,9 +147,6 @@ class TestMapping(TestCase):
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
-    def test_nested_unique_together_relations(self):
-        pytest.skip("Not yet implemented")
-
 
 class DisplayableReferencedModel(Document):
     name = me_fields.StringField()

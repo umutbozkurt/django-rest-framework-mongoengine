@@ -46,15 +46,6 @@ class TestObjectIdField(FieldValues):
         '56353a4aa21aab2c49d86ebb': '56353a4aa21aab2c49d86ebb'
     }
 
-class TestBinaryField(TestCase):
-    def test_skipped(self):
-        pytest.skip("TODO")
-
-class TestDynamicField(TestCase):
-    def test_skipped(self):
-        pytest.skip("TODO")
-
-
 
 # Tests for regular field mappings.
 # ---------------------------------
@@ -212,13 +203,13 @@ class TestRegularFieldMappings(TestCase):
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)
                 decimal_field = DecimalField(decimal_places=4, max_digits=8, max_value=9999, required=False)
         """)
-        if six.PY2:
-            # This particular case is too awkward to resolve fully across
-            # both py2 and py3.
-            expected = expected.replace(
-                "('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')",
-                "(u'red', u'Red'), (u'blue', u'Blue'), (u'green', u'Green')"
-            )
+        # if six.PY2:
+        #     # This particular case is too awkward to resolve fully across
+        #     # both py2 and py3.
+        #     expected = expected.replace(
+        #         "('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')",
+        #         "(u'red', u'Red'), (u'blue', u'Blue'), (u'green', u'Green')"
+        #     )
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
     def test_method_field(self):

@@ -3,6 +3,7 @@ Helper functions for creating user-friendly representations
 of serializer classes and serializer fields.
 """
 from __future__ import unicode_literals
+
 from django.utils import six
 from django.utils.encoding import force_str
 
@@ -35,6 +36,7 @@ def mongo_doc_repr(value):
         u = '[Bad Unicode data]'
     return force_str('<%s: %s>' % (value.__class__.__name__, u))
 
+uni_lit_re = re.compile("u'(.*?)'")
 
 def smart_repr(value):
     if isinstance(value, QuerySet):
@@ -53,8 +55,7 @@ def smart_repr(value):
 
     # Representations like u'help text'
     # should simply be presented as 'help text'
-    if value.startswith("u'") and value.endswith("'"):
-        return value[1:]
+    value = uni_lit_re.sub("'\\1'", value)
 
     # Representations like
     # <django.core.validators.RegexValidator object at 0x1047af050>
