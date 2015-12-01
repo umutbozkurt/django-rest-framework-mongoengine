@@ -134,10 +134,10 @@ def get_field_kwargs(field_name, model_field):
     # Gets removed for everything else.
     kwargs['model_field'] = model_field
 
-    if model_field.verbose_name and needs_label(model_field, field_name):
+    if hasattr(model_field, 'verbose_name') and needs_label(model_field, field_name):
         kwargs['label'] = capfirst(model_field.verbose_name)
 
-    if model_field.help_text:
+    if hasattr(model_field, 'help_text'):
         kwargs['help_text'] = model_field.help_text
 
     if isinstance(model_field, me_fields.DecimalField):
@@ -205,11 +205,10 @@ def get_relation_kwargs(field_name, relation_info):
 
 
     if model_field:
-        if model_field.verbose_name and needs_label(model_field, field_name):
+        if hasattr(model_field, 'verbose_name') and needs_label(model_field, field_name):
             kwargs['label'] = capfirst(model_field.verbose_name)
-        help_text = model_field.help_text
-        if help_text:
-            kwargs['help_text'] = help_text
+        if hasattr(model_field, 'help_text'):
+            kwargs['help_text'] = model_field.help_text
         if kwargs.get('read_only', False):
             # If this field is read-only, then return early.
             # No further keyword arguments are valid.
