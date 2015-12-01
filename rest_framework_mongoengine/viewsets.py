@@ -3,12 +3,7 @@ from rest_framework.viewsets import ViewSetMixin
 from rest_framework_mongoengine.generics import GenericAPIView
 
 
-class MongoGenericViewSet(ViewSetMixin, GenericAPIView):
-    """
-    The MongoGenericViewSet class does not provide any actions by default,
-    but does include the base set of generic view behavior, such as
-    the `get_object` and `get_queryset` methods.
-    """
+class GenericViewSet(ViewSetMixin, GenericAPIView):
     pass
 
 
@@ -17,7 +12,7 @@ class ModelViewSet(mixins.CreateModelMixin,
                    mixins.UpdateModelMixin,
                    mixins.DestroyModelMixin,
                    mixins.ListModelMixin,
-                   MongoGenericViewSet):
+                   GenericViewSet):
     """
     A viewset that provides default `create()`, `retrieve()`, `update()`,
     `partial_update()`, `destroy()` and `list()` actions.
@@ -27,7 +22,7 @@ class ModelViewSet(mixins.CreateModelMixin,
 
 class ReadOnlyModelViewSet(mixins.RetrieveModelMixin,
                            mixins.ListModelMixin,
-                           MongoGenericViewSet):
+                           GenericViewSet):
     """
     A viewset that provides default `list()` and `retrieve()` actions.
     """

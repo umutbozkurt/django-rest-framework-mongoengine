@@ -1,22 +1,21 @@
-from rest_framework.routers import SimpleRouter, DefaultRouter
+from rest_framework import routers as drf_routers
 
 
 class MongoRouterMixin(object):
+    """ Mixin for mongo-routers
+    Determines base_name from mongo queryset
+    """
     def get_default_base_name(self, viewset):
-        """
-        If `base_name` is not specified, attempt to automatically determine
-        it from the viewset.
-        """
-        model_cls = getattr(viewset, 'model', None)
-        assert model_cls, '`base_name` argument not specified, and could ' \
-            'not automatically determine the name from the viewset, as ' \
-            'it does not have a `.model` attribute.'
-        return model_cls.__name__.lower()
+        queryset = getattr(viewset, 'queryset', None)
+        assert queryset is not None, ('`base_name` argument not specified, and could ' \
+                                      'not automatically determine the name from the viewset, as ' \
+                                      'it does not have a `.queryset` attribute.')
+        return queryset._document.__name__.lower()
 
 
-class MongoSimpleRouter(MongoRouterMixin, SimpleRouter):
+class SimpleRouter(MongoRouterMixin, drf_routers.SimpleRouter):
     pass
 
 
-class MongoDefaultRouter(MongoSimpleRouter, DefaultRouter):
+class DefaultRouter(MongoRouterMixin, drf_routers.DefaultRouter):
     pass
