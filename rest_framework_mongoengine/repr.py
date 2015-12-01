@@ -8,10 +8,11 @@ from django.utils.encoding import force_str
 
 import re
 
+from rest_framework.compat import unicode_repr
+from rest_framework.fields import Field
 from mongoengine.queryset import QuerySet
 from mongoengine.fields import BaseField
 from mongoengine.base import BaseDocument
-from rest_framework.compat import unicode_repr
 
 
 def manager_repr(value):
@@ -45,6 +46,9 @@ def smart_repr(value):
     if isinstance(value, BaseDocument):
         return mongo_field_repr(value)
 
+    if isinstance(value, Field):
+        return field_repr(value)
+
     value = unicode_repr(value)
 
     # Representations like u'help text'
@@ -67,6 +71,11 @@ def field_repr(field, force_many=False):
         kwargs = kwargs.copy()
         kwargs['many'] = True
         kwargs.pop('child', None)
+
+    if kwargs.get('label', None) is None:
+        kwargs.pop('label', None)
+    if kwargs.get('help_text', None) is None:
+        kwargs.pop('help_text', None)
 
     arg_string = ', '.join([smart_repr(val) for val in field._args])
     kwarg_string = ', '.join([
