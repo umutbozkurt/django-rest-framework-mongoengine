@@ -1,5 +1,0 @@
-site_name: DRF - Mongoengine Documentation
-pages:
-- [index.md, Home]
-- [serializers.md, Serializers]
-- [generics.md, Generic Views]
