@@ -1,3 +1,6 @@
+"""
+The module description
+"""
 from collections import OrderedDict
 
 from django.utils import six
@@ -19,18 +22,7 @@ from mongoengine.errors import DoesNotExist
 from rest_framework_mongoengine.repr import smart_repr
 
 class DocumentField(serializers.Field):
-    """
-    The field replicates DRF's `ModelField`.
-    Base field for Mongoengine fields that we can not convert to DRF fields.
-
-    A generic field that can be used against an arbitrary model field.
-
-    This is used by `DocumentSerializer` when dealing with custom model fields,
-    that do not have a serializer field to be mapped to.
-
-    Delegates parsing to model_field.to_python.
-    Representation is recursive with fallback to smart_repr.
-    """
+    """ Adaptation of DRF ModelField """
 
     type_label = 'DocumentField'
 
@@ -68,10 +60,6 @@ class DocumentField(serializers.Field):
                      for key, val in obj.items()])
 
     def transform_object(self, obj, depth):
-        """
-        Models to natives
-        Recursion for (embedded) objects
-        """
         if depth == 0:
             return smart_repr(obj)
         elif isinstance(obj, BaseDocument):
@@ -92,6 +80,7 @@ class DocumentField(serializers.Field):
 
 
 class ObjectIdField(serializers.Field):
+    """ Serialization of ObjectId value """
     type_label = 'ObjectIdField'
 
     def to_representation(self, value):
@@ -105,11 +94,9 @@ class ObjectIdField(serializers.Field):
 
 
 class ReferenceField(serializers.Field):
-    """
-    The field replicates DRF's `PrimaryKeyRelatedField` (w/out `many`).
-    In particular, it checks value against existant objects and also provides choices.
+    """ Serialization of ReferenceField
 
-    It serializes/parses str(bson.ObjectId). Internal value is bson.DBRef.
+    Behaves like DRF ForeignKeyField
     """
     type_label = 'ReferenceField'
     default_error_messages = {
@@ -117,7 +104,9 @@ class ReferenceField(serializers.Field):
         'incorrect_type': _('Incorrect type. Expected str|ObjectId|DBRef|Document value, received {data_type}.'),
     }
     queryset = None
+
     pk_field_class = ObjectIdField
+    """ serializer field class used to handle object ids """
 
     def __init__(self, model=None, **kwargs):
         if model is not None:
@@ -197,15 +186,14 @@ class ReferenceField(serializers.Field):
 
 
 class DynamicField(DocumentField):
-
+    """ TODO: remove """
     type_label = 'DynamicField'
-
     def to_representation(self, value):
         return self.model_field.to_python(value)
 
 
 class BinaryField(DocumentField):
-
+    """ binary value """
     type_label = 'BinaryField'
 
     def __init__(self, **kwargs):
@@ -223,5 +211,6 @@ class BinaryField(DocumentField):
 
 
 class BaseGeoField(DocumentField):
+    """ geojson value """
 
     type_label = 'BaseGeoField'
