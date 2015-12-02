@@ -1,11 +1,14 @@
+"""
+The module description
+"""
+
 from rest_framework import mixins
 from rest_framework.viewsets import ViewSetMixin
 from rest_framework_mongoengine.generics import GenericAPIView
 
 
 class GenericViewSet(ViewSetMixin, GenericAPIView):
-    pass
-
+    """ Replication of DRF GenericViewSet """
 
 class ModelViewSet(mixins.CreateModelMixin,
                    mixins.RetrieveModelMixin,
@@ -13,17 +16,12 @@ class ModelViewSet(mixins.CreateModelMixin,
                    mixins.DestroyModelMixin,
                    mixins.ListModelMixin,
                    GenericViewSet):
-    """
-    A viewset that provides default `create()`, `retrieve()`, `update()`,
-    `partial_update()`, `destroy()` and `list()` actions.
-    """
+    """ Replication of DRF ModelViewSet """
     pass
 
 
 class ReadOnlyModelViewSet(mixins.RetrieveModelMixin,
                            mixins.ListModelMixin,
                            GenericViewSet):
-    """
-    A viewset that provides default `list()` and `retrieve()` actions.
-    """
+    """ Replication of DRF ReadOnlyModelViewSet """
     pass

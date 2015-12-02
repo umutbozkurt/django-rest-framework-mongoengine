@@ -1,3 +1,6 @@
+"""
+The module description
+"""
 import copy
 from collections import OrderedDict
 
@@ -31,25 +34,23 @@ from .repr import serializer_repr
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
-    """
-    *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to work automagically ***
+    # *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to work automagically ***
 
-    Give explicit errors when users attempt to pass writable nested data.
+    # Give explicit errors when users attempt to pass writable nested data.
 
-    If we don't do this explicitly they'd get a less helpful error when
-    calling `.save()` on the serializer.
+    # If we don't do this explicitly they'd get a less helpful error when
+    # calling `.save()` on the serializer.
 
-    We don't *automatically* support these sorts of nested writes because
-    there are too many ambiguities to define a default behavior.
+    # We don't *automatically* support these sorts of nested writes because
+    # there are too many ambiguities to define a default behavior.
 
-    Eg. Suppose we have a `UserSerializer` with a nested profile. How should
-    we handle the case of an update, where the `profile` relationship does
-    not exist? Any of the following might be valid:
+    # Eg. Suppose we have a `UserSerializer` with a nested profile. How should
+    # we handle the case of an update, where the `profile` relationship does
+    # not exist? Any of the following might be valid:
 
-    * Raise an application error.
-    * Silently ignore the nested part of the update.
-    * Automatically create a profile instance.
-    """
+    # * Raise an application error.
+    # * Silently ignore the nested part of the update.
+    # * Automatically create a profile instance.
 
     # Ensure we don't have a writable nested field. For example:
     #
@@ -94,8 +95,9 @@ def raise_errors_on_nested_writes(method_name, serializer, validated_data):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    """
-    Adaptation of ModelSerializer for mongoengine.
+    """ Serializer for Document.
+    Adaptation of ModelSerializer.
+
     """
 
     serializer_field_mapping = {
@@ -126,9 +128,6 @@ class DocumentSerializer(serializers.ModelSerializer):
     serializer_url_field = None
 
     def is_valid(self, raise_exception=False):
-        """
-        Call super.is_valid() and then apply embedded document serializer's validations.
-        """
         valid = super(DocumentSerializer,self).is_valid(raise_exception=raise_exception)
 
         for name in self.field_info.embedded.keys():
@@ -141,10 +140,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         return valid
 
     def create(self, validated_data):
-        """
-        Create an instance using queryset.create()
-        Before create() on self, call EmbeddedDocumentSerializer's create() first. If exists.
-        """
         raise_errors_on_nested_writes('create', self, validated_data)
 
         # Automagically create and set embedded documents to validated data
@@ -193,10 +188,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        """
-        Update embedded fields first, set relevant attributes with updated data
-        And then continue regular updating
-        """
         raise_errors_on_nested_writes('update', self, validated_data)
 
         for name in self.field_info.embedded.keys():
@@ -207,11 +198,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         return super(DocumentSerializer, self).update(instance, validated_data)
 
     def get_fields(self):
-        """
-        Return the dict of field names -> field instances that should be
-        used for `self.fields` when instantiating the serializer.
-        """
-
         assert hasattr(self, 'Meta'), (
             'Class {serializer_class} missing "Meta" attribute'.format(
                 serializer_class=self.__class__.__name__
@@ -283,10 +269,6 @@ class DocumentSerializer(serializers.ModelSerializer):
     #     # use upstream
 
     def get_default_field_names(self, declared_fields, model_info):
-        """
-        Return the default list of field names that will be used if the
-        `Meta.fields` option is not specified.
-        """
         return (
             [model_info.pk.name] +
             list(declared_fields.keys()) +
@@ -296,9 +278,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         )
 
     def build_field(self, field_name, info, model_class, nested_depth):
-        """
-        Return a two tuple of (cls, kwargs) to build a serializer field with.
-        """
         if field_name in info.fields_and_pk:
             model_field = info.fields_and_pk[field_name]
             if isinstance(model_field, COMPOUND_FIELD_TYPES):
@@ -330,9 +309,6 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 
     def build_standard_field(self, field_name, model_field):
-        """
-        Create regular model fields.
-        """
         field_mapping = ClassLookupDict(self.serializer_field_mapping)
 
         field_class = field_mapping[model_field]
@@ -374,9 +350,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
     def build_compound_field(self, field_name, model_field, child_field):
-        """
-        Create regular model fields.
-        """
         if isinstance(model_field, me_fields.ListField):
             field_class = drf_fields.ListField
         elif isinstance(model_field, me_fields.DictField):
@@ -393,10 +366,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
     def build_reference_field(self, field_name, relation_info, nested_depth):
-        """
-        Create fields for references.
-        DRF: build_relational_field
-        """
         if relation_info.related_model:
             field_class = self.serializer_related_field
             field_kwargs = get_relation_kwargs(field_name, relation_info)
@@ -407,10 +376,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
     def build_dereference_field(self, field_name, relation_info, nested_depth):
-        """
-        Create nested fields for references.
-        DRF::build_nested_field
-        """
         if relation_info.related_model:
             class NestedRefSerializer(DocumentSerializer):
                 class Meta:
@@ -425,10 +390,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
     def build_embedded_field(self, field_name, relation_info, nested_depth):
-        """
-        Create fields for embedded documents.
-        The same as nested, but writeable.
-        """
         if relation_info.related_model and nested_depth:
             class NestedEmbSerializer(EmbeddedDocumentSerializer):
                 class Meta:
@@ -474,16 +435,8 @@ class DocumentSerializer(serializers.ModelSerializer):
     #     # use mainstream
 
     def get_uniqueness_extra_kwargs(self, field_names, extra_kwargs):
-        """
-        Return any additional field options that need to be included as a
-        result of uniqueness constraints on the model. This is returned as
-        a two-tuple of:
-
-        ('dict of updated extra kwargs', 'mapping of hidden fields')
-
-        extra_kwargs contains 'default', 'required', 'validators=[UniqValidator]'
-        hidden_fields contains fields involved in constraints, but missing in serializer fields
-        """
+        # extra_kwargs contains 'default', 'required', 'validators=[UniqValidator]'
+        # hidden_fields contains fields involved in constraints, but missing in serializer fields
         model = self.Meta.model
 
         uniq_extra_kwargs = {}
@@ -536,9 +489,6 @@ class DocumentSerializer(serializers.ModelSerializer):
     #     # mainstream
 
     def get_unique_together_validators(self):
-        """
-        Determine a default set of validators for any unique_together contraints.
-        """
         model = self.Meta.model
         validators = []
         field_names = set(self.get_field_names(self._declared_fields, self.field_info))
@@ -556,9 +506,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         return validators
 
     def get_unique_for_date_validators(self):
-        """
-        Not supported in mongo
-        """
+        # not supported in mongo
         return []
 
     def __repr__(self):
@@ -566,17 +514,14 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 
 class EmbeddedDocumentSerializer(DocumentSerializer):
+    """ Serializer for EmbeddedDocument
+    """
+
     def create(self, validated_data):
-        """
-        EmbeddedDocuments are not saved separately, so we create an instance of it.
-        """
         raise_errors_on_nested_writes('create', self, validated_data)
         return self.Meta.model(**validated_data)
 
     def update(self, instance, validated_data):
-        """
-        EmbeddedDocuments are not saved separately, so we just update the instance and return it.
-        """
         raise_errors_on_nested_writes('update', self, validated_data)
 
         for attr, value in validated_data.items():
@@ -585,9 +530,6 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
         return instance
 
     def get_default_field_names(self, declared_fields, model_info):
-        """
-        EmbeddedDocuments don't have `id`s so do not include `id` to field names
-        """
         return (
             list(declared_fields.keys()) +
             list(model_info.fields.keys()) +
@@ -597,8 +539,7 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
 
 
 class DynamicDocumentSerializer(DocumentSerializer):
-    """
-    DocumentSerializer extended for DynamicDocuments to handle DynamicFields.
+    """ Serializer for DynamicDocument
     """
     def to_representation(self, instance):
         """

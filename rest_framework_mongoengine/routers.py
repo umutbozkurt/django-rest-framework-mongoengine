@@ -1,8 +1,13 @@
+"""
+The module description
+"""
+
 from rest_framework import routers as drf_routers
 
 
 class MongoRouterMixin(object):
     """ Mixin for mongo-routers
+
     Determines base_name from mongo queryset
     """
     def get_default_base_name(self, viewset):
@@ -14,8 +19,10 @@ class MongoRouterMixin(object):
 
 
 class SimpleRouter(MongoRouterMixin, drf_routers.SimpleRouter):
+    """ Replication of DRF SimpleRouter """
     pass
 
 
 class DefaultRouter(MongoRouterMixin, drf_routers.DefaultRouter):
+    """ Replication of DRF DefaultRouter """
     pass

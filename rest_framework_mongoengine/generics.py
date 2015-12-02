@@ -1,3 +1,7 @@
+"""
+The module description
+"""
+
 from rest_framework import mixins
 from rest_framework import generics as drf_generics
 
@@ -6,15 +10,11 @@ from mongoengine import ValidationError
 
 
 class GenericAPIView(drf_generics.GenericAPIView):
-    """
-    View to play nice with our Document Serializer
-    """
+    """ Adaptation of DRF GenericAPIView """
     lookup_field = 'id'
 
     def get_queryset(self):
-        """
-        Re evaluate queryset, fixes #63
-        """
+        ""
         queryset = super(GenericAPIView, self).get_queryset()
 
         if isinstance(queryset, BaseQuerySet):
@@ -23,15 +23,7 @@ class GenericAPIView(drf_generics.GenericAPIView):
         return queryset
 
     def get_object(self):
-        """
-        *** Inherited from DRF 3 GenericAPIView, swapped get_object_or_404() with similar logic for mongoengine ***
-
-        Returns the object the view is displaying.
-
-        You may want to override this if you need to provide non-standard
-        queryset lookups.  Eg if objects are referenced using multiple
-        keyword arguments in the url conf.
-        """
+        ""
         queryset = self.filter_queryset(self.get_queryset())
 
         # Perform the lookup filtering.
@@ -60,19 +52,14 @@ class GenericAPIView(drf_generics.GenericAPIView):
 
 class CreateAPIView(mixins.CreateModelMixin,
                     GenericAPIView):
-
-    """
-    Concrete view for creating a model instance.
-    """
+    "Adaptation of DRF CreateAPIView"
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
 class ListAPIView(mixins.ListModelMixin,
                   GenericAPIView):
-    """
-    Concrete view for listing a queryset.
-    """
+    "Adaptation of DRF ListAPIView"
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -80,9 +67,7 @@ class ListAPIView(mixins.ListModelMixin,
 class ListCreateAPIView(mixins.ListModelMixin,
                         mixins.CreateModelMixin,
                         GenericAPIView):
-    """
-    Concrete view for listing a queryset or creating a model instance.
-    """
+    "Adaptation of DRF ListCreateAPIView"
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -92,19 +77,13 @@ class ListCreateAPIView(mixins.ListModelMixin,
 
 class RetrieveAPIView(mixins.RetrieveModelMixin,
                       GenericAPIView):
-    """
-    Concrete view for retrieving a model instance.
-    """
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
 
 class UpdateAPIView(mixins.UpdateModelMixin,
                     GenericAPIView):
-
-    """
-    Concrete view for updating a model instance.
-    """
+    "Adaptation of DRF UpdateAPIView"
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -115,9 +94,7 @@ class UpdateAPIView(mixins.UpdateModelMixin,
 class RetrieveUpdateAPIView(mixins.RetrieveModelMixin,
                             mixins.UpdateModelMixin,
                             GenericAPIView):
-    """
-    Concrete view for retrieving, updating a model instance.
-    """
+    "Adaptation of DRF RetrieveUpdateAPIView"
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -131,9 +108,7 @@ class RetrieveUpdateAPIView(mixins.RetrieveModelMixin,
 class RetrieveDestroyAPIView(mixins.RetrieveModelMixin,
                              mixins.DestroyModelMixin,
                              GenericAPIView):
-    """
-    Concrete view for retrieving or deleting a model instance.
-    """
+    "Adaptation of DRF RetrieveDestroyAPIView"
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -145,9 +120,7 @@ class RetrieveUpdateDestroyAPIView(mixins.RetrieveModelMixin,
                                    mixins.UpdateModelMixin,
                                    mixins.DestroyModelMixin,
                                    GenericAPIView):
-    """
-    Concrete view for retrieving, updating or deleting a model instance.
-    """
+    "Adaptation of DRF RetrieveUpdateDestroyAPIView"
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
