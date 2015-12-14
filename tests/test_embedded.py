@@ -189,7 +189,7 @@ class TestEmbeddedIntegration(TestCase):
         expected = {
             'id': str(instance.id),
             'embedded': { 'foo': "Foo1",
-                          'embedded': "<tests.test_3embedded.SelfEmbeddedModel>"
+                          'embedded': "<tests.test_embedded.SelfEmbeddedModel>"
                           }
         }
         self.assertEqual(serializer.data, expected)

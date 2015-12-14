@@ -8,38 +8,6 @@ def dedent(blocktext):
     return '\n'.join([line[12:] for line in blocktext.splitlines()[1:-1]])
 
 
-class MockObject(object):
-    def __init__(self, **kwargs):
-        self._kwargs = kwargs
-        for key, val in kwargs.items():
-            setattr(self, key, val)
-
-    def __str__(self):
-        kwargs_str = ', '.join([
-            '%s=%s' % (key, value)
-            for key, value in sorted(self._kwargs.items())
-        ])
-        return '<MockObject %s>' % kwargs_str
-
-    def to_dbref(self):
-        return DBRef('mock_collection', self.id)
-
-class MockQueryset(object):
-    def __init__(self, iterable):
-        self.items = iterable
-
-    def only(self, *args):
-        return self
-
-    def get(self, **lookup):
-        for item in self.items:
-            if all([
-                getattr(item, key, None) == value
-                for key, value in lookup.items()
-            ]):
-                return item
-        raise DoesNotExist()
-
 class BadType(object):
     """
     When used as a lookup with a `MockQueryset`, these objects
@@ -57,6 +25,7 @@ def get_items(mapping_or_list_of_two_tuples):
         return mapping_or_list_of_two_tuples.items()
     # [(value, expected), ...]
     return mapping_or_list_of_two_tuples
+
 
 class FieldValues():
     """
