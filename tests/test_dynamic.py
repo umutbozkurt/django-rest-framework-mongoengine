@@ -18,7 +18,7 @@ class DynamicModel(DynamicDocument):
     foo = fields.IntField()
 
 class TestDynamicMapping(TestCase):
-    def test_dynamic_serializer(self):
+    def test_declared(self):
         class TestSerializer(DynamicDocumentSerializer):
             class Meta:
                 model = DynamicModel
@@ -30,7 +30,7 @@ class TestDynamicMapping(TestCase):
         """)
         self.assertEqual(unicode_repr(TestSerializer()), expected)
 
-    def test_dynamic_serializer_extended(self):
+    def test_extended(self):
         class TestSerializer(DynamicDocumentSerializer):
             class Meta:
                 model = DynamicModel

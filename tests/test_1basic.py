@@ -24,7 +24,7 @@ from rest_framework.compat import unicode_repr
 from rest_framework import serializers
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from rest_framework_mongoengine.fields import ObjectIdField, BinaryField, DynamicField
+from rest_framework_mongoengine.fields import ObjectIdField, GenericField
 
 from .utils import dedent, FieldValues
 

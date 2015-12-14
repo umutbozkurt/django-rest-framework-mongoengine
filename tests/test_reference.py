@@ -54,7 +54,7 @@ class TestReferenceFieldValue(FieldValues, TestCase):
     }
     invalid_inputs = {
         123: ['Incorrect type. Expected str|ObjectId|DBRef|Document value, received int.'],
-        'xxx': ['"xxx" is not a valid ObjectId']
+        'xxx': ['\'xxx\' is not a valid ObjectId']
     }
     outputs = {
         somedbref: str(someobjectid),

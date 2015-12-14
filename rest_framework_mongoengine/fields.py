@@ -4,7 +4,7 @@ The module description
 from collections import OrderedDict
 
 from django.utils import six
-from django.utils.encoding import smart_str
+from django.utils.encoding import is_protected_type, smart_text
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
@@ -14,89 +14,147 @@ from rest_framework.fields import empty
 from bson import ObjectId, DBRef
 from bson.errors import InvalidId
 
+from mongoengine.base import get_document
+from mongoengine.errors import ValidationError as MongoValidationError, NotRegistered
+
 from mongoengine.queryset import QuerySet, QuerySetManager
-from mongoengine.base.document import BaseDocument
-from mongoengine import Document, fields as me_fields
+from mongoengine import EmbeddedDocument, Document, fields as me_fields
 from mongoengine.errors import DoesNotExist
 
 from rest_framework_mongoengine.repr import smart_repr
 
-class DocumentField(serializers.Field):
-    """ Adaptation of DRF ModelField """
-
-    type_label = 'DocumentField'
-
-    def __init__(self, model_field, depth=0, **kwargs):
-        self.model_field = model_field
-        self.depth = depth
-        super(DocumentField,self).__init__(**kwargs)
-
-    def to_internal_value(self, data):
-        return self.model_field.to_python(data)
-
-    def to_representation(self, value):
-        return self.transform_object(value, self.depth)
-
-    def transform_document(self, document, depth):
-        data = {}
-
-        # serialize each required field
-        for field in document._fields:
-            if hasattr(document, smart_str(field)):
-                # finally check for an attribute 'field' on the instance
-                obj = getattr(document, field)
-            else:
-                continue
-
-            val = self.transform_object(obj, depth-1)
-
-            if val is not None:
-                data[field] = val
-
-        return data
-
-    def transform_dict(self, obj, depth):
-        return dict([(key, self.transform_object(val, depth-1))
-                     for key, val in obj.items()])
-
-    def transform_object(self, obj, depth):
-        if depth == 0:
-            return smart_repr(obj)
-        elif isinstance(obj, BaseDocument):
-            return self.transform_document(obj, depth)
-        elif isinstance(obj, DBRef):
-            # DBRef
-            return self.transform_object(obj.id, depth)
-        elif isinstance(obj, dict):
-            # Dictionaries
-            return self.transform_dict(obj, depth)
-        elif isinstance(obj, list):
-            # List
-            return [self.transform_object(value, depth) for value in obj]
-        elif obj is None:
-            return None
-        else:
-            return smart_repr(obj)
-
 
 class ObjectIdField(serializers.Field):
-    """ Serialization of ObjectId value """
+    """ Field for ObjectId value """
     type_label = 'ObjectIdField'
 
+    def to_internal_value(self, value):
+        try:
+            return ObjectId(smart_text(value))
+        except InvalidId:
+            raise serializers.ValidationError("%s is not a valid ObjectId" % repr(value))
+
     def to_representation(self, value):
-        return smart_str(value)
+        return smart_text(value)
+
+
+class DocumentField(serializers.Field):
+    """ Replacement of DRF ModelField
+    Keeps track of underlying document field.
+    Delegates parsing nd validation to underlying document field.
+
+    Used by DocumentSerializers to map unknown fields.
+    """
+    type_label = 'DocumentField'
+
+    def __init__(self, model_field, **kwargs):
+        self.model_field = model_field
+        super(DocumentField, self).__init__(**kwargs)
+
+    def get_attribute(self, obj):
+        return obj
 
     def to_internal_value(self, data):
+        """ convert input to python value
+        Uses underlying document field's `to_python` method.
+        """
+        return self.model_field.to_python(data)
+
+    def to_representation(self, obj):
+        """ convert value to representation
+        DRF ModelField uses `value_to_string` for this purpose. Mongoengine fields do not have such method.
+
+        This implementation uses `django.utils.encoding.smart_text` to convert everything to text, while keeping json-safe types intact.
+
+        NB: The argument is whole object instead of value. It's upstream feature.
+        """
+        value = self.model_field.__get__(obj, None)
+        return smart_text(value, strings_only=True)
+
+    def run_validators(self, value):
         try:
-            return ObjectId(smart_str(data))
-        except InvalidId:
-            raise serializers.ValidationError("\"%s\" is not a valid ObjectId" % smart_str(data))
+            self.model_field.validate(value)
+        except MongoValidationError as e:
+            raise ValidationError(e.message)
+        super(DocumentField, self).run_validators()
+
+
+class GenericField(serializers.Field):
+    """ Field for generic value
+    Tries to handle values of arbitrary type.
+    """
+    type_label = 'GenericField'
+
+    default_error_messages = {
+        'undefined_model': _('`{doc_cls}` has not been defined.')
+    }
+
+    def to_representation(self, value):
+        """ convert value to representation
+        Recursively transforms dicts, lists and embedded docs.
+        Embedded docs are serialized into dicts with additional attribute `_cls`.
+        Primitive types represented using `django.utils.encoding.smart_text`, keeping json-safe intact.
+        """
+        return self.represent_data(value)
+
+    def represent_data(self, data):
+        if isinstance(data, EmbeddedDocument):
+            return self.represent_document(data)
+        elif isinstance(data, DBRef):
+            return smart_text(data.id)
+        elif isinstance(data, dict):
+            return dict([(key, self.represent_data(val)) for key, val in data.items()])
+        elif isinstance(data, list):
+            return [self.represent_data(value) for value in data]
+        elif data is None:
+            return None
+        else:
+            return smart_text(data, strings_only=True)
+
+    def represent_document(self, doc):
+        data = { '_cls': doc.__class__.__name__}
+        for field in doc._fields:
+            if not hasattr(doc, field):
+                continue
+            data[field] = self.represent_data(getattr(doc, field))
+        return data
+
+    def to_internal_value(self, value):
+        """ convert input into value
+        Recursively transforms dicts, lists and embedded docs.
+        Any dict with item '_cls' is converted to registered EmbeddedDocument.
+        Anything else left intact.
+        """
+        return self.parse_data(value)
+
+    def parse_data(self, data):
+        if isinstance(data, dict):
+            result = dict([(key, self.parse_data(val)) for key, val in data.items()])
+            if '_cls' in result:
+                try:
+                    doc_name = result['_cls']
+                    doc_cls = get_document(doc_name)
+                    return doc_cls._from_son(result)
+                except NotRegistered:
+                    self.fail('undefined_model', doc_cls=doc_name)
+            else:
+                return result
+        elif isinstance(data, list):
+            return [self.parse_data(value) for value in data]
+        else:
+            return data
+
+
+class DynamicField(GenericField, DocumentField):
+    """ Field for DynamicDocuments
+    Used internally by `DynamicDocumentSerializer`.
+    Behaves like `GenericField`.
+    """
 
 
 class ReferenceField(serializers.Field):
-    """ Serialization of ReferenceField
-
-    Behaves like DRF ForeignKeyField
+    """ Serialization of ReferenceField.
+    Behaves like DRF ForeignKeyField.
     """
     type_label = 'ReferenceField'
     default_error_messages = {
@@ -183,34 +241,3 @@ class ReferenceField(serializers.Field):
     def to_representation(self, datum):
         oid = self.get_id(datum)
         return self.pk_field.to_representation(oid)
-
-
-class DynamicField(DocumentField):
-    """ TODO: remove """
-    type_label = 'DynamicField'
-    def to_representation(self, value):
-        return self.model_field.to_python(value)
-
-
-class BinaryField(DocumentField):
-    """ binary value """
-    type_label = 'BinaryField'
-
-    def __init__(self, **kwargs):
-        try:
-            self.max_bytes = kwargs.pop('max_bytes')
-        except KeyError:
-            raise ValueError('BinaryField requires "max_bytes" kwarg')
-        super(BinaryField, self).__init__(**kwargs)
-
-    def to_representation(self, value):
-        return smart_str(value)
-
-    def to_internal_value(self, data):
-        return super(BinaryField, self).to_internal_value(smart_str(data))
-
-
-class BaseGeoField(DocumentField):
-    """ geojson value """
-
-    type_label = 'BaseGeoField'

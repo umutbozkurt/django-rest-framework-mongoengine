@@ -15,12 +15,10 @@ from rest_framework.compat import unicode_to_repr
 from rest_framework_mongoengine.validators import UniqueValidator, UniqueTogetherValidator
 
 
-from .fields import (ReferenceField,
-                     DynamicField,
-                     ObjectIdField,
+from .fields import (ObjectIdField,
                      DocumentField,
-                     BinaryField,
-                     BaseGeoField)
+                     DynamicField,
+                     ReferenceField)
 
 from .utils import (is_abstract_model,
                     get_field_info,
@@ -96,7 +94,10 @@ def raise_errors_on_nested_writes(method_name, serializer, validated_data):
 
 class DocumentSerializer(serializers.ModelSerializer):
     """ Serializer for Document.
-    Adaptation of ModelSerializer.
+    Replacement of ModelSerializer.
+    Tries to create serialization fields for each document field.
+
+
 
     """
 
@@ -111,14 +112,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.BooleanField: drf_fields.BooleanField,
         me_fields.DateTimeField: drf_fields.DateTimeField,
         me_fields.ComplexDateTimeField: drf_fields.DateTimeField,
-        me_fields.DynamicField: DynamicField,
         me_fields.ObjectIdField: ObjectIdField,
-        me_fields.BinaryField: BinaryField,
         me_fields.FileField: drf_fields.FileField,
         me_fields.ImageField: drf_fields.ImageField,
         me_fields.SequenceField: drf_fields.IntegerField,
         me_fields.UUIDField: drf_fields.UUIDField,
-        me_fields.GeoJsonBaseField: BaseGeoField,
         me_fields.BaseField: DocumentField
     }
 
@@ -390,7 +388,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
     def build_embedded_field(self, field_name, relation_info, nested_depth):
-        if relation_info.related_model and nested_depth:
+        if not relation_info.related_model:
+            raise NotImplemented("GenericEmbedding not yet implemented. ")
+        elif nested_depth:
             class NestedEmbSerializer(EmbeddedDocumentSerializer):
                 class Meta:
                     model = relation_info.related_model
@@ -399,12 +399,10 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_class = NestedEmbSerializer
             field_kwargs = get_nested_relation_kwargs(relation_info)
             field_kwargs.pop('read_only',None)
-        else:
-            field_class = DocumentField
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
-            field_kwargs.pop('required')
-            field_kwargs['read_only'] = True
-            field_kwargs['depth'] = max(0,nested_depth-1)
+        else: # depth exhausted
+            # return dumb lock
+            field_class = drf_fields.HiddenField
+            field_kwargs = {'default': None}
         return field_class, field_kwargs
 
 
@@ -540,6 +538,7 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
 
 class DynamicDocumentSerializer(DocumentSerializer):
     """ Serializer for DynamicDocument
+    Maps all the fields to Dyn
     """
     def to_representation(self, instance):
         """

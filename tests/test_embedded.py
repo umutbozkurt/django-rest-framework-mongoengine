@@ -45,7 +45,7 @@ class TestEmbeddedMapping(TestCase):
                 foo = CharField(required=False)
                 bar = CharField(required=False)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_mapping(self):
         class TestSerializer(DocumentSerializer):
@@ -59,7 +59,7 @@ class TestEmbeddedMapping(TestCase):
                     foo = CharField(required=False)
                     bar = CharField(required=False)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_mapping_list(self):
         class TestSerializer(DocumentSerializer):
@@ -73,7 +73,7 @@ class TestEmbeddedMapping(TestCase):
                     foo = CharField(required=False)
                     bar = CharField(required=False)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_mapping_nodepth(self):
         class TestSerializer(DocumentSerializer):
@@ -83,9 +83,9 @@ class TestEmbeddedMapping(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                embedded = DocumentField(depth=0, model_field=<mongoengine.fields.EmbeddedDocumentField: embedded>, read_only=True)
+                embedded = HiddenField(default=None)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_mapping_nested(self):
         class TestSerializer(DocumentSerializer):
@@ -100,7 +100,7 @@ class TestEmbeddedMapping(TestCase):
                         foo = CharField(required=False)
                         bar = CharField(required=False)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_mapping_nested_nodepth(self):
         class TestSerializer(DocumentSerializer):
@@ -111,9 +111,9 @@ class TestEmbeddedMapping(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 embedded = NestedEmbSerializer():
-                    embedded = DocumentField(depth=0, model_field=<mongoengine.fields.EmbeddedDocumentField: embedded>, read_only=True)
+                    embedded = HiddenField(default=None)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_mapping_recursive(self):
         class TestSerializer(DocumentSerializer):
@@ -129,9 +129,9 @@ class TestEmbeddedMapping(TestCase):
                         foo = CharField(required=False)
                         embedded = NestedEmbSerializer():
                             foo = CharField(required=False)
-                            embedded = DocumentField(depth=0, model_field=<mongoengine.fields.EmbeddedDocumentField: embedded>, read_only=True)
+                            embedded = HiddenField(default=None)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
 
 class TestEmbeddedIntegration(TestCase):
@@ -152,7 +152,7 @@ class TestEmbeddedIntegration(TestCase):
             'id': str(instance.id),
             'embedded': { 'foo': "Foo", 'bar': None },
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_retrival_recursive(self):
         instance = RecursiveEmbeddingModel.objects.create(
@@ -168,13 +168,11 @@ class TestEmbeddedIntegration(TestCase):
             'id': str(instance.id),
             'embedded': { 'foo': "Foo1",
                           'embedded': { 'foo': "Foo2",
-                                        'embedded':{ 'foo': "Foo3",
-                                                     'embedded': None
-                                                     }
+                                        'embedded':{ 'foo': "Foo3" }
                                         }
                           }
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_retrival_recursive_nodepth(self):
         instance = RecursiveEmbeddingModel.objects.create(
@@ -188,11 +186,9 @@ class TestEmbeddedIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'embedded': { 'foo': "Foo1",
-                          'embedded': "<tests.test_embedded.SelfEmbeddedModel>"
-                          }
+            'embedded': { 'foo': "Foo1" }
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_create(self):
         class TestSerializer(DocumentSerializer):
@@ -217,7 +213,7 @@ class TestEmbeddedIntegration(TestCase):
             'id': str(instance.id),
             'embedded': { 'foo': "Foo", 'bar': None}
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_update(self):
         instance = EmbeddingModel.objects.create(
@@ -246,7 +242,7 @@ class TestEmbeddedIntegration(TestCase):
             'id': str(instance.id),
             'embedded': { 'foo': "Foo", 'bar': "Baz"}
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
 
 class ValidatingEmbeddedModel(EmbeddedDocument):
