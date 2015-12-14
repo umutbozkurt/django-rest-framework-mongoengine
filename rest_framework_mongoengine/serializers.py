@@ -24,7 +24,6 @@ from .utils import (is_abstract_model,
                     get_field_info,
                     get_field_kwargs,
                     get_relation_kwargs,
-                    get_nested_relation_kwargs,
                     has_default,
                     COMPOUND_FIELD_TYPES)
 
@@ -291,10 +290,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         if field_name in info.references:
             relation_info = info.references[field_name]
-            if not nested_depth:
-                return self.build_reference_field(field_name, relation_info, nested_depth)
-            else:
-                return self.build_dereference_field(field_name, relation_info, nested_depth)
+            return self.build_reference_field(field_name, relation_info, nested_depth)
 
         if field_name in info.embedded:
             relation_info = info.embedded[field_name]
@@ -364,45 +360,38 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
     def build_reference_field(self, field_name, relation_info, nested_depth):
-        if relation_info.related_model:
+        if not nested_depth:
             field_class = self.serializer_related_field
             field_kwargs = get_relation_kwargs(field_name, relation_info)
-        else:
-            field_class = self.serializer_related_field
-            field_kwargs = get_nested_relation_kwargs(relation_info)
-
-        return field_class, field_kwargs
-
-    def build_dereference_field(self, field_name, relation_info, nested_depth):
-        if relation_info.related_model:
+        elif relation_info.related_model:
             class NestedRefSerializer(DocumentSerializer):
                 class Meta:
                     model = relation_info.related_model
                     depth = nested_depth - 1
 
             field_class = NestedRefSerializer
-            field_kwargs = get_nested_relation_kwargs(relation_info)
+            field_kwargs = {'read_only':True}
         else:
-            field_class = self.serializer_related_field
-            field_kwargs = get_nested_relation_kwargs(relation_info)
+            raise NotImplementedError("GenericReference not yet supported.")
+
         return field_class, field_kwargs
 
     def build_embedded_field(self, field_name, relation_info, nested_depth):
-        if not relation_info.related_model:
-            raise NotImplemented("GenericEmbedding not yet implemented. ")
-        elif nested_depth:
+        if not nested_depth:
+            # just skip
+            field_class = drf_fields.HiddenField
+            field_kwargs = {'default': None}
+        elif relation_info.related_model:
             class NestedEmbSerializer(EmbeddedDocumentSerializer):
                 class Meta:
                     model = relation_info.related_model
                     depth = nested_depth - 1
 
             field_class = NestedEmbSerializer
-            field_kwargs = get_nested_relation_kwargs(relation_info)
-            field_kwargs.pop('read_only',None)
-        else: # depth exhausted
-            # return dumb lock
-            field_class = drf_fields.HiddenField
-            field_kwargs = {'default': None}
+            field_kwargs = {}
+        else:
+            raise NotImplementedError("GenericEmbedding not yet supported. ")
+
         return field_class, field_kwargs
 
 

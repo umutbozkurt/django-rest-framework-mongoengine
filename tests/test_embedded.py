@@ -34,6 +34,9 @@ class SelfEmbeddedModel(EmbeddedDocument):
 class RecursiveEmbeddingModel(Document):
     embedded = fields.EmbeddedDocumentField(SelfEmbeddedModel)
 
+class GenericEmbeddingModel(Document):
+    generic_embedded_field = fields.GenericEmbeddedDocumentField()
+
 
 class TestEmbeddedMapping(TestCase):
     def test_embedded_serializer(self):

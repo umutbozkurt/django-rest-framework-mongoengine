@@ -224,10 +224,5 @@ def get_relation_kwargs(field_name, relation_info):
 
     return kwargs
 
-
-def get_nested_relation_kwargs(relation_info):
-    kwargs = {'read_only': True}
-    return kwargs
-
 def has_default(model_field):
     return model_field.default is not None or model_field.null

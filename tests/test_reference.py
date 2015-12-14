@@ -19,19 +19,17 @@ from .utils import dedent, BadType, FieldValues
 class ReferencedModel(Document):
     name = me_fields.StringField()
 
-
 class RefFieldsModel(Document):
     ref = me_fields.ReferenceField(ReferencedModel)
     dbref = me_fields.ReferenceField(ReferencedModel, dbref=True)
     cached = me_fields.CachedReferenceField(ReferencedModel)
-    generic = me_fields.GenericReferenceField()
-
+    # generic = me_fields.GenericReferenceField()
 
 class ReferencingModel(Document):
     ref = me_fields.ReferenceField(ReferencedModel)
 
 class GenericReferencingModel(Document):
-    generic = me_fields.GenericReferenceField()
+    ref = me_fields.GenericReferenceField()
 
 someobjectid = ObjectId('563547d9a21aab31b7e73ac9')
 somedbref = DBRef('referenced_model', someobjectid)
@@ -107,9 +105,9 @@ class TestReferenceField(APISimpleTestCase):
         assert representation == smart_str(self.instance.id)
 
 
-class TestMapping(TestCase):
+class TestReferenceMapping(TestCase):
     maxDiff = 1000
-    def test_pk_relations(self):
+    def test_referenced(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RefFieldsModel
@@ -121,11 +119,10 @@ class TestMapping(TestCase):
                 ref = ReferenceField(queryset=ReferencedModel.objects)
                 dbref = ReferenceField(queryset=ReferencedModel.objects)
                 cached = ReferenceField(queryset=ReferencedModel.objects)
-                generic = ReferenceField(read_only=True)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
-    def test_nested_relations(self):
+    def test_nested(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RefFieldsModel
@@ -143,9 +140,8 @@ class TestMapping(TestCase):
                 cached = NestedRefSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
-                generic = ReferenceField(read_only=True)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
 
 class DisplayableReferencedModel(Document):
@@ -238,33 +234,6 @@ class TestIntegration(TestCase):
         }
         self.assertEqual(serializer.data, expected)
 
-    def test_retrival_generic(self):
-        instance = GenericReferencingModel.objects.create(generic=self.target)
-        class TestSerializer(DocumentSerializer):
-            class Meta:
-                model = GenericReferencingModel
-                depth = 0
-
-        serializer = TestSerializer(instance)
-        expected = {
-            'id': str(instance.id),
-            'generic': str(self.target.id),
-        }
-        self.assertEqual(serializer.data, expected)
-
-    def test_retrival_generic_deep(self):
-        instance = GenericReferencingModel.objects.create(generic=self.target)
-        class TestSerializer(DocumentSerializer):
-            class Meta:
-                model = GenericReferencingModel
-                depth = 1
-
-        serializer = TestSerializer(instance)
-        expected = {
-            'id': str(instance.id),
-            'generic': str(self.target.id),
-        }
-        self.assertEqual(serializer.data, expected)
 
     def test_create(self):
         class TestSerializer(DocumentSerializer):
