@@ -81,9 +81,9 @@ class FieldOptionsModel(Document):
     value_limit_field = fields.IntField(min_value=3, max_value=12)
     decimal_field = fields.DecimalField(precision=4, max_value=9999)
 
-# DECIMAL_CHOICES = (('low', Decimal('0.1')), ('medium', Decimal('0.5')), ('high', Decimal('0.9')))
-# class ChoicesModel(Document):
-#     choices_field_with_nonstandard_args = fields.DecimalField(precision=1, choices=DECIMAL_CHOICES, verbose_name='A label')
+DECIMAL_CHOICES = (('low', Decimal('0.1')), ('medium', Decimal('0.5')), ('high', Decimal('0.9')))
+class ComplexChoicesModel(Document):
+    choices_field_with_nonstandard_args = fields.DecimalField(precision=1, choices=DECIMAL_CHOICES, verbose_name='A label')
 
 
 class TestRegularFieldMappings(TestCase):
@@ -328,7 +328,13 @@ class TestRegularFieldMappings(TestCase):
         ChildSerializer().fields
 
     def test_choices_with_nonstandard_args(self):
-        pytest.skip("TODO")
+        class TestSerializer(DocumentSerializer):
+            missing = serializers.ReadOnlyField()
+
+            class Meta:
+                model = ComplexChoicesModel
+
+        TestSerializer().fields
 
     def test_fields_and_exclude_behavior(self):
         class ImplicitFieldsSerializer(DocumentSerializer):
