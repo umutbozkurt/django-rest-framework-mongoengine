@@ -540,7 +540,7 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
 
     def to_internal_value(self, data):
         # run nested validation and convert to document instance
-        data = super().to_internal_value(data)
+        data = super(EmbeddedDocumentSerializer,self).to_internal_value(data)
         return self.Meta.model(**data)
 
 

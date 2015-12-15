@@ -33,7 +33,7 @@ class ObjectIdField(serializers.Field):
         try:
             return ObjectId(smart_text(value))
         except InvalidId:
-            raise serializers.ValidationError("%s is not a valid ObjectId" % repr(value))
+            raise serializers.ValidationError("'%s' is not a valid ObjectId" % value)
 
     def to_representation(self, value):
         return smart_text(value)
@@ -252,7 +252,7 @@ class ReferenceField(serializers.Field):
         try:
             return self.pk_field.to_internal_value(value)
         except:
-            self.fail('invalid_id', pk_value=repr(value), pk_type=self.pk_field_class.__name__)
+            self.fail('invalid_id', pk_value=value, pk_type=self.pk_field_class.__name__)
 
     def to_internal_value(self, value):
         if isinstance(value, dict):
