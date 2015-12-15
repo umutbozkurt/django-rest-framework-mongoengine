@@ -96,12 +96,9 @@ def raise_errors_on_nested_writes(method_name, serializer, validated_data):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    """ Serializer for Document.
+    """ Serializer for Documents
     Replacement of ModelSerializer.
     Tries to create serialization fields for each document field.
-
-
-
     """
 
     serializer_field_mapping = {
@@ -124,6 +121,8 @@ class DocumentSerializer(serializers.ModelSerializer):
     }
 
     serializer_related_field = ReferenceField
+    """default field used to represent references when depth exhausted (and nested serializer isn't generated)"""
+
     # induct failure if they occasionally used somewhere
     serializer_related_to_field = None
     serializer_url_field = None
@@ -384,13 +383,13 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_class = self.serializer_related_field
             field_kwargs = get_relation_kwargs(field_name, relation_info)
         elif relation_info.related_model:
-            class NestedRefSerializer(DocumentSerializer):
+            class NestedSerializer(DocumentSerializer):
                 class Meta:
                     model = relation_info.related_model
                     depth = nested_depth - 1
 
-            field_class = NestedRefSerializer
-            field_kwargs = get_relation_kwargs(field_name, relation_info)
+            field_class = NestedSerializer
+            field_kwargs = { 'read_only': True }
         else:
             raise NotImplementedError("GenericReference not yet supported.")
 

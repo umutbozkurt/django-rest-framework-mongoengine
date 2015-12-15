@@ -131,13 +131,13 @@ class TestReferenceMapping(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                ref = NestedRefSerializer(read_only=True):
+                ref = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
-                dbref = NestedRefSerializer(read_only=True):
+                dbref = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
-                cached = NestedRefSerializer(read_only=True):
+                cached = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
         """)
@@ -196,7 +196,7 @@ class TestRelationalFieldDisplayValue(TestCase):
         self.assertEqual(serializer.fields['color'].choices, expected)
 
 
-class TestIntegration(TestCase):
+class TestReferenceIntegration(TestCase):
     def setUp(self):
         self.target = ReferencedModel.objects.create(
             name='Foo'
