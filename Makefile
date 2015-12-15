@@ -1,10 +1,11 @@
 # Makefile for Sphinx documentation
 #
+GH_PAGES_SOURCES = rest_framework_mongoengine 
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-BUILDDIR      = doc
+BUILDDIR      = build
 export DJANGO_SETTINGS_MODULE=dumbsettings
 
 # User-friendly check for sphinx-build
@@ -40,3 +41,10 @@ singlehtml:
 	$(SPHINXBUILD) -b singlehtml $(ALLSPHINXOPTS) $(BUILDDIR)/singlehtml
 	@echo
 	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
+
+gh-pages:
+	rm -rf build _sources _static	
+	git checkout master $(GH_PAGES_SOURCES)
+	git reset HEAD
+	make html
+	mv -fv build/html/* ./
