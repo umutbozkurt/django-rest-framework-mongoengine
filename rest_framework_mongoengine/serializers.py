@@ -4,7 +4,10 @@ The module description
 import copy
 from collections import OrderedDict
 
-from mongoengine import fields as me_fields
+from django.utils.translation import ugettext_lazy as _
+from django.utils.functional import cached_property
+
+from mongoengine import fields as me_fields, EmbeddedDocument
 from mongoengine.errors import ValidationError as me_ValidationError
 
 from rest_framework import serializers
@@ -17,6 +20,7 @@ from rest_framework_mongoengine.validators import UniqueValidator, UniqueTogethe
 
 from .fields import (ObjectIdField,
                      DocumentField,
+                     GenericEmbeddedDocumentField,
                      DynamicField,
                      ReferenceField)
 
@@ -124,26 +128,28 @@ class DocumentSerializer(serializers.ModelSerializer):
     serializer_related_to_field = None
     serializer_url_field = None
 
-    def is_valid(self, raise_exception=False):
-        valid = super(DocumentSerializer,self).is_valid(raise_exception=raise_exception)
+    # def is_valid(self, raise_exception=False):
+    #     valid = super(DocumentSerializer,self).is_valid(raise_exception=raise_exception)
 
-        for name in self.field_info.embedded.keys():
-            if name.endswith('.child'):
-                continue
-            field = self.fields[name]
-            field.initial_data = self.validated_data.pop(name, serializers.empty)
-            valid &= field.is_valid(raise_exception=raise_exception)
+    #     for name in self.field_info.embedded.keys():
+    #         if name.endswith('.child'):
+    #             continue
+    #         field = self.fields[name]
+    #         if isinstance(field, EmbeddedDocumentSerializer):
+    #             field.initial_data = self.validated_data.pop(name, serializers.empty)
+    #             valid &= field.is_valid(raise_exception=raise_exception)
 
-        return valid
+    #     return valid
 
     def create(self, validated_data):
         raise_errors_on_nested_writes('create', self, validated_data)
 
-        # Automagically create and set embedded documents to validated data
-        for name in self.field_info.embedded.keys():
-            field = self.fields[name]
-            embedded_doc_intance = field.create(field.validated_data)
-            validated_data[name] = embedded_doc_intance
+    #     # Automagically reate and set embedded documents to validated data
+    #     for name in self.field_info.embedded.keys():
+    #         field = self.fields[name]
+    #         if isinstance(field, EmbeddedDocumentSerializer):
+    #             embedded_doc_intance = field.create(field.validated_data)
+    #             validated_data[name] = embedded_doc_intance
 
         ModelClass = self.Meta.model
         try:
@@ -187,12 +193,21 @@ class DocumentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         raise_errors_on_nested_writes('update', self, validated_data)
 
-        for name in self.field_info.embedded.keys():
-            field = self.fields[name]
-            embedded_doc_intance = field.update(getattr(instance, name), field.validated_data)
-            setattr(instance, name, embedded_doc_intance)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+    #     for name in self.field_info.embedded.keys():
+    #         field = self.fields[name]
+    #         if isinstance(field, EmbeddedDocumentSerializer):
+    #             embedded_doc_intance = field.update(getattr(instance, name), field.validated_data)
+    #             setattr(instance, name, embedded_doc_intance)
 
-        return super(DocumentSerializer, self).update(instance, validated_data)
+        instance.save()
+
+        return instance
+
+
+    def get_model(self):
+        return self.Meta.model
 
     def get_fields(self):
         assert hasattr(self, 'Meta'), (
@@ -205,18 +220,23 @@ class DocumentSerializer(serializers.ModelSerializer):
                 serializer_class=self.__class__.__name__
             )
         )
-        if is_abstract_model(self.Meta.model):
-            raise ValueError(
-                'Cannot use ModelSerializer with Abstract Models.'
-            )
-
-        declared_fields = copy.deepcopy(self._declared_fields)
-        model = getattr(self.Meta, 'model')
         depth = getattr(self.Meta, 'depth', 0)
 
         if depth is not None:
             assert depth >= 0, "'depth' may not be negative."
             assert depth <= 10, "'depth' may not be greater than 10."
+
+        declared_fields = copy.deepcopy(self._declared_fields)
+        model = self.get_model()
+
+        if model is None:
+            return {}
+
+        if is_abstract_model(model):
+            raise ValueError(
+                'Cannot use ModelSerializer with Abstract Models.'
+            )
+
 
         # Retrieve metadata about fields & relationships on the model class.
         self.field_info = get_field_info(model)
@@ -370,7 +390,7 @@ class DocumentSerializer(serializers.ModelSerializer):
                     depth = nested_depth - 1
 
             field_class = NestedRefSerializer
-            field_kwargs = {'read_only':True}
+            field_kwargs = get_relation_kwargs(field_name, relation_info)
         else:
             raise NotImplementedError("GenericReference not yet supported.")
 
@@ -382,15 +402,17 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_class = drf_fields.HiddenField
             field_kwargs = {'default': None}
         elif relation_info.related_model:
-            class NestedEmbSerializer(EmbeddedDocumentSerializer):
+            class NestedSerializer(EmbeddedDocumentSerializer):
                 class Meta:
                     model = relation_info.related_model
                     depth = nested_depth - 1
 
-            field_class = NestedEmbSerializer
-            field_kwargs = {}
+            field_class = NestedSerializer
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+            field_kwargs.pop('model_field')
         else:
-            raise NotImplementedError("GenericEmbedding not yet supported. ")
+            field_class = GenericEmbeddedDocumentField
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
 
         return field_class, field_kwargs
 
@@ -501,22 +523,10 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 
 class EmbeddedDocumentSerializer(DocumentSerializer):
-    """ Serializer for EmbeddedDocument
-    """
-
-    def create(self, validated_data):
-        raise_errors_on_nested_writes('create', self, validated_data)
-        return self.Meta.model(**validated_data)
-
-    def update(self, instance, validated_data):
-        raise_errors_on_nested_writes('update', self, validated_data)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        return instance
+    """ Serializer for EmbeddedDocument """
 
     def get_default_field_names(self, declared_fields, model_info):
+        # skip id field
         return (
             list(declared_fields.keys()) +
             list(model_info.fields.keys()) +
@@ -524,26 +534,30 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
             list(model_info.embedded.keys())
         )
 
+    def get_unique_together_validators(self):
+        # skip the valaidators
+        return []
+
+    def to_internal_value(self, data):
+        # run nested validation and convert to document instance
+        data = super().to_internal_value(data)
+        return self.Meta.model(**data)
+
+
+class RuntimeDocument(EmbeddedDocument):
+    """ runtime document stub """
+    pass
+
 
 class DynamicDocumentSerializer(DocumentSerializer):
     """ Serializer for DynamicDocument
     Maps all the fields to Dyn
     """
     def to_representation(self, instance):
-        """
-        Adds dynamic fields
-        """
         ret = super(DynamicDocumentSerializer,self).to_representation(instance)
 
         for field_name, field in self._map_dynamic_fields(instance).items():
-            attribute = getattr(instance, field_name)
-
-            if attribute is None:
-                # We skip `to_representation` for `None` values so that
-                # fields do not have to explicitly deal with that case.
-                ret[field_name] = None
-            else:
-                ret[field_name] = field.to_representation(attribute)
+            ret[field_name] = field.to_representation(instance)
 
         return ret
 

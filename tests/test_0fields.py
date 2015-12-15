@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 from mongoengine import Document, EmbeddedDocument, fields
 
-from rest_framework_mongoengine.fields import (ObjectIdField, DocumentField, GenericField)
+from rest_framework_mongoengine.fields import (ObjectIdField, DocumentField, GenericEmbeddedField, GenericField)
 
 from .utils import FieldValues
 
@@ -59,6 +59,21 @@ class MockEmbeddedModel(EmbeddedDocument):
     foo = fields.IntField()
 
 
+class TestGenericEmbeddedField(FieldValues, TestCase):
+    field = GenericEmbeddedField()
+
+    valid_inputs = [
+        ({ '_cls': 'MockEmbeddedModel', 'foo': "Foo"}, MockEmbeddedModel(foo="Foo")),
+    ]
+
+    invalid_inputs = [
+        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, ["Document `InvalidModel` has not been defined."]),
+    ]
+
+    outputs = [
+        (MockEmbeddedModel(foo="Foo"), { '_cls': 'MockEmbeddedModel', 'foo': "Foo"}),
+    ]
+
 class TestGenericField(FieldValues, TestCase):
     field = GenericField()
 
@@ -72,7 +87,8 @@ class TestGenericField(FieldValues, TestCase):
     ]
 
     invalid_inputs = [
-        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, ["`InvalidModel` has not been defined."]),
+        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, ["Document `InvalidModel` has not been defined."]),
+        ({'emb': { '_cls': 'InvalidModel', 'foo': "Foo"}}, ["Document `InvalidModel` has not been defined."]),
     ]
 
     outputs = [
