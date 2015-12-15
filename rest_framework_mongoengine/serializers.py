@@ -556,7 +556,7 @@ class DynamicDocumentSerializer(DocumentSerializer):
         ret = super(DynamicDocumentSerializer,self).to_representation(instance)
 
         for field_name, field in self._map_dynamic_fields(instance).items():
-            ret[field_name] = field.to_representation(instance)
+            ret[field_name] = field.to_representation(field.get_attribute(instance))
 
         return ret
 
@@ -569,5 +569,7 @@ class DynamicDocumentSerializer(DocumentSerializer):
         dynamic_fields = {}
         if document._dynamic:
             for name, field in document._dynamic_fields.items():
-                dynamic_fields[name] = DynamicField(**get_field_kwargs(name, field))
+                dfield = DynamicField(model_field=field, required=False)
+                dfield.bind(name, self)
+                dynamic_fields[name] = dfield
         return dynamic_fields

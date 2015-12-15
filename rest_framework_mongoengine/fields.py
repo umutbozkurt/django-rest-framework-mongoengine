@@ -178,7 +178,6 @@ class DynamicField(GenericField, AttributedDocumentField):
     """
     pass
 
-
 class ReferenceField(serializers.Field):
     """ Serialization of ReferenceField.
     Behaves like DRF ForeignKeyField.

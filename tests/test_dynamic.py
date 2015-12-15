@@ -64,7 +64,7 @@ class TestDynamicIntegration(TestCase):
             'bar': 43,
             'baz': "Baz"
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_create(self):
         data = {
@@ -87,7 +87,7 @@ class TestDynamicIntegration(TestCase):
             'bar': 43,
             'baz': "Baz"
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_update(self):
         instance = DynamicModel.objects.create(foo=42, bar=43, baz="z")
@@ -108,4 +108,4 @@ class TestDynamicIntegration(TestCase):
             'bar': 143,
             'baz': "Baz"
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
