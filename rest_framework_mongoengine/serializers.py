@@ -22,7 +22,8 @@ from .fields import (ObjectIdField,
                      DocumentField,
                      GenericEmbeddedDocumentField,
                      DynamicField,
-                     ReferenceField)
+                     ReferenceField,
+                     GenericReferenceField)
 
 from .utils import (is_abstract_model,
                     get_field_info,
@@ -120,10 +121,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.BaseField: DocumentField
     }
 
-    serializer_related_field = ReferenceField
-    """default field used to represent references when depth exhausted (and nested serializer isn't generated)"""
-
     # induct failure if they occasionally used somewhere
+    serializer_related_field = None
     serializer_related_to_field = None
     serializer_url_field = None
 
@@ -379,10 +378,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
     def build_reference_field(self, field_name, relation_info, nested_depth):
-        if not nested_depth:
-            field_class = self.serializer_related_field
-            field_kwargs = get_relation_kwargs(field_name, relation_info)
-        elif relation_info.related_model:
+        if relation_info.related_model and nested_depth:
             class NestedSerializer(DocumentSerializer):
                 class Meta:
                     model = relation_info.related_model
@@ -390,8 +386,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 
             field_class = NestedSerializer
             field_kwargs = { 'read_only': True }
+        elif relation_info.related_model:
+            field_class = ReferenceField
+            field_kwargs = get_relation_kwargs(field_name, relation_info)
         else:
-            raise NotImplementedError("GenericReference not yet supported.")
+            field_class = GenericReferenceField
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+            field_kwargs.pop('model_field', None)
 
         return field_class, field_kwargs
 

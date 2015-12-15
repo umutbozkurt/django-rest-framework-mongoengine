@@ -15,6 +15,7 @@ from bson import ObjectId, DBRef
 from bson.errors import InvalidId
 
 from mongoengine.base import get_document
+from mongoengine.base.common import _document_registry
 from mongoengine.errors import ValidationError as MongoValidationError, NotRegistered
 
 from mongoengine.queryset import QuerySet, QuerySetManager
@@ -95,7 +96,7 @@ class GenericEmbeddedField(serializers.Field):
         'not_a_dict': serializers.DictField.default_error_messages['not_a_dict'],
         'not_a_doc': _('Expected an EmbeddedDocument but got type "{input_type}".'),
         'undefined_model': _('Document `{doc_cls}` has not been defined.'),
-        'undefined_class': _('Provided data has not `_cls` item.')
+        'missing_class': _('Provided data has not `_cls` item.')
     }
 
     def to_internal_value(self, data):
@@ -105,7 +106,7 @@ class GenericEmbeddedField(serializers.Field):
             doc_name = data['_cls']
             doc_cls = get_document(doc_name)
         except KeyError:
-            self.fail('undefined_class')
+            self.fail('missing_class')
         except NotRegistered:
             self.fail('undefined_model', doc_cls=doc_name)
 
@@ -178,14 +179,20 @@ class DynamicField(GenericField, AttributedDocumentField):
     """
     pass
 
+
 class ReferenceField(serializers.Field):
-    """ Serialization of ReferenceField.
+    """ Field for References
     Behaves like DRF ForeignKeyField.
+
+    Internal value: DBRef.
+
+    Representation: `str(id)`, or  `{ _id: str(id) }`.
     """
     type_label = 'ReferenceField'
     default_error_messages = {
-        'does_not_exist': _('Invalid id "{pk_value}" - object does not exist.'),
-        'incorrect_type': _('Incorrect type. Expected str|ObjectId|DBRef|Document value, received {data_type}.'),
+        'invalid_input': _('Invalid input. Expected `str` or `{ _id: str }`.'),
+        'invalid_id': _('Cannot parse "{pk_value}" as {pk_type}.'),
+        'not_found': _('Document with id={pk_value} does not exist.'),
     }
     queryset = None
 
@@ -215,12 +222,6 @@ class ReferenceField(serializers.Field):
     def get_queryset(self):
         queryset = self.queryset
         if isinstance(queryset, (QuerySet, QuerySetManager)):
-            # Ensure queryset is re-evaluated whenever used.
-            # Note that actually a `Manager` class may also be used as the
-            # queryset argument. This occurs on ModelSerializer fields,
-            # as it allows us to generate a more expressive 'repr' output
-            # for the field.
-            # Eg: 'MyRelationship(queryset=ExampleModel.objects.all())'
             queryset = queryset.all()
         return queryset
 
@@ -247,23 +248,98 @@ class ReferenceField(serializers.Field):
     def display_value(self, instance):
         return six.text_type(instance)
 
-    def get_id(self, datum):
-        if isinstance(datum, ObjectId):
-            return datum
-        elif isinstance(datum, (Document, DBRef)):
-            return datum.id
-        elif isinstance(datum, six.string_types):
-            return self.pk_field.to_internal_value(datum)
-        else:
-            self.fail('incorrect_type', data_type=type(datum).__name__)
-
-    def to_internal_value(self, datum):
-        oid = self.get_id(datum)
+    def parse_id(self,value):
         try:
-            return self.get_queryset().only('id').get(id=oid).to_dbref()
-        except DoesNotExist:
-            self.fail('does_not_exist', pk_value=oid)
+            return self.pk_field.to_internal_value(value)
+        except:
+            self.fail('invalid_id', pk_value=repr(value), pk_type=self.pk_field_class.__name__)
 
-    def to_representation(self, datum):
-        oid = self.get_id(datum)
-        return self.pk_field.to_representation(oid)
+    def to_internal_value(self, value):
+        if isinstance(value, dict):
+            try:
+                doc_id = self.parse_id(value['_id'])
+            except KeyError:
+                self.fail('invalid_input')
+        else:
+            doc_id = self.parse_id(value)
+
+        try:
+            return self.get_queryset().only('id').get(id=doc_id).to_dbref()
+        except DoesNotExist:
+            self.fail('not_found', pk_value=doc_id)
+
+    def to_representation(self, value):
+        assert isinstance(value, (Document, DBRef))
+        doc_id = value.id
+        return self.pk_field.to_representation(doc_id)
+
+
+class GenericReferenceField(serializers.Field):
+    """ Field for GenericReferences
+    Internal value: Document, retrieved with only id field. The mongengine does not support DBRef here.
+
+    Representation: `{ _cls: str, _id: str }`.
+
+    No db validation, no choices.
+    """
+    type_label = 'GenericReferenceField'
+
+    pk_field_class = ObjectIdField
+    """ serializer field class used to handle object ids """
+
+    default_error_messages = {
+        'not_a_dict': serializers.DictField.default_error_messages['not_a_dict'],
+        'missing_items': _('Expected a dict with `_cls` and `_id` items.'),
+        'invalid_id': _('Cannot parse "{pk_value}" as {pk_type}.'),
+        'undefined_model': _('Document `{doc_cls}` has not been defined.'),
+        'unmapped_colection': _('Cannot find Document for collection "{collection}".'),
+        'not_found': _('Document with id={pk_value} does not exist.'),
+    }
+
+    def __init__(self, **kwargs):
+        self.pk_field = self.pk_field_class()
+        super(GenericReferenceField,self).__init__(**kwargs)
+
+    def parse_id(self,value):
+        try:
+            return self.pk_field.to_internal_value(value)
+        except:
+            self.fail('invalid_id', pk_value=repr(value), pk_type=self.pk_field_class.__name__)
+
+    def to_internal_value(self, value):
+        if not isinstance(value, dict):
+            self.fail('not_a_dict', input_type=type(value).__name__)
+        try:
+            doc_name = value['_cls']
+            doc_id = value['_id']
+        except KeyError:
+            self.fail('missing_class')
+        try:
+            doc_cls = get_document(doc_name)
+        except NotRegistered:
+            self.fail('undefined_model', doc_cls = doc_name)
+
+        try:
+            doc_id = self.pk_field.to_internal_value(doc_id)
+        except:
+            self.fail('invalid_id', pk_value=repr(doc_id), pk_type=self.pk_field_class.__name__)
+
+        try:
+            return doc_cls.objects.only('id').get(id=doc_id)
+        except DoesNotExist:
+            self.fail('not_found', pk_value=doc_id)
+
+
+    def to_representation(self, value):
+        assert isinstance(value, (Document, DBRef))
+        if isinstance(value, Document):
+            doc_id = value.id
+            doc_cls = value.__class__.__name__
+        if isinstance(value, DBRef): # hard case
+            doc_id = value.id
+            doc_collection = value.collection
+            class_match = [ k for k,v in _document_registry.items() if v._get_collection_name() == doc_collection ]
+            if len(class_match) != 1:
+                self.fail('undefined_model', collection=doc_collection)
+            doc_cls = class_match[0]
+        return { '_cls': doc_cls, '_id': self.pk_field.to_representation(doc_id) }
