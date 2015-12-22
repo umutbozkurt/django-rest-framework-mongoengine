@@ -1,9 +1,3 @@
-"""
-Adaptation of DRF generics.
-
-You should use them instead of original DRF classes.
-"""
-
 from rest_framework import mixins
 from rest_framework import generics as drf_generics
 

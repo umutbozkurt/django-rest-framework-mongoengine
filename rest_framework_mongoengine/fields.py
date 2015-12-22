@@ -82,15 +82,6 @@ class DocumentField(serializers.Field):
         super(DocumentField, self).run_validators(value)
 
 
-class AttributedDocumentField(DocumentField):
-    """ DocumentField that gets attribute value in ``to_representation``.
-
-    Used internally.
-    """
-    def get_attribute(self, instance):
-        return serializers.Field.get_attribute(self, instance)
-
-
 class GenericEmbeddedField(serializers.Field):
     """ Field for generic embedded documents.
 
@@ -132,9 +123,11 @@ class GenericField(serializers.Field):
 
     Recursively traverses lists and dicts.
     Primitive values are serialized using ``django.utils.encoding.smart_text`` (keeping json-safe intact).
-    Embedded documents handled using GenericEmbeddedField.
+    Embedded documents handled using temporary GenericEmbeddedField.
 
-    TODO: catch objectids and dbrefs.
+    No validation performed.
+
+    Note: it will not work properly if a value contains some complex elements.
     """
     embedded_doc_field = GenericEmbeddedField
 
@@ -170,6 +163,11 @@ class GenericField(serializers.Field):
             return data
 
 
+class AttributedDocumentField(DocumentField):
+    def get_attribute(self, instance):
+        return serializers.Field.get_attribute(self, instance)
+
+
 class GenericEmbeddedDocumentField(GenericEmbeddedField, AttributedDocumentField):
     """ Field for GenericEmbeddedDocumentField.
 
@@ -189,9 +187,13 @@ class DynamicField(GenericField, AttributedDocumentField):
 class ReferenceField(serializers.Field):
     """ Field for References.
 
+    Should be specified with ``model`` or ``queryset`` argument pointing to referenced model.
+
     Internal value: DBRef.
 
-    Representation: ``str(id)``, or  ``{ _id: str(id) }``.
+    Representation: ``str(id)``, or ``{ _id: str(id) }`` (for compatibility with GenericReference).
+
+    Validation checks existance of referenced object.
     """
     default_error_messages = {
         'invalid_input': _('Invalid input. Expected `str` or `{ _id: str }`.'),
@@ -203,11 +205,13 @@ class ReferenceField(serializers.Field):
     pk_field_class = ObjectIdField
     """ Serializer field class used to handle object ids. Override it in derived class if you have other type of ids."""
 
-    def __init__(self, model=None, **kwargs):
+    def __init__(self, model=None, queryset=None, **kwargs):
         if model is not None:
             self.queryset = model.objects
+        elif queryset is not None:
+            self.queryset = queryset
         else:
-            self.queryset = kwargs.pop('queryset', self.queryset)
+            self.queryset = None
 
         self.pk_field = self.pk_field_class()
 
@@ -284,17 +288,19 @@ class GenericReferenceField(serializers.Field):
     Internal value: Document, retrieved with only id field. The mongengine does not support DBRef here.
 
     Representation: ``{ _cls: str, _id: str }``.
+
+    Validation checks existance of given class and existance of referenced model.
     """
 
     pk_field_class = ObjectIdField
-    """ Serializer field class used to handle object ids """
+    """ Serializer field class used to handle object ids. Override it in derived class if you have other type of ids."""
 
     default_error_messages = {
         'not_a_dict': serializers.DictField.default_error_messages['not_a_dict'],
         'missing_items': _('Expected a dict with `_cls` and `_id` items.'),
         'invalid_id': _('Cannot parse "{pk_value}" as {pk_type}.'),
         'undefined_model': _('Document `{doc_cls}` has not been defined.'),
-        'unmapped_colection': _('Cannot find Document for collection "{collection}".'),
+        'undefined_collecion': _('No document defined for collection `{collection}`.'),
         'not_found': _('Document with id={pk_value} does not exist.'),
     }
 
@@ -315,7 +321,7 @@ class GenericReferenceField(serializers.Field):
             doc_name = value['_cls']
             doc_id = value['_id']
         except KeyError:
-            self.fail('missing_class')
+            self.fail('missing_items')
         try:
             doc_cls = get_document(doc_name)
         except NotRegistered:
@@ -342,7 +348,7 @@ class GenericReferenceField(serializers.Field):
             doc_collection = value.collection
             class_match = [ k for k,v in _document_registry.items() if v._get_collection_name() == doc_collection ]
             if len(class_match) != 1:
-                self.fail('undefined_model', collection=doc_collection)
+                self.fail('unmapped_collection', collection=doc_collection)
             doc_cls = class_match[0]
         return { '_cls': doc_cls, '_id': self.pk_field.to_representation(doc_id) }
 
@@ -363,6 +369,8 @@ class GeoPointField(MongoValidatingField, serializers.Field):
     """ Field for 2D point values.
 
     Internal value and representation: ``[ x, y ]``
+
+    Validation is delegated to mongoengine field.
     """
     default_error_messages = {
         'not_a_list': _("Points must be a list of coordinates, instead got {input_value}."),
@@ -389,11 +397,13 @@ class GeoPointField(MongoValidatingField, serializers.Field):
 class GeoJSONField(MongoValidatingField, serializers.Field):
     """ Field for GeoJSON values.
 
+    Shouldbe specified with argument ``geo_type`` referencing to GeoJSON geometry type ('Point', 'LineSting', etc)
+
     Internal value: ``[ coordinates ]`` (as required by mongoengine fields).
 
     Representation: ``{ 'type': str, 'coordinates': [ coords ] }`` (GeoJSON geometry format).
 
-    Validation: delegated to mongoengine.
+    Validation: delegated to corresponding mongoengine field.
     """
 
     default_error_messages = {
@@ -409,7 +419,7 @@ class GeoJSONField(MongoValidatingField, serializers.Field):
         'MultiPolygon': me_fields.MultiPolygonField
     }
 
-    def __init__(self, geo_type=None, *args, **kwargs):
+    def __init__(self, geo_type, *args, **kwargs):
         assert geo_type in self.valid_geo_types
         self.mongo_field = self.valid_geo_types[geo_type]
         super(GeoJSONField, self).__init__(*args, **kwargs)
