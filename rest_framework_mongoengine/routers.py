@@ -1,9 +1,3 @@
-"""
-Adaptaion of DRF routers.
-
-You should use them instead of original DRF classes.
-"""
-
 from rest_framework import routers as drf_routers
 
 

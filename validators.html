@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Viewsets &mdash; DRFM 3.x documentation</title>
+  <title>Validators &mdash; DRFM 3.x documentation</title>
   
 
   
@@ -31,8 +31,8 @@
 
   
     <link rel="top" title="DRFM 3.x documentation" href="index.html"/>
-        <link rel="next" title="Routers" href="routers.html"/>
-        <link rel="prev" title="Generics" href="generics.html"/> 
+        <link rel="next" title="Generics" href="generics.html"/>
+        <link rel="prev" title="Fields" href="fields.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -84,9 +84,9 @@
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="serializers.html">Serializers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fields.html">Fields</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validators.html">Validators</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Validators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="generics.html">Generics</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Viewsets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewsets.html">Viewsets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="routers.html">Routers</a></li>
 </ul>
 
@@ -118,7 +118,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li>Viewsets</li>
+    <li>Validators</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -130,26 +130,24 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="viewsets">
-<h1>Viewsets<a class="headerlink" href="#viewsets" title="Permalink to this headline">¶</a></h1>
-<p>Adaptation of DRF viewsets.</p>
-<p>You should use them instead of original DRF classes.</p>
-<span class="target" id="module-rest_framework_mongoengine.viewsets"></span><dl class="class">
-<dt id="rest_framework_mongoengine.viewsets.GenericViewSet">
-<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.viewsets.</code><code class="descname">GenericViewSet</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.viewsets.GenericViewSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adaptation of DRF GenericViewSet</p>
+  <div class="section" id="validators">
+<h1>Validators<a class="headerlink" href="#validators" title="Permalink to this headline">¶</a></h1>
+<p>Adaptation of DRF uniqueness validators.</p>
+<p>There are no constraints for unique-for-date in mongoengine.</p>
+<span class="target" id="module-rest_framework_mongoengine.validators"></span><dl class="class">
+<dt id="rest_framework_mongoengine.validators.UniqueTogetherValidator">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.validators.</code><code class="descname">UniqueTogetherValidator</code><span class="sig-paren">(</span><em>queryset</em>, <em>fields</em>, <em>message=None</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.validators.UniqueTogetherValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.validators.MongoValidatorMixin</span></code>, <code class="xref py py-class docutils literal"><span class="pre">rest_framework.validators.UniqueTogetherValidator</span></code></p>
+<p>Replacement of DRF UniqueTogetherValidator.</p>
+<p>Used by <code class="xref py py-class docutils literal"><span class="pre">DocumentSerializer</span></code> for fields, present in unique indexes.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="rest_framework_mongoengine.viewsets.ModelViewSet">
-<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.viewsets.</code><code class="descname">ModelViewSet</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.viewsets.ModelViewSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adaptation of DRF ModelViewSet</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="rest_framework_mongoengine.viewsets.ReadOnlyModelViewSet">
-<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.viewsets.</code><code class="descname">ReadOnlyModelViewSet</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.viewsets.ReadOnlyModelViewSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adaptation of DRF ReadOnlyModelViewSet</p>
+<dt id="rest_framework_mongoengine.validators.UniqueValidator">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.validators.</code><code class="descname">UniqueValidator</code><span class="sig-paren">(</span><em>queryset</em>, <em>message=None</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.validators.UniqueValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.validators.MongoValidatorMixin</span></code>, <code class="xref py py-class docutils literal"><span class="pre">rest_framework.validators.UniqueValidator</span></code></p>
+<p>Replacement of DRF UniqueValidator.</p>
+<p>Used by <code class="xref py py-class docutils literal"><span class="pre">DocumentSerializer</span></code> for fields, present in unique indexes.</p>
 </dd></dl>
 
 </div>
@@ -161,10 +159,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="routers.html" class="btn btn-neutral float-right" title="Routers" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="generics.html" class="btn btn-neutral float-right" title="Generics" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="generics.html" class="btn btn-neutral" title="Generics" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="fields.html" class="btn btn-neutral" title="Fields" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

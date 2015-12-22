@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>DRFM’s documentation &mdash; DRFM 3.x documentation</title>
+  <title>The Django Rest Framework Mongoengine &mdash; DRFM 3.x documentation</title>
   
 
   
@@ -31,7 +31,7 @@
 
   
     <link rel="top" title="DRFM 3.x documentation" href="#"/>
-        <link rel="next" title="Fields" href="fields.html"/> 
+        <link rel="next" title="Serializers" href="serializers.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -81,8 +81,9 @@
             
             
                 <ul>
-<li class="toctree-l1"><a class="reference internal" href="fields.html">Fields</a></li>
 <li class="toctree-l1"><a class="reference internal" href="serializers.html">Serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Fields</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validators.html">Validators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="generics.html">Generics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewsets.html">Viewsets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="routers.html">Routers</a></li>
@@ -116,7 +117,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="#">Docs</a> &raquo;</li>
       
-    <li>DRFM&#8217;s documentation</li>
+    <li>The Django Rest Framework Mongoengine</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -128,13 +129,35 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="drfm-s-documentation">
-<h1>DRFM&#8217;s documentation<a class="headerlink" href="#drfm-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>_rest_framework_mongoengine: <a class="reference external" href="https://github.com/umutbozkurt/django-rest-framework-mongoengine">https://github.com/umutbozkurt/django-rest-framework-mongoengine</a></p>
+  <div class="section" id="the-django-rest-framework-mongoengine">
+<h1>The Django Rest Framework Mongoengine<a class="headerlink" href="#the-django-rest-framework-mongoengine" title="Permalink to this headline">¶</a></h1>
+<p>The package provides support for <a class="reference external" href="http://mongoengine.org/">mongoengine</a>  to work with <a class="reference external" href="http://www.django-rest-framework.org/">Django Rest Framework</a>
+Provided classes are mostly reproduce corresponding DRF classes. The usage of them is the same as in upstream. But the implemenation may have differences and features, and some code relying on DRF internals may not work propery.</p>
+<p>At version 3.x the modules are refactored to closer match upstream API and behaviour. Major and minor versions intended to match supported version of DRF.</p>
+<p>Older versions are not supported anymore. <a class="reference external" href="https://pythonhosted.org/django-rest-framework-mongoengine/">Older documentation is available here</a>.</p>
+<p>Sources are available at <a class="reference external" href="https://github.com/umutbozkurt/django-rest-framework-mongoengine">https://github.com/umutbozkurt/django-rest-framework-mongoengine</a></p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="fields.html">Fields</a></li>
-<li class="toctree-l1"><a class="reference internal" href="serializers.html">Serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="serializers.html">Serializers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="serializers.html#documentserializer">DocumentSerializer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serializers.html#embeddeddocumentserializer">EmbeddedDocumentSerializer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serializers.html#dynamicdocumentserializer">DynamicDocumentSerializer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Fields</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#genericfield">GenericField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#geopointfield">GeoPointField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#geojsonfield">GeoJSONField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#objectidfield">ObjectIdField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#referencefield">ReferenceField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#genericreferencefield">GenericReferenceField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#genericembeddedfield">GenericEmbeddedField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#documentfield">DocumentField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#dynamicfield">DynamicField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#genericembeddeddocumentfield">GenericEmbeddedDocumentField</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="validators.html">Validators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="generics.html">Generics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewsets.html">Viewsets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="routers.html">Routers</a></li>
@@ -149,7 +172,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="fields.html" class="btn btn-neutral float-right" title="Fields" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="serializers.html" class="btn btn-neutral float-right" title="Serializers" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
     </div>

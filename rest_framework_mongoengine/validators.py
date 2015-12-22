@@ -17,7 +17,7 @@ class MongoValidatorMixin():
 class UniqueValidator(MongoValidatorMixin, validators.UniqueValidator):
     """ Replacement of DRF UniqueValidator.
 
-    Used by ``DocumentSerializer`` for fields, present in unique indexes.
+    Used by :class:`DocumentSerializer` for fields, present in unique indexes.
     """
     def __call__(self, value):
         queryset = self.queryset
@@ -36,7 +36,7 @@ class UniqueValidator(MongoValidatorMixin, validators.UniqueValidator):
 class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherValidator):
     """ Replacement of DRF UniqueTogetherValidator.
 
-    Used by ``DocumentSerializer`` for fields, present in unique indexes.
+    Used by :class:`DocumentSerializer` for fields, present in unique indexes.
     """
     def __call__(self, attrs):
         self.enforce_required_fields(attrs)
