@@ -4,7 +4,7 @@ The module description
 from collections import OrderedDict
 
 from django.utils import six
-from django.utils.encoding import is_protected_type, smart_text
+from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
@@ -21,8 +21,6 @@ from mongoengine.errors import ValidationError as MongoValidationError, NotRegis
 from mongoengine.queryset import QuerySet, QuerySetManager
 from mongoengine import EmbeddedDocument, Document, fields as me_fields
 from mongoengine.errors import DoesNotExist
-
-from rest_framework_mongoengine.repr import smart_repr
 
 
 class ObjectIdField(serializers.Field):

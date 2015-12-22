@@ -4,9 +4,6 @@ The module description
 import copy
 from collections import OrderedDict
 
-from django.utils.translation import ugettext_lazy as _
-from django.utils.functional import cached_property
-
 from mongoengine import fields as me_fields, EmbeddedDocument
 from mongoengine.errors import ValidationError as me_ValidationError
 
@@ -130,28 +127,8 @@ class DocumentSerializer(serializers.ModelSerializer):
     serializer_related_to_field = None
     serializer_url_field = None
 
-    # def is_valid(self, raise_exception=False):
-    #     valid = super(DocumentSerializer,self).is_valid(raise_exception=raise_exception)
-
-    #     for name in self.field_info.embedded.keys():
-    #         if name.endswith('.child'):
-    #             continue
-    #         field = self.fields[name]
-    #         if isinstance(field, EmbeddedDocumentSerializer):
-    #             field.initial_data = self.validated_data.pop(name, serializers.empty)
-    #             valid &= field.is_valid(raise_exception=raise_exception)
-
-    #     return valid
-
     def create(self, validated_data):
         raise_errors_on_nested_writes('create', self, validated_data)
-
-    #     # Automagically reate and set embedded documents to validated data
-    #     for name in self.field_info.embedded.keys():
-    #         field = self.fields[name]
-    #         if isinstance(field, EmbeddedDocumentSerializer):
-    #             embedded_doc_intance = field.create(field.validated_data)
-    #             validated_data[name] = embedded_doc_intance
 
         ModelClass = self.Meta.model
         try:
@@ -197,16 +174,10 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-    #     for name in self.field_info.embedded.keys():
-    #         field = self.fields[name]
-    #         if isinstance(field, EmbeddedDocumentSerializer):
-    #             embedded_doc_intance = field.update(getattr(instance, name), field.validated_data)
-    #             setattr(instance, name, embedded_doc_intance)
 
         instance.save()
 
         return instance
-
 
     def get_model(self):
         return self.Meta.model
@@ -277,15 +248,6 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return fields
 
-
-    # def get_field_names(self, declared_fields, info):
-    #     """
-    #     Returns the list of all field names that should be created when
-    #     instantiating this serializer class. This is based on the default
-    #     set of fields, but also takes into account the `Meta.fields` or
-    #     `Meta.exclude` options if they have been specified.
-    #     """
-    #     # use upstream
 
     def get_default_field_names(self, declared_fields, model_info):
         return (
@@ -421,32 +383,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
 
-    # def build_property_field(self, field_name, model_class):
-    #     """
-    #     Create a read only field for model methods and properties.
-    #     """
-    #     # use upstream
-
-    # def build_unknown_field(self, field_name, model_class):
-    #     """
-    #     Raise an error on any unknown fields.
-    #     """
-    #     # use upastream
-
-    # def include_extra_kwargs(self, kwargs, extra_kwargs):
-    #     """
-    #     Include any 'extra_kwargs' that have been included for this field,
-    #     possibly removing any incompatible existing keyword arguments.
-    #     """
-    #     # use upastream
-
-    # def get_extra_kwargs(self):
-    #     """
-    #     Return a dictionary mapping field names to a dictionary of
-    #     additional keyword arguments.
-    #     """
-    #     # use mainstream
-
     def get_uniqueness_extra_kwargs(self, field_names, extra_kwargs):
         # extra_kwargs contains 'default', 'required', 'validators=[UniqValidator]'
         # hidden_fields contains fields involved in constraints, but missing in serializer fields
@@ -494,12 +430,6 @@ class DocumentSerializer(serializers.ModelSerializer):
                 extra_kwargs[key] = value
 
         return extra_kwargs, hidden_fields
-
-    # def get_validators(self):
-    #     """
-    #     Determine the set of validators to use when instantiating serializer.
-    #     """
-    #     # mainstream
 
     def get_unique_together_validators(self):
         model = self.Meta.model
