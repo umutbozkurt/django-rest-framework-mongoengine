@@ -45,7 +45,7 @@ class FieldValues():
         for input_value, expected_failure in get_items(self.invalid_inputs):
             with pytest.raises(ValidationError) as exc_info:
                 self.field.run_validation(input_value)
-            assert exc_info.value.detail == expected_failure
+            assert expected_failure in exc_info.value.detail[0]
 
     def test_outputs(self):
         for output_value, expected_output in get_items(self.outputs):

@@ -150,6 +150,9 @@ def get_field_kwargs(field_name, model_field):
         kwargs['decimal_places'] = precision
         kwargs['max_digits'] = max_length
 
+    if isinstance(model_field, me_fields.GeoJsonBaseField):
+        kwargs['geo_type'] = model_field._type
+
     if isinstance(model_field, me_fields.SequenceField) or model_field.primary_key or model_field.db_field == '_id':
         # If this field is read-only, then return early.
         # Further keyword arguments are not valid.

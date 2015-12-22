@@ -23,7 +23,9 @@ from .fields import (ObjectIdField,
                      GenericEmbeddedDocumentField,
                      DynamicField,
                      ReferenceField,
-                     GenericReferenceField)
+                     GenericReferenceField,
+                     GeoPointField,
+                     GeoJSONField)
 
 from .utils import (is_abstract_model,
                     get_field_info,
@@ -118,6 +120,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.ImageField: drf_fields.ImageField,
         me_fields.SequenceField: drf_fields.IntegerField,
         me_fields.UUIDField: drf_fields.UUIDField,
+        me_fields.GeoPointField: GeoPointField,
+        me_fields.GeoJsonBaseField: GeoJSONField,
         me_fields.BaseField: DocumentField
     }
 

@@ -19,7 +19,7 @@ from mongoengine.base.common import _document_registry
 from mongoengine.errors import ValidationError as MongoValidationError, NotRegistered
 
 from mongoengine.queryset import QuerySet, QuerySetManager
-from mongoengine import EmbeddedDocument, Document
+from mongoengine import EmbeddedDocument, Document, fields as me_fields
 from mongoengine.errors import DoesNotExist
 
 from rest_framework_mongoengine.repr import smart_repr
@@ -343,3 +343,70 @@ class GenericReferenceField(serializers.Field):
                 self.fail('undefined_model', collection=doc_collection)
             doc_cls = class_match[0]
         return { '_cls': doc_cls, '_id': self.pk_field.to_representation(doc_id) }
+
+
+class MongoValidatingField(object):
+    " uses attribute mongo_field to validate value"
+    mongo_field = me_fields.BaseField
+
+    def run_validators(self, value):
+        try:
+            self.mongo_field().validate(value)
+        except MongoValidationError as e:
+            raise ValidationError(e.message)
+        super(MongoValidatingField, self).run_validators(value)
+
+
+class GeoPointField(MongoValidatingField, serializers.Field):
+    default_error_messages = {
+        'not_a_list': _("Points must be a list of coordinates, instead got {input_value}."),
+        'not_2d': _("Point value must be a two-dimensional coordinates, instead got {input_value}."),
+        'not_float': _("Point coordinates must be float or int values, instead got {input_value}."),
+    }
+
+    mongo_field = me_fields.GeoPointField
+
+    def to_internal_value(self, value):
+        if not isinstance(value, list):
+            self.fail('not_a_list', input_value=repr(value))
+        if len(value) != 2:
+            self.fail('not_2d', input_value=repr(value))
+        try:
+            return [ float(value[0]), float(value[1]) ]
+        except ValueError:
+            self.fail('not_float', input_value=repr(value))
+
+    def to_representation(self, value):
+        return list(value)
+
+
+class GeoJSONField(MongoValidatingField, serializers.Field):
+    default_error_messages = {
+        'invalid_type': _("Geometry must be a geojson geometry or a geojson coordinates, got {input_value}."),
+        'invalid_geotype': _("Geometry expected to be '{exp_type}', got {geo_type}."),
+    }
+    valid_geo_types = {
+        'Point': me_fields.PointField,
+        'LineString': me_fields.LineStringField,
+        'Polygon': me_fields.PolygonField,
+        'MultiPoint': me_fields.MultiPointField,
+        'MultiLineString': me_fields.MultiLineStringField,
+        'MultiPolygon': me_fields.MultiPolygonField
+    }
+
+    def __init__(self, geo_type=None, *args, **kwargs):
+        assert geo_type in self.valid_geo_types
+        self.mongo_field = self.valid_geo_types[geo_type]
+        super(GeoJSONField, self).__init__(*args, **kwargs)
+
+    def to_internal_value(self, value):
+        if isinstance(value, list):
+            return value
+        if not isinstance(value, dict) or 'coordinates' not in value or 'type' not in value:
+            self.fail('invalid_type', input_value=repr(value))
+        if value['type'] != self.mongo_field._type:
+            self.fail('invalid_geotype', geo_type=repr(value['type']), exp_type=self.mongo_field._type)
+        return value['coordinates']
+
+    def to_representation(self, value):
+        return { 'type': self.mongo_field._type, 'coordinates': value}
