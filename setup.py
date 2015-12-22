@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='django-rest-framework-mongoengine',
-    version='2.1.0',
+    version='3.3.0',
     description='MongoEngine support for Django Rest Framework.',
     packages=['rest_framework_mongoengine',],
     license='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/LICENSE',
@@ -20,8 +20,9 @@ setup(
                  'License :: OSI Approved :: MIT License',
                  'Natural Language :: English',
                  'Programming Language :: Python',
+                 'Programming Language :: Python :: 2',
+                 'Programming Language :: Python :: 3',
                  'Topic :: Software Development :: Libraries :: Python Modules',
-                 'Topic :: Software Development :: Testing',
                  'Topic :: Internet',
                  'Topic :: Internet :: WWW/HTTP :: Site Management',
                  'Topic :: Text Processing :: Markup :: HTML',
