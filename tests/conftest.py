@@ -11,17 +11,17 @@ def pytest_configure():
         USE_L10N=True,
         STATIC_URL='/static/',
         ROOT_URLCONF='tests.urls',
-        TEMPLATE_LOADERS=(
-        ),
-        MIDDLEWARE_CLASSES=(
-        ),
+        TEMPLATE_LOADERS=(),
+        MIDDLEWARE_CLASSES=(),
         INSTALLED_APPS=(
+            'django.contrib.auth',
+            'django.contrib.contenttypes',
             'rest_framework',
             'rest_framework_mongoengine',
             'tests',
         ),
-        PASSWORD_HASHERS=(
-        ),
+        AUTHENTICATION_BACKENDS=(),
+        PASSWORD_HASHERS=(),
     )
 
     from mongoengine import connect

@@ -1,6 +1,0 @@
-django==1.8.*
-djangorestframework==3.3.*
-pymongo==2.*
-blinker==1.*
-pytest==2.*
-pytest-django==2.*
