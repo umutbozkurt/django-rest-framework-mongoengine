@@ -1,6 +1,3 @@
-"""
-The module description
-"""
 from collections import OrderedDict
 
 from django.utils import six
@@ -24,8 +21,7 @@ from mongoengine.errors import DoesNotExist
 
 
 class ObjectIdField(serializers.Field):
-    """ Field for ObjectId value """
-    type_label = 'ObjectIdField'
+    """ Field for ObjectId values """
 
     def to_internal_value(self, value):
         try:
@@ -38,13 +34,14 @@ class ObjectIdField(serializers.Field):
 
 
 class DocumentField(serializers.Field):
-    """ Replacement of DRF ModelField
-    Keeps track of underlying document field.
-    Delegates parsing nd validation to underlying document field.
+    """ Replacement of DRF ModelField.
+
+    Keeps track of underlying mognoengine field.
 
     Used by DocumentSerializers to map unknown fields.
+
+    NB: This is not DocumentField from previous releases. For previous behaviour see GenericField
     """
-    type_label = 'DocumentField'
 
     def __init__(self, model_field, **kwargs):
         self.model_field = model_field
@@ -54,24 +51,30 @@ class DocumentField(serializers.Field):
         return obj
 
     def to_internal_value(self, data):
-        """ convert input to python value
-        Uses underlying document field's `to_python` method.
+        """ convert input to python value.
+
+        Uses mongoengine field's ``to_python()``.
         """
         return self.model_field.to_python(data)
 
     def to_representation(self, obj):
-        """ convert value to representation
-        DRF ModelField uses `value_to_string` for this purpose. Mongoengine fields do not have such method.
+        """ convert value to representation.
 
-        This implementation uses `django.utils.encoding.smart_text` to convert everything to text, while keeping json-safe types intact.
+        DRF ModelField uses ``value_to_string`` for this purpose. Mongoengine fields do not have such method.
 
-        NB: The argument is whole object instead of value. It's upstream feature.
-        Probably because the field can be represented by a complicated method with smart way to extract data.
+        This implementation uses ``django.utils.encoding.smart_text`` to convert everything to text, while keeping json-safe types intact.
+
+        NB: The argument is whole object, instead of attribute value. This is upstream feature.
+        Probably because the field can be represented by a complicated method with nontrivial way to extract data.
         """
         value = self.model_field.__get__(obj, None)
         return smart_text(value, strings_only=True)
 
     def run_validators(self, value):
+        """ validate value.
+
+        Uses mongoengine field's ``validate()``
+        """
         try:
             self.model_field.validate(value)
         except MongoValidationError as e:
@@ -80,16 +83,19 @@ class DocumentField(serializers.Field):
 
 
 class AttributedDocumentField(DocumentField):
-    """ normalizes back DocumentField's' `get_attribute` and `to_representation` """
+    """ DocumentField that gets attribute value in ``to_representation``.
+
+    Used internally.
+    """
     def get_attribute(self, instance):
         return serializers.Field.get_attribute(self, instance)
 
 
 class GenericEmbeddedField(serializers.Field):
-    """ Field for generic embedded documents
-    Serializes like DictField with additional item '_cls'
+    """ Field for generic embedded documents.
+
+    Serializes like DictField with additional item ``_cls``.
     """
-    type_label = 'GenericEmbeddedField'
     default_error_messages = {
         'not_a_dict': serializers.DictField.default_error_messages['not_a_dict'],
         'not_a_doc': _('Expected an EmbeddedDocument but got type "{input_type}".'),
@@ -122,13 +128,14 @@ class GenericEmbeddedField(serializers.Field):
 
 
 class GenericField(serializers.Field):
-    """ Field for generic values
+    """ Field for generic values.
+
     Recursively traverses lists and dicts.
-    Primitive values are serialized using `django.utils.encoding.smart_text`, keeping json-safe intact.
+    Primitive values are serialized using ``django.utils.encoding.smart_text`` (keeping json-safe intact).
     Embedded documents handled using GenericEmbeddedField.
-    TODO: Handle references using (Generic)ReferenceField
+
+    TODO: catch objectids and dbrefs.
     """
-    type_label = 'GenericField'
     embedded_doc_field = GenericEmbeddedField
 
     def to_representation(self, value):
@@ -163,30 +170,29 @@ class GenericField(serializers.Field):
             return data
 
 
-
 class GenericEmbeddedDocumentField(GenericEmbeddedField, AttributedDocumentField):
-    """ Field for GenericEmbeddedDocumentField
-    Used internally by `DocumentSerializer`.
+    """ Field for GenericEmbeddedDocumentField.
+
+    Used internally by ``DocumentSerializer``.
     """
     pass
 
 
 class DynamicField(GenericField, AttributedDocumentField):
-    """ Field for DynamicDocuments
-    Used internally by `DynamicDocumentSerializer`.
+    """ Field for DynamicDocuments.
+
+    Used internally by ``DynamicDocumentSerializer``.
     """
     pass
 
 
 class ReferenceField(serializers.Field):
-    """ Field for References
-    Behaves like DRF ForeignKeyField.
+    """ Field for References.
 
     Internal value: DBRef.
 
-    Representation: `str(id)`, or  `{ _id: str(id) }`.
+    Representation: ``str(id)``, or  ``{ _id: str(id) }``.
     """
-    type_label = 'ReferenceField'
     default_error_messages = {
         'invalid_input': _('Invalid input. Expected `str` or `{ _id: str }`.'),
         'invalid_id': _('Cannot parse "{pk_value}" as {pk_type}.'),
@@ -195,7 +201,7 @@ class ReferenceField(serializers.Field):
     queryset = None
 
     pk_field_class = ObjectIdField
-    """ serializer field class used to handle object ids """
+    """ Serializer field class used to handle object ids. Override it in derived class if you have other type of ids."""
 
     def __init__(self, model=None, **kwargs):
         if model is not None:
@@ -273,17 +279,15 @@ class ReferenceField(serializers.Field):
 
 
 class GenericReferenceField(serializers.Field):
-    """ Field for GenericReferences
+    """ Field for GenericReferences.
+
     Internal value: Document, retrieved with only id field. The mongengine does not support DBRef here.
 
-    Representation: `{ _cls: str, _id: str }`.
-
-    No db validation, no choices.
+    Representation: ``{ _cls: str, _id: str }``.
     """
-    type_label = 'GenericReferenceField'
 
     pk_field_class = ObjectIdField
-    """ serializer field class used to handle object ids """
+    """ Serializer field class used to handle object ids """
 
     default_error_messages = {
         'not_a_dict': serializers.DictField.default_error_messages['not_a_dict'],
@@ -344,7 +348,7 @@ class GenericReferenceField(serializers.Field):
 
 
 class MongoValidatingField(object):
-    " uses attribute mongo_field to validate value"
+    # uses attribute mongo_field to validate value
     mongo_field = me_fields.BaseField
 
     def run_validators(self, value):
@@ -356,6 +360,10 @@ class MongoValidatingField(object):
 
 
 class GeoPointField(MongoValidatingField, serializers.Field):
+    """ Field for 2D point values.
+
+    Internal value and representation: ``[ x, y ]``
+    """
     default_error_messages = {
         'not_a_list': _("Points must be a list of coordinates, instead got {input_value}."),
         'not_2d': _("Point value must be a two-dimensional coordinates, instead got {input_value}."),
@@ -379,6 +387,15 @@ class GeoPointField(MongoValidatingField, serializers.Field):
 
 
 class GeoJSONField(MongoValidatingField, serializers.Field):
+    """ Field for GeoJSON values.
+
+    Internal value: ``[ coordinates ]`` (as required by mongoengine fields).
+
+    Representation: ``{ 'type': str, 'coordinates': [ coords ] }`` (GeoJSON geometry format).
+
+    Validation: delegated to mongoengine.
+    """
+
     default_error_messages = {
         'invalid_type': _("Geometry must be a geojson geometry or a geojson coordinates, got {input_value}."),
         'invalid_geotype': _("Geometry expected to be '{exp_type}', got {geo_type}."),

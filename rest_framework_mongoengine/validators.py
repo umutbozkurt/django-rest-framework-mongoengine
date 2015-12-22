@@ -6,19 +6,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.compat import unicode_to_repr
 from rest_framework_mongoengine.repr import smart_repr
 
-class MongoValidationWrapper():
-    def __init__(self, model_field):
-        self.field = model_field
-
-    def __call__(self, value):
-        try:
-            if self.field.validation:
-                self.field.validation(value)
-            if self.field.validate:
-                self.field.validate(value)
-        except mongo_ValidationError as e:
-            raise ValidationError(e)
-
 
 class MongoValidatorMixin():
     def exclude_current_instance(self, queryset):
@@ -28,6 +15,10 @@ class MongoValidatorMixin():
 
 
 class UniqueValidator(MongoValidatorMixin, validators.UniqueValidator):
+    """ Replacement of DRF UniqueValidator.
+
+    Used by ``DocumentSerializer`` for fields, present in unique indexes.
+    """
     def __call__(self, value):
         queryset = self.queryset
         queryset = self.filter_queryset(value, queryset)
@@ -43,6 +34,10 @@ class UniqueValidator(MongoValidatorMixin, validators.UniqueValidator):
 
 
 class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherValidator):
+    """ Replacement of DRF UniqueTogetherValidator.
+
+    Used by ``DocumentSerializer`` for fields, present in unique indexes.
+    """
     def __call__(self, attrs):
         self.enforce_required_fields(attrs)
         queryset = self.queryset

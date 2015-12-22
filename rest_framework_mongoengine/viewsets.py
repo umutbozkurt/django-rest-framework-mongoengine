@@ -1,5 +1,7 @@
 """
-The module description
+Adaptation of DRF viewsets.
+
+You should use them instead of original DRF classes.
 """
 
 from rest_framework import mixins
@@ -8,7 +10,8 @@ from rest_framework_mongoengine.generics import GenericAPIView
 
 
 class GenericViewSet(ViewSetMixin, GenericAPIView):
-    """ Replication of DRF GenericViewSet """
+    """ Adaptation of DRF GenericViewSet """
+    pass
 
 class ModelViewSet(mixins.CreateModelMixin,
                    mixins.RetrieveModelMixin,
@@ -16,12 +19,12 @@ class ModelViewSet(mixins.CreateModelMixin,
                    mixins.DestroyModelMixin,
                    mixins.ListModelMixin,
                    GenericViewSet):
-    """ Replication of DRF ModelViewSet """
+    """ Adaptation of DRF ModelViewSet """
     pass
 
 
 class ReadOnlyModelViewSet(mixins.RetrieveModelMixin,
                            mixins.ListModelMixin,
                            GenericViewSet):
-    """ Replication of DRF ReadOnlyModelViewSet """
+    """ Adaptation of DRF ReadOnlyModelViewSet """
     pass

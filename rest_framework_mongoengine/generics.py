@@ -1,5 +1,7 @@
 """
-The module description
+Adaptation of DRF generics.
+
+You should use them instead of original DRF classes.
 """
 
 from rest_framework import mixins

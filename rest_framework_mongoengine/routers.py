@@ -1,12 +1,14 @@
 """
-The module description
+Adaptaion of DRF routers.
+
+You should use them instead of original DRF classes.
 """
 
 from rest_framework import routers as drf_routers
 
 
 class MongoRouterMixin(object):
-    """ Mixin for mongo-routers
+    """ Mixin for mongo-routers.
 
     Determines base_name from mongo queryset
     """
@@ -19,10 +21,10 @@ class MongoRouterMixin(object):
 
 
 class SimpleRouter(MongoRouterMixin, drf_routers.SimpleRouter):
-    """ Replication of DRF SimpleRouter """
+    """ Adaptation of DRF SimpleRouter """
     pass
 
 
 class DefaultRouter(MongoRouterMixin, drf_routers.DefaultRouter):
-    """ Replication of DRF DefaultRouter """
+    """ Adaptation of DRF DefaultRouter """
     pass
