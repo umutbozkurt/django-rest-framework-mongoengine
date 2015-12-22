@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Fields &mdash; DRFM 3.x documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="DRFM 3.x documentation" href="index.html"/>
+        <link rel="next" title="Serializers" href="serializers.html"/>
+        <link rel="prev" title="DRFM’s documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> DRFM
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.x
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Fields</a></li>
+<li class="toctree-l1"><a class="reference internal" href="serializers.html">Serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generics.html">Generics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewsets.html">Viewsets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="routers.html">Routers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">DRFM</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Fields</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-rest_framework_mongoengine.fields">
+<span id="fields"></span><h1>Fields<a class="headerlink" href="#module-rest_framework_mongoengine.fields" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.GenericField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">GenericField</code><span class="sig-paren">(</span><em>read_only=False</em>, <em>write_only=False</em>, <em>required=None</em>, <em>default=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>initial=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>source=None</em>, <em>label=None</em>, <em>help_text=None</em>, <em>style=None</em>, <em>error_messages=None</em>, <em>validators=None</em>, <em>allow_null=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
+<p>Field for generic values.</p>
+<p>Recursively traverses lists and dicts.
+Primitive values are serialized using <code class="docutils literal"><span class="pre">django.utils.encoding.smart_text</span></code> (keeping json-safe intact).
+Embedded documents handled using GenericEmbeddedField.</p>
+<p>TODO: catch objectids and dbrefs.</p>
+<dl class="attribute">
+<dt id="rest_framework_mongoengine.fields.GenericField.embedded_doc_field">
+<code class="descname">embedded_doc_field</code><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericField.embedded_doc_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#rest_framework_mongoengine.fields.GenericEmbeddedField" title="rest_framework_mongoengine.fields.GenericEmbeddedField"><code class="xref py py-class docutils literal"><span class="pre">GenericEmbeddedField</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.GeoPointField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">GeoPointField</code><span class="sig-paren">(</span><em>read_only=False</em>, <em>write_only=False</em>, <em>required=None</em>, <em>default=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>initial=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>source=None</em>, <em>label=None</em>, <em>help_text=None</em>, <em>style=None</em>, <em>error_messages=None</em>, <em>validators=None</em>, <em>allow_null=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.GeoPointField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.fields.MongoValidatingField</span></code>, <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
+<p>Field for 2D point values.</p>
+<p>Internal value and representation: <code class="docutils literal"><span class="pre">[</span> <span class="pre">x,</span> <span class="pre">y</span> <span class="pre">]</span></code></p>
+<dl class="attribute">
+<dt id="rest_framework_mongoengine.fields.GeoPointField.mongo_field">
+<code class="descname">mongo_field</code><a class="headerlink" href="#rest_framework_mongoengine.fields.GeoPointField.mongo_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#rest_framework_mongoengine.fields.GeoPointField" title="rest_framework_mongoengine.fields.GeoPointField"><code class="xref py py-class docutils literal"><span class="pre">GeoPointField</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.GeoJSONField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">GeoJSONField</code><span class="sig-paren">(</span><em>geo_type=None</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.GeoJSONField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.fields.MongoValidatingField</span></code>, <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
+<p>Field for GeoJSON values.</p>
+<p>Internal value: <code class="docutils literal"><span class="pre">[</span> <span class="pre">coordinates</span> <span class="pre">]</span></code> (as required by mongoengine fields).</p>
+<p>Representation: <code class="docutils literal"><span class="pre">{</span> <span class="pre">'type':</span> <span class="pre">str,</span> <span class="pre">'coordinates':</span> <span class="pre">[</span> <span class="pre">coords</span> <span class="pre">]</span> <span class="pre">}</span></code> (GeoJSON geometry format).</p>
+<p>Validation: delegated to mongoengine.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.ObjectIdField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">ObjectIdField</code><span class="sig-paren">(</span><em>read_only=False</em>, <em>write_only=False</em>, <em>required=None</em>, <em>default=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>initial=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>source=None</em>, <em>label=None</em>, <em>help_text=None</em>, <em>style=None</em>, <em>error_messages=None</em>, <em>validators=None</em>, <em>allow_null=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.ObjectIdField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
+<p>Field for ObjectId values</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.ReferenceField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">ReferenceField</code><span class="sig-paren">(</span><em>model=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.ReferenceField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
+<p>Field for References.</p>
+<p>Internal value: DBRef.</p>
+<p>Representation: <code class="docutils literal"><span class="pre">str(id)</span></code>, or  <code class="docutils literal"><span class="pre">{</span> <span class="pre">_id:</span> <span class="pre">str(id)</span> <span class="pre">}</span></code>.</p>
+<dl class="attribute">
+<dt id="rest_framework_mongoengine.fields.ReferenceField.pk_field_class">
+<code class="descname">pk_field_class</code><a class="headerlink" href="#rest_framework_mongoengine.fields.ReferenceField.pk_field_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializer field class used to handle object ids. Override it in derived class if you have other type of ids.</p>
+<p>alias of <a class="reference internal" href="#rest_framework_mongoengine.fields.ObjectIdField" title="rest_framework_mongoengine.fields.ObjectIdField"><code class="xref py py-class docutils literal"><span class="pre">ObjectIdField</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.GenericReferenceField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">GenericReferenceField</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericReferenceField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
+<p>Field for GenericReferences.</p>
+<p>Internal value: Document, retrieved with only id field. The mongengine does not support DBRef here.</p>
+<p>Representation: <code class="docutils literal"><span class="pre">{</span> <span class="pre">_cls:</span> <span class="pre">str,</span> <span class="pre">_id:</span> <span class="pre">str</span> <span class="pre">}</span></code>.</p>
+<dl class="attribute">
+<dt id="rest_framework_mongoengine.fields.GenericReferenceField.pk_field_class">
+<code class="descname">pk_field_class</code><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericReferenceField.pk_field_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializer field class used to handle object ids</p>
+<p>alias of <a class="reference internal" href="#rest_framework_mongoengine.fields.ObjectIdField" title="rest_framework_mongoengine.fields.ObjectIdField"><code class="xref py py-class docutils literal"><span class="pre">ObjectIdField</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.GenericEmbeddedField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">GenericEmbeddedField</code><span class="sig-paren">(</span><em>read_only=False</em>, <em>write_only=False</em>, <em>required=None</em>, <em>default=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>initial=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>source=None</em>, <em>label=None</em>, <em>help_text=None</em>, <em>style=None</em>, <em>error_messages=None</em>, <em>validators=None</em>, <em>allow_null=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericEmbeddedField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
+<p>Field for generic embedded documents.</p>
+<p>Serializes like DictField with additional item <code class="docutils literal"><span class="pre">_cls</span></code>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.DocumentField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">DocumentField</code><span class="sig-paren">(</span><em>model_field</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.DocumentField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
+<p>Replacement of DRF ModelField.</p>
+<p>Keeps track of underlying mognoengine field.</p>
+<p>Used by DocumentSerializers to map unknown fields.</p>
+<p>NB: This is not DocumentField from previous releases. For previous behaviour see GenericField</p>
+<dl class="method">
+<dt id="rest_framework_mongoengine.fields.DocumentField.run_validators">
+<code class="descname">run_validators</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.DocumentField.run_validators" title="Permalink to this definition">¶</a></dt>
+<dd><p>validate value.</p>
+<p>Uses mongoengine field&#8217;s <code class="docutils literal"><span class="pre">validate()</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rest_framework_mongoengine.fields.DocumentField.to_internal_value">
+<code class="descname">to_internal_value</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.DocumentField.to_internal_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert input to python value.</p>
+<p>Uses mongoengine field&#8217;s <code class="docutils literal"><span class="pre">to_python()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rest_framework_mongoengine.fields.DocumentField.to_representation">
+<code class="descname">to_representation</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.DocumentField.to_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert value to representation.</p>
+<p>DRF ModelField uses <code class="docutils literal"><span class="pre">value_to_string</span></code> for this purpose. Mongoengine fields do not have such method.</p>
+<p>This implementation uses <code class="docutils literal"><span class="pre">django.utils.encoding.smart_text</span></code> to convert everything to text, while keeping json-safe types intact.</p>
+<p>NB: The argument is whole object, instead of attribute value. This is upstream feature.
+Probably because the field can be represented by a complicated method with nontrivial way to extract data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.AttributedDocumentField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">AttributedDocumentField</code><span class="sig-paren">(</span><em>model_field</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.AttributedDocumentField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rest_framework_mongoengine.fields.DocumentField" title="rest_framework_mongoengine.fields.DocumentField"><code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.fields.DocumentField</span></code></a></p>
+<p>DocumentField that gets attribute value in <code class="docutils literal"><span class="pre">to_representation</span></code>.</p>
+<p>Used internally.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.DynamicField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">DynamicField</code><span class="sig-paren">(</span><em>model_field</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.DynamicField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rest_framework_mongoengine.fields.GenericField" title="rest_framework_mongoengine.fields.GenericField"><code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.fields.GenericField</span></code></a>, <a class="reference internal" href="#rest_framework_mongoengine.fields.AttributedDocumentField" title="rest_framework_mongoengine.fields.AttributedDocumentField"><code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.fields.AttributedDocumentField</span></code></a></p>
+<p>Field for DynamicDocuments.</p>
+<p>Used internally by <code class="docutils literal"><span class="pre">DynamicDocumentSerializer</span></code>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="rest_framework_mongoengine.fields.GenericEmbeddedDocumentField">
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">GenericEmbeddedDocumentField</code><span class="sig-paren">(</span><em>model_field</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericEmbeddedDocumentField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#rest_framework_mongoengine.fields.GenericEmbeddedField" title="rest_framework_mongoengine.fields.GenericEmbeddedField"><code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.fields.GenericEmbeddedField</span></code></a>, <a class="reference internal" href="#rest_framework_mongoengine.fields.AttributedDocumentField" title="rest_framework_mongoengine.fields.AttributedDocumentField"><code class="xref py py-class docutils literal"><span class="pre">rest_framework_mongoengine.fields.AttributedDocumentField</span></code></a></p>
+<p>Field for GenericEmbeddedDocumentField.</p>
+<p>Used internally by <code class="docutils literal"><span class="pre">DocumentSerializer</span></code>.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="serializers.html" class="btn btn-neutral float-right" title="Serializers" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="DRFM’s documentation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.x',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

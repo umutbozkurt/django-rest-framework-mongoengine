@@ -116,6 +116,9 @@ def serializer_repr(serializer, indent, force_many=None):
         ret += '\n' + indent_str + 'class Meta:'
         ret += '\n' + indent_str + '    validators = ' + smart_repr(serializer.validators)
 
+    if len(fields) == 0:
+        ret += "\npass"
+
     return ret
 
 

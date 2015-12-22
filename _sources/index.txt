@@ -1,7 +1,7 @@
 DRFM's documentation
 ====================
 
-_rest_framework_mongoengine: https://github.com/umutbozkurt/django-rest-framework-mongoengine
+Some intro description
 
 .. toctree::
    :maxdepth: 2

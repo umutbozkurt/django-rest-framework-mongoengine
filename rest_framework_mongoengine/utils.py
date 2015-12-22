@@ -23,23 +23,6 @@ RelationInfo = namedtuple('RelationInfo', [
 ])
 
 
-# def _resolve_model(obj):
-#     """
-#     Inherited from rest_framework.utils.model_meta
-#     Overridden for MongoDB compability
-#     """
-#     if isinstance(obj, six.string_types) and len(obj.split('.')) == 2:
-#         app_name, model_name = obj.split('.')
-#         resolved_model = get_document(model_name)
-#         if resolved_model is None:
-#             msg = "Mongoengine did not return a model for {0}.{1}"
-#             raise ImproperlyConfigured(msg.format(app_name, model_name))
-#         return resolved_model
-#     elif inspect.isclass(obj) and issubclass(obj, mongoengine.BaseDocument):
-#         return obj
-#     raise ValueError("{0} is not a MongoDB Document".format(obj))
-
-
 NUMERIC_FIELD_TYPES = (
     me_fields.IntField,
     me_fields.LongField,
@@ -150,6 +133,9 @@ def get_field_kwargs(field_name, model_field):
         kwargs['decimal_places'] = precision
         kwargs['max_digits'] = max_length
 
+    if isinstance(model_field, me_fields.GeoJsonBaseField):
+        kwargs['geo_type'] = model_field._type
+
     if isinstance(model_field, me_fields.SequenceField) or model_field.primary_key or model_field.db_field == '_id':
         # If this field is read-only, then return early.
         # Further keyword arguments are not valid.
@@ -222,11 +208,6 @@ def get_relation_kwargs(field_name, relation_info):
             validator = UniqueValidator(queryset=model_field.model.objects)
             kwargs['validators'] = [validator]
 
-    return kwargs
-
-
-def get_nested_relation_kwargs(relation_info):
-    kwargs = {'read_only': True}
     return kwargs
 
 def has_default(model_field):
