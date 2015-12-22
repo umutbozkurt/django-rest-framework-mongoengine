@@ -22,8 +22,8 @@ class TestObjectId(FieldValues, TestCase):
         '56353a4aa21aab2c49d86ebb': ObjectId('56353a4aa21aab2c49d86ebb')
     }
     invalid_inputs = {
-        123: ["'123' is not a valid ObjectId"],
-        'xxx': ["'xxx' is not a valid ObjectId"]
+        123: "not a valid ObjectId",
+        'xxx': "is not a valid ObjectId"
     }
     outputs = {
         ObjectId('56353a4aa21aab2c49d86ebb'): '56353a4aa21aab2c49d86ebb',
@@ -67,7 +67,7 @@ class TestGenericEmbeddedField(FieldValues, TestCase):
     ]
 
     invalid_inputs = [
-        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, ["Document `InvalidModel` has not been defined."]),
+        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, "Document `InvalidModel` has not been defined."),
     ]
 
     outputs = [
@@ -87,8 +87,8 @@ class TestGenericField(FieldValues, TestCase):
     ]
 
     invalid_inputs = [
-        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, ["Document `InvalidModel` has not been defined."]),
-        ({'emb': { '_cls': 'InvalidModel', 'foo': "Foo"}}, ["Document `InvalidModel` has not been defined."]),
+        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, "Document `InvalidModel` has not been defined."),
+        ({'emb': { '_cls': 'InvalidModel', 'foo': "Foo"}}, "Document `InvalidModel` has not been defined."),
     ]
 
     outputs = [
