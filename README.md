@@ -56,6 +56,7 @@ Use corresponding classes from this package in place of original DRF stuff. Refe
 ### Current release 
 
 Intended to match DRF API. The major and minor version number matches supported version of DRF.
+Note: this release is incompatible with all previous.
 
 ### Old releases
 
