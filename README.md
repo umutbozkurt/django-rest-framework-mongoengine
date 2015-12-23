@@ -1,54 +1,71 @@
 Django Rest Framework Mongoengine
-===============================
+=================================
 
-***Mongoengine*** support for ***Django Rest Framework***.
-
-# DRF 3
-Starting from `version 2.0`, this package will be developed using `DRF 3.0` and higher. 
-
-# DRF 2
-If you want to use `DRFME` with `DRF 2`, you should `version 1.*`. Development will be continued on `drf_2_support` branch.
+The package provides [mongoengine](mongoengine.org) support for [django-rest-framework](https://github.com/tomchristie/django-rest-framework)
 
 ## Documentation
-See full documentation [here](https://pythonhosted.org/django-rest-framework-mongoengine/)
-### DocumentSerializer
-`DocumentSerializer` works just like as `DRF Model Serializer`. Your model fields are converted to relevant serializer fields automatically. If you want custom behavior, you can use `nested serializers`.
-```Python
-from rest_framework_mongoengine.serializers import DocumentSerializer
 
-class BlogSerializer(DocumentSerializer):
-    class Meta:
-        model = Blog
-        fields = ('id', 'author', 'name', 'date_created')
-```
-### DynamicDocumentSerializer
-A `DocumentSerializer` for dynamic documents.
-### EmbeddedDocumentSerializer
-`EmbeddedDocumentSerializer` is used to customize `EmbeddedDocument` behavior, and make `validations` accurately. It is mentioned extensively on the [documentation](https://pythonhosted.org/django-rest-framework-mongoengine/serializers/#embeddeddocumentserializer)
-### Generic Views
-`Generic Views` are named exactly the same as `DRF Generic Views`. 
+For full documentation, usage and examples refer to [DRF manuals](http://www.django-rest-framework.org/). 
 
-Just make sure you are using `DRFME Generics`.
+The features and differences of this package are described in [API documentation](http://umutbozkurt.github.io/django-rest-framework-mongoengine/) 
 
-`from rest_framework_mongoengine import generics`
+## Requirements
+
+* Django == 1.*
+* djangorestframework == 3.*
+* mongoengine == 0.10.* | 0.9.*
+* blinker == 1.* (for mongoengine referencefields to work)
+* With mongoengine 0.10: pymongo == 3.*
+* With mongoengine 0.9: pymongo == 2.*
 
 ## Installation
+
+### from pypi
+
 `pip install django-rest-framework-mongoengine`
 
-**Note:** You might consider using a specific version.
+### from github
 
-***For clarity:***
-- DRF2 support: `pip install "django-rest-framework-mongoengine<2.0"`
-- DRF3 support: `pip install "django-rest-framework-mongoengine>=2.0"`
+* download [some release from github](https://github.com/umutbozkurt/django-rest-framework-mongoengine/releases), unpack somewhere.
+* copy subdir `unpacked_path/rest_framework_mongoengine` into your django project or inside python path
+* or, install using `pip unpacked_path`
 
+### do not use git clone!
 
-Don't forget to add the package to installed apps.
+It may contain non-working code.
+
+## Usage
+
+### Include the packages in Django settings.
+
 ```Python
 INSTALLED_APPS = (
     ...
+    'rest_framework'
     'rest_framework_mongoengine',
+    ...
 )
 ```
+
+### Import modules
+
+Use corresponding classes from this package in place of original DRF stuff. Refer to API documentation.
+
+## Releases
+
+### Current release 
+
+Intended to match DRF API. The major and minor version number matches supported version of DRF.
+Note: this release is incompatible with all previous.
+
+### Old releases
+
+Releases 2.x were not well compatible with DRF and mongoengine. Current code is mostly refactored and reimplemented.
+
+### Ancient releases
+
+Releases 1.x were developed to work with `DRF 2`. This branch is no longer supported. 
+Documentation available [here](https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/drf_2_support/README.md)
 
 ## Maintainers
 
