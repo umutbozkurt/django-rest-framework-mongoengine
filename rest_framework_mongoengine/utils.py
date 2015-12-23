@@ -1,12 +1,9 @@
 from collections import OrderedDict, namedtuple
 
-from django.utils.text import capfirst
-
-from rest_framework.utils.field_mapping import needs_label
-
 import mongoengine
+from django.utils.text import capfirst
 from mongoengine import fields as me_fields
-
+from rest_framework.utils.field_mapping import needs_label
 from rest_framework_mongoengine.validators import UniqueValidator
 
 FieldInfo = namedtuple('FieldResult', [
@@ -14,7 +11,7 @@ FieldInfo = namedtuple('FieldResult', [
     'fields',  # Dict of field name -> model field instance, contains fieldname.child for compound fields
     'references',  # Dict of field name -> RelationInfo
     'fields_and_pk',  # Shortcut for 'pk' + 'fields'
-    'embedded' # Dict of field name -> RelationInfo
+    'embedded'  # Dict of field name -> RelationInfo
 ])
 
 RelationInfo = namedtuple('RelationInfo', [
@@ -45,6 +42,7 @@ COMPOUND_FIELD_TYPES = (
     me_fields.DictField,
     me_fields.ListField
 )
+
 
 def get_relation_info(model_field):
     return RelationInfo(
@@ -104,7 +102,7 @@ def get_field_info(model):
 
 
 def is_abstract_model(model):
-    return hasattr(model, 'meta') and model.meta.get('abstract',False)
+    return hasattr(model, 'meta') and model.meta.get('abstract', False)
 
 
 def get_field_kwargs(field_name, model_field):
@@ -125,7 +123,7 @@ def get_field_kwargs(field_name, model_field):
 
     if isinstance(model_field, me_fields.DecimalField):
         precision = model_field.precision
-        max_value = getattr(model_field,'max_value',None)
+        max_value = getattr(model_field, 'max_value', None)
         if max_value is not None:
             max_length = len(str(max_value)) + precision
         else:
@@ -189,7 +187,6 @@ def get_relation_kwargs(field_name, relation_info):
     else:
         kwargs['read_only'] = True
 
-
     if model_field:
         if hasattr(model_field, 'verbose_name') and needs_label(model_field, field_name):
             kwargs['label'] = capfirst(model_field.verbose_name)
@@ -209,6 +206,7 @@ def get_relation_kwargs(field_name, relation_info):
             kwargs['validators'] = [validator]
 
     return kwargs
+
 
 def has_default(model_field):
     return model_field.default is not None or model_field.null

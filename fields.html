@@ -170,6 +170,12 @@ Embedded documents handled using temporary GenericEmbeddedField.</p>
 <p>Field for 2D point values.</p>
 <p>Internal value and representation: <code class="docutils literal"><span class="pre">[</span> <span class="pre">x,</span> <span class="pre">y</span> <span class="pre">]</span></code></p>
 <p>Validation is delegated to mongoengine field.</p>
+<dl class="attribute">
+<dt id="rest_framework_mongoengine.fields.GeoPointField.mongo_field">
+<code class="descname">mongo_field</code><a class="headerlink" href="#rest_framework_mongoengine.fields.GeoPointField.mongo_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal"><span class="pre">GeoPointField</span></code></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -208,6 +214,15 @@ Embedded documents handled using temporary GenericEmbeddedField.</p>
 <p>Internal value: DBRef.</p>
 <p>Representation: <code class="docutils literal"><span class="pre">str(id)</span></code>, or <code class="docutils literal"><span class="pre">{</span> <span class="pre">_id:</span> <span class="pre">str(id)</span> <span class="pre">}</span></code> (for compatibility with GenericReference).</p>
 <p>Validation checks existance of referenced object.</p>
+<dl class="attribute">
+<dt id="rest_framework_mongoengine.fields.ReferenceField.pk_field_class">
+<code class="descname">pk_field_class</code><a class="headerlink" href="#rest_framework_mongoengine.fields.ReferenceField.pk_field_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializer field class used to handle object ids.</p>
+<p>If your docments have another type for ids, you need to create custom ReferenceField class and override this atribute to corresponding serializer field.
+However, this custom ReferenceField class will not be used automagically by DocumentSerializer, and you have to declare fields manually.</p>
+<p>alias of <code class="xref py py-class docutils literal"><span class="pre">ObjectIdField</span></code></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -221,6 +236,13 @@ Embedded documents handled using temporary GenericEmbeddedField.</p>
 <p>Internal value: Document, retrieved with only id field. The mongengine does not support DBRef here.</p>
 <p>Representation: <code class="docutils literal"><span class="pre">{</span> <span class="pre">_cls:</span> <span class="pre">str,</span> <span class="pre">_id:</span> <span class="pre">str</span> <span class="pre">}</span></code>.</p>
 <p>Validation checks existance of given class and existance of referenced model.</p>
+<dl class="attribute">
+<dt id="rest_framework_mongoengine.fields.GenericReferenceField.pk_field_class">
+<code class="descname">pk_field_class</code><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericReferenceField.pk_field_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>The same as for ReferenceField</p>
+<p>alias of <code class="xref py py-class docutils literal"><span class="pre">ObjectIdField</span></code></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -228,7 +250,7 @@ Embedded documents handled using temporary GenericEmbeddedField.</p>
 <h2>GenericEmbeddedField<a class="headerlink" href="#genericembeddedfield" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="rest_framework_mongoengine.fields.GenericEmbeddedField">
-<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">GenericEmbeddedField</code><span class="sig-paren">(</span><em>read_only=False</em>, <em>write_only=False</em>, <em>required=None</em>, <em>default=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>initial=&lt;class 'rest_framework.fields.empty'&gt;</em>, <em>source=None</em>, <em>label=None</em>, <em>help_text=None</em>, <em>style=None</em>, <em>error_messages=None</em>, <em>validators=None</em>, <em>allow_null=False</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericEmbeddedField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">rest_framework_mongoengine.fields.</code><code class="descname">GenericEmbeddedField</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.GenericEmbeddedField" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rest_framework.fields.Field</span></code></p>
 <p>Field for generic embedded documents.</p>
 <p>Serializes like DictField with additional item <code class="docutils literal"><span class="pre">_cls</span></code>.</p>
@@ -245,6 +267,30 @@ Embedded documents handled using temporary GenericEmbeddedField.</p>
 <p>Keeps track of underlying mognoengine field.</p>
 <p>Used by DocumentSerializers to map unknown fields.</p>
 <p>NB: This is not DocumentField from previous releases. For previous behaviour see GenericField</p>
+<dl class="method">
+<dt id="rest_framework_mongoengine.fields.DocumentField.run_validators">
+<code class="descname">run_validators</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.DocumentField.run_validators" title="Permalink to this definition">¶</a></dt>
+<dd><p>validate value.</p>
+<p>Uses document field&#8217;s <code class="docutils literal"><span class="pre">validate()</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rest_framework_mongoengine.fields.DocumentField.to_internal_value">
+<code class="descname">to_internal_value</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.DocumentField.to_internal_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert input to python value.</p>
+<p>Uses document field&#8217;s <code class="docutils literal"><span class="pre">to_python()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rest_framework_mongoengine.fields.DocumentField.to_representation">
+<code class="descname">to_representation</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="headerlink" href="#rest_framework_mongoengine.fields.DocumentField.to_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert value to representation.</p>
+<p>DRF ModelField uses <code class="docutils literal"><span class="pre">value_to_string</span></code> for this purpose. Mongoengine fields do not have such method.</p>
+<p>This implementation uses <code class="docutils literal"><span class="pre">django.utils.encoding.smart_text</span></code> to convert everything to text, while keeping json-safe types intact.</p>
+<p>NB: The argument is whole object, instead of attribute value. This is upstream feature.
+Probably because the field can be represented by a complicated method with nontrivial way to extract data.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>

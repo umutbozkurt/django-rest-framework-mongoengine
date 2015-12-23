@@ -13,58 +13,68 @@ GenericField
 
 .. autoclass:: rest_framework_mongoengine.fields.GenericField(**kwargs)
    :show-inheritance:
+   :members:
 
 GeoPointField
 -------------
 
 .. autoclass:: rest_framework_mongoengine.fields.GeoPointField(**kwargs)
    :show-inheritance:
+   :members:
 
 GeoJSONField
 ------------
 
 .. autoclass:: rest_framework_mongoengine.fields.GeoJSONField
    :show-inheritance:
+   :members:
 
 ObjectIdField
 -------------
 
 .. autoclass:: rest_framework_mongoengine.fields.ObjectIdField(**kwargs)
    :show-inheritance:
+   :members:
 
 ReferenceField
 --------------
 
 .. autoclass:: rest_framework_mongoengine.fields.ReferenceField
    :show-inheritance:
+   :members:
 
 GenericReferenceField
 ---------------------
 
 .. autoclass:: rest_framework_mongoengine.fields.GenericReferenceField(**kwargs)
    :show-inheritance:
+   :members:
 
 GenericEmbeddedField
 --------------------
 
-.. autoclass:: rest_framework_mongoengine.fields.GenericEmbeddedField
+.. autoclass:: rest_framework_mongoengine.fields.GenericEmbeddedField(**kwargs)
    :show-inheritance:
+   :members:
 
 DocumentField
 -------------
 
 .. autoclass:: rest_framework_mongoengine.fields.DocumentField
    :show-inheritance:
+   :members:
 
 DynamicField
 ------------
 
 .. autoclass:: rest_framework_mongoengine.fields.DynamicField
    :show-inheritance:
+   :members:
 
 GenericEmbeddedDocumentField 
 ----------------------------
 
 .. autoclass:: rest_framework_mongoengine.fields.GenericEmbeddedDocumentField 
    :show-inheritance:
+   :members:
 

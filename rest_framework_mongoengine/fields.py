@@ -1,23 +1,20 @@
 from collections import OrderedDict
 
+from bson import DBRef, ObjectId
+from bson.errors import InvalidId
 from django.utils import six
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
-
+from mongoengine import fields as me_fields
+from mongoengine import Document, EmbeddedDocument
+from mongoengine.base import get_document
+from mongoengine.base.common import _document_registry
+from mongoengine.errors import ValidationError as MongoValidationError
+from mongoengine.errors import DoesNotExist, NotRegistered
+from mongoengine.queryset import QuerySet, QuerySetManager
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
-
-from bson import ObjectId, DBRef
-from bson.errors import InvalidId
-
-from mongoengine.base import get_document
-from mongoengine.base.common import _document_registry
-from mongoengine.errors import ValidationError as MongoValidationError, NotRegistered
-
-from mongoengine.queryset import QuerySet, QuerySetManager
-from mongoengine import EmbeddedDocument, Document, fields as me_fields
-from mongoengine.errors import DoesNotExist
 
 
 class ObjectIdField(serializers.Field):
@@ -53,7 +50,7 @@ class DocumentField(serializers.Field):
     def to_internal_value(self, data):
         """ convert input to python value.
 
-        Uses mongoengine field's ``to_python()``.
+        Uses document field's ``to_python()``.
         """
         return self.model_field.to_python(data)
 
@@ -73,7 +70,7 @@ class DocumentField(serializers.Field):
     def run_validators(self, value):
         """ validate value.
 
-        Uses mongoengine field's ``validate()``
+        Uses document field's ``validate()``
         """
         try:
             self.model_field.validate(value)
@@ -110,7 +107,7 @@ class GenericEmbeddedField(serializers.Field):
     def to_representation(self, doc):
         if not isinstance(doc, EmbeddedDocument):
             self.fail('not_a_doc', input_type=type(doc).__name__)
-        data = { '_cls': doc.__class__.__name__}
+        data = {'_cls': doc.__class__.__name__}
         for field_name in doc._fields:
             if not hasattr(doc, field_name):
                 continue
@@ -129,7 +126,6 @@ class GenericField(serializers.Field):
 
     Note: it will not work properly if a value contains some complex elements.
     """
-    embedded_doc_field = GenericEmbeddedField
 
     def to_representation(self, value):
         return self.represent_data(value)
@@ -203,7 +199,11 @@ class ReferenceField(serializers.Field):
     queryset = None
 
     pk_field_class = ObjectIdField
-    """ Serializer field class used to handle object ids. Override it in derived class if you have other type of ids."""
+    """ Serializer field class used to handle object ids.
+
+    If your docments have another type for ids, you need to create custom ReferenceField subclass and override this atribute to corresponding serializer field.
+    However, this custom ReferenceField subclass will not be used automagically by DocumentSerializer, and you have to declare fields manually.
+    """
 
     def __init__(self, model=None, queryset=None, **kwargs):
         if model is not None:
@@ -219,13 +219,13 @@ class ReferenceField(serializers.Field):
             'Reference field must provide a `queryset` or `model` argument, '
             'or set read_only=`True`.'
         )
-        super(ReferenceField,self).__init__(**kwargs)
+        super(ReferenceField, self).__init__(**kwargs)
 
     def run_validation(self, data=empty):
         # We force empty strings to None values for relational fields.
         if data == '':
             data = None
-        return super(ReferenceField,self).run_validation(data)
+        return super(ReferenceField, self).run_validation(data)
 
     def get_queryset(self):
         queryset = self.queryset
@@ -256,7 +256,7 @@ class ReferenceField(serializers.Field):
     def display_value(self, instance):
         return six.text_type(instance)
 
-    def parse_id(self,value):
+    def parse_id(self, value):
         try:
             return self.pk_field.to_internal_value(value)
         except:
@@ -293,7 +293,7 @@ class GenericReferenceField(serializers.Field):
     """
 
     pk_field_class = ObjectIdField
-    """ Serializer field class used to handle object ids. Override it in derived class if you have other type of ids."""
+    "The same as for ReferenceField"
 
     default_error_messages = {
         'not_a_dict': serializers.DictField.default_error_messages['not_a_dict'],
@@ -306,9 +306,9 @@ class GenericReferenceField(serializers.Field):
 
     def __init__(self, **kwargs):
         self.pk_field = self.pk_field_class()
-        super(GenericReferenceField,self).__init__(**kwargs)
+        super(GenericReferenceField, self).__init__(**kwargs)
 
-    def parse_id(self,value):
+    def parse_id(self, value):
         try:
             return self.pk_field.to_internal_value(value)
         except:
@@ -325,7 +325,7 @@ class GenericReferenceField(serializers.Field):
         try:
             doc_cls = get_document(doc_name)
         except NotRegistered:
-            self.fail('undefined_model', doc_cls = doc_name)
+            self.fail('undefined_model', doc_cls=doc_name)
 
         try:
             doc_id = self.pk_field.to_internal_value(doc_id)
@@ -337,25 +337,24 @@ class GenericReferenceField(serializers.Field):
         except DoesNotExist:
             self.fail('not_found', pk_value=doc_id)
 
-
     def to_representation(self, value):
         assert isinstance(value, (Document, DBRef))
         if isinstance(value, Document):
             doc_id = value.id
             doc_cls = value.__class__.__name__
-        if isinstance(value, DBRef): # hard case
+        if isinstance(value, DBRef):  # hard case
             doc_id = value.id
             doc_collection = value.collection
-            class_match = [ k for k,v in _document_registry.items() if v._get_collection_name() == doc_collection ]
+            class_match = [k for k, v in _document_registry.items() if v._get_collection_name() == doc_collection]
             if len(class_match) != 1:
                 self.fail('unmapped_collection', collection=doc_collection)
             doc_cls = class_match[0]
-        return { '_cls': doc_cls, '_id': self.pk_field.to_representation(doc_id) }
+        return {'_cls': doc_cls, '_id': self.pk_field.to_representation(doc_id)}
 
 
 class MongoValidatingField(object):
-    # uses attribute mongo_field to validate value
     mongo_field = me_fields.BaseField
+    "mongoengine field class used to validate value"
 
     def run_validators(self, value):
         try:
@@ -386,7 +385,7 @@ class GeoPointField(MongoValidatingField, serializers.Field):
         if len(value) != 2:
             self.fail('not_2d', input_value=repr(value))
         try:
-            return [ float(value[0]), float(value[1]) ]
+            return [float(value[0]), float(value[1])]
         except ValueError:
             self.fail('not_float', input_value=repr(value))
 
@@ -434,4 +433,4 @@ class GeoJSONField(MongoValidatingField, serializers.Field):
         return value['coordinates']
 
     def to_representation(self, value):
-        return { 'type': self.mongo_field._type, 'coordinates': value}
+        return {'type': self.mongo_field._type, 'coordinates': value}

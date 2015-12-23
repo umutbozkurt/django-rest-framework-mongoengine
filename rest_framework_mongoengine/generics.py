@@ -1,8 +1,7 @@
-from rest_framework import mixins
-from rest_framework import generics as drf_generics
-
-from mongoengine.queryset.base import BaseQuerySet
 from mongoengine import ValidationError
+from mongoengine.queryset.base import BaseQuerySet
+from rest_framework import generics as drf_generics
+from rest_framework import mixins
 
 
 class GenericAPIView(drf_generics.GenericAPIView):
