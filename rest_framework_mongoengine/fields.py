@@ -50,7 +50,7 @@ class DocumentField(serializers.Field):
     def to_internal_value(self, data):
         """ convert input to python value.
 
-        Uses mongoengine field's ``to_python()``.
+        Uses document field's ``to_python()``.
         """
         return self.model_field.to_python(data)
 
@@ -70,7 +70,7 @@ class DocumentField(serializers.Field):
     def run_validators(self, value):
         """ validate value.
 
-        Uses mongoengine field's ``validate()``
+        Uses document field's ``validate()``
         """
         try:
             self.model_field.validate(value)
@@ -126,7 +126,6 @@ class GenericField(serializers.Field):
 
     Note: it will not work properly if a value contains some complex elements.
     """
-    embedded_doc_field = GenericEmbeddedField
 
     def to_representation(self, value):
         return self.represent_data(value)
@@ -200,7 +199,11 @@ class ReferenceField(serializers.Field):
     queryset = None
 
     pk_field_class = ObjectIdField
-    """ Serializer field class used to handle object ids. Override it in derived class if you have other type of ids."""
+    """ Serializer field class used to handle object ids.
+
+    If your docments have another type for ids, you need to create custom ReferenceField subclass and override this atribute to corresponding serializer field.
+    However, this custom ReferenceField subclass will not be used automagically by DocumentSerializer, and you have to declare fields manually.
+    """
 
     def __init__(self, model=None, queryset=None, **kwargs):
         if model is not None:
@@ -290,7 +293,7 @@ class GenericReferenceField(serializers.Field):
     """
 
     pk_field_class = ObjectIdField
-    """ Serializer field class used to handle object ids. Override it in derived class if you have other type of ids."""
+    "The same as for ReferenceField"
 
     default_error_messages = {
         'not_a_dict': serializers.DictField.default_error_messages['not_a_dict'],
@@ -350,8 +353,8 @@ class GenericReferenceField(serializers.Field):
 
 
 class MongoValidatingField(object):
-    # uses attribute mongo_field to validate value
     mongo_field = me_fields.BaseField
+    "mongoengine field class used to validate value"
 
     def run_validators(self, value):
         try:
