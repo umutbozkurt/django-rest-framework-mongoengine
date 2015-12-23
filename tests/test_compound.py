@@ -1,12 +1,10 @@
-import pytest
-
 from django.test import TestCase
 from mongoengine import Document, fields
-
 from rest_framework.compat import unicode_repr
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .test_1basic import dedent
+
 
 class BasicCompoundFieldsModel(Document):
     list_field = fields.ListField()
@@ -78,12 +76,13 @@ class TestIntegration(TestCase):
 
     def test_retrival(self):
         instance = BasicCompoundFieldsModel.objects.create(
-            list_field = ["1",2,3.0],
-            int_list_field = [1,2,3],
-            dict_field = {'a':"1", 'b':2,'c':3.0},
-            int_dict_field = {'a':1,'b':2,'c':3},
-            int_map_field = {'a':1,'b':2,'c':3}
+            list_field=["1", 2, 3.0],
+            int_list_field=[1, 2, 3],
+            dict_field={'a': "1", 'b': 2, 'c': 3.0},
+            int_dict_field={'a': 1, 'b': 2, 'c': 3},
+            int_map_field={'a': 1, 'b': 2, 'c': 3}
         )
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = BasicCompoundFieldsModel
@@ -91,11 +90,11 @@ class TestIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'list_field': ["1",2,3.0],
-            'int_list_field': [1,2,3],
-            'dict_field': {'a':"1", 'b':2,'c':3.0},
-            'int_dict_field': {'a':1,'b':2,'c':3},
-            'int_map_field': {'a':1,'b':2,'c':3}
+            'list_field': ["1", 2, 3.0],
+            'int_list_field': [1, 2, 3],
+            'dict_field': {'a': "1", 'b': 2, 'c': 3.0},
+            'int_dict_field': {'a': 1, 'b': 2, 'c': 3},
+            'int_map_field': {'a': 1, 'b': 2, 'c': 3}
         }
         self.assertEqual(serializer.data, expected)
 
@@ -105,70 +104,71 @@ class TestIntegration(TestCase):
                 model = BasicCompoundFieldsModel
 
         data = {
-            'list_field': ["1",2,3.0],
-            'int_list_field': [1,2,3],
-            'dict_field': {'a':"1", 'b':2,'c':3.0},
-            'int_dict_field': {'a':1,'b':2,'c':3},
-            'int_map_field': {'a':1,'b':2,'c':3}
+            'list_field': ["1", 2, 3.0],
+            'int_list_field': [1, 2, 3],
+            'dict_field': {'a': "1", 'b': 2, 'c': 3.0},
+            'int_dict_field': {'a': 1, 'b': 2, 'c': 3},
+            'int_map_field': {'a': 1, 'b': 2, 'c': 3}
         }
 
         serializer = TestSerializer(data=data)
         assert serializer.is_valid()
 
         instance = serializer.save()
-        assert instance.list_field ==  ["1",2,3.0]
-        assert instance.int_list_field ==  [1,2,3]
-        assert instance.dict_field ==  {'a':"1", 'b':2,'c':3.0}
-        assert instance.int_dict_field ==  {'a':1,'b':2,'c':3}
-        assert instance.int_map_field ==  {'a':1,'b':2,'c':3}
+        assert instance.list_field == ["1", 2, 3.0]
+        assert instance.int_list_field == [1, 2, 3]
+        assert instance.dict_field == {'a': "1", 'b': 2, 'c': 3.0}
+        assert instance.int_dict_field == {'a': 1, 'b': 2, 'c': 3}
+        assert instance.int_map_field == {'a': 1, 'b': 2, 'c': 3}
 
         expected = {
             'id': str(instance.id),
-            'list_field': ["1",2,3.0],
-            'int_list_field': [1,2,3],
-            'dict_field': {'a':"1", 'b':2,'c':3.0},
-            'int_dict_field': {'a':1,'b':2,'c':3},
-            'int_map_field': {'a':1,'b':2,'c':3}
+            'list_field': ["1", 2, 3.0],
+            'int_list_field': [1, 2, 3],
+            'dict_field': {'a': "1", 'b': 2, 'c': 3.0},
+            'int_dict_field': {'a': 1, 'b': 2, 'c': 3},
+            'int_map_field': {'a': 1, 'b': 2, 'c': 3}
         }
         self.assertEqual(serializer.data, expected)
 
     def test_update(self):
         instance = BasicCompoundFieldsModel.objects.create(
-            list_field = ["1",2,3.0],
-            int_list_field = [1,2,3],
-            dict_field = {'a':"1", 'b':2,'c':3.0},
-            int_dict_field = {'a':1,'b':2,'c':3},
-            int_map_field = {'a':1,'b':2,'c':3}
+            list_field=["1", 2, 3.0],
+            int_list_field=[1, 2, 3],
+            dict_field={'a': "1", 'b': 2, 'c': 3.0},
+            int_dict_field={'a': 1, 'b': 2, 'c': 3},
+            int_map_field={'a': 1, 'b': 2, 'c': 3}
         )
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = BasicCompoundFieldsModel
 
         data = {
-            'list_field': ["0",1,2.0],
-            'int_list_field': [9,1,2],
-            'dict_field': {'a':"0", 'b':1,'c':2.0, 'd': 3},
-            'int_dict_field': {'a':0,'b':1,'c':2, 'd':3},
-            'int_map_field': {'a':0,'b':1,'c':2, 'd':3}
+            'list_field': ["0", 1, 2.0],
+            'int_list_field': [9, 1, 2],
+            'dict_field': {'a': "0", 'b': 1, 'c': 2.0, 'd': 3},
+            'int_dict_field': {'a': 0, 'b': 1, 'c': 2, 'd': 3},
+            'int_map_field': {'a': 0, 'b': 1, 'c': 2, 'd': 3}
         }
 
         serializer = TestSerializer(instance, data=data)
         assert serializer.is_valid()
 
         instance = serializer.save()
-        assert instance.list_field == ["0",1,2.0]
-        assert instance.int_list_field == [9,1,2]
-        assert instance.dict_field == {'a':"0", 'b':1,'c':2.0, 'd': 3}
-        assert instance.int_dict_field == {'a':0,'b':1,'c':2, 'd':3}
-        assert instance.int_map_field == {'a':0,'b':1,'c':2, 'd':3}
+        assert instance.list_field == ["0", 1, 2.0]
+        assert instance.int_list_field == [9, 1, 2]
+        assert instance.dict_field == {'a': "0", 'b': 1, 'c': 2.0, 'd': 3}
+        assert instance.int_dict_field == {'a': 0, 'b': 1, 'c': 2, 'd': 3}
+        assert instance.int_map_field == {'a': 0, 'b': 1, 'c': 2, 'd': 3}
 
         expected = {
             'id': str(instance.id),
-            'list_field': ["0",1,2.0],
-            'int_list_field': [9,1,2],
-            'dict_field': {'a':"0", 'b':1,'c':2.0, 'd': 3},
-            'int_dict_field': {'a':0,'b':1,'c':2, 'd':3},
-            'int_map_field': {'a':0,'b':1,'c':2, 'd':3}
+            'list_field': ["0", 1, 2.0],
+            'int_list_field': [9, 1, 2],
+            'dict_field': {'a': "0", 'b': 1, 'c': 2.0, 'd': 3},
+            'int_dict_field': {'a': 0, 'b': 1, 'c': 2, 'd': 3},
+            'int_map_field': {'a': 0, 'b': 1, 'c': 2, 'd': 3}
         }
         self.assertEqual(serializer.data, expected)
 
@@ -180,10 +180,10 @@ class ValidatingSerializer(DocumentSerializer):
 
 class TestCompoundValidation(TestCase):
     def test_validation_is_executed(self):
-        serializer = ValidatingSerializer(data={'int_list_field':[1,2,3]})
+        serializer = ValidatingSerializer(data={'int_list_field': [1, 2, 3]})
         self.assertFalse(serializer.is_valid())
         self.assertIn('int_list_field', serializer.errors)
 
     def test_validation_passing(self):
-        serializer = ValidatingSerializer(data={'int_list_field':[3,4,5]})
+        serializer = ValidatingSerializer(data={'int_list_field': [3, 4, 5]})
         self.assertTrue(serializer.is_valid())

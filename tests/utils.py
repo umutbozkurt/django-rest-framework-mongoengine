@@ -1,7 +1,5 @@
-from bson import DBRef
 import pytest
 from rest_framework.exceptions import ValidationError
-from mongoengine.errors import DoesNotExist
 
 
 def dedent(blocktext):

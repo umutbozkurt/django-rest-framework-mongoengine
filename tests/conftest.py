@@ -32,5 +32,3 @@ def pytest_configure():
         django.setup()
     except AttributeError:
         pass
-	
-	

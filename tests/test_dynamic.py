@@ -1,14 +1,9 @@
 from __future__ import unicode_literals
 
-import pytest
-
 from django.test import TestCase
-
 from mongoengine import DynamicDocument, fields
-
-from rest_framework.compat import unicode_repr
 from rest_framework import fields as drf_fields
-
+from rest_framework.compat import unicode_repr
 from rest_framework_mongoengine.serializers import DynamicDocumentSerializer
 
 from .utils import dedent
@@ -16,6 +11,7 @@ from .utils import dedent
 
 class DynamicModel(DynamicDocument):
     foo = fields.IntField()
+
 
 class TestDynamicMapping(TestCase):
     def test_declared(self):
@@ -43,7 +39,6 @@ class TestDynamicMapping(TestCase):
                 foo = IntegerField(required=False)
         """)
         assert unicode_repr(TestSerializer()) == expected
-
 
 
 class DynamicSerializer(DynamicDocumentSerializer):
@@ -92,7 +87,7 @@ class TestDynamicIntegration(TestCase):
     def test_update(self):
         instance = DynamicModel.objects.create(foo=42, bar=43, baz="z")
 
-        data = { 'foo': 142, 'bar': 143, 'baz': "Baz" }
+        data = {'foo': 142, 'bar': 143, 'baz': "Baz"}
 
         serializer = DynamicSerializer(instance, data=data)
         assert serializer.is_valid()

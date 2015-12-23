@@ -1,20 +1,19 @@
 from __future__ import unicode_literals
 
-import pytest
-import datetime
 from django.test import TestCase
-
 from mongoengine import Document, fields
-
 from rest_framework import serializers
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from rest_framework_mongoengine.validators import UniqueValidator, UniqueTogetherValidator
+from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
+                                                   UniqueValidator)
 
 from .utils import dedent
+
 
 class ValidatingModel(Document):
     name = fields.StringField()
     code = fields.IntField()
+
 
 class NullValidatingModel(Document):
     name = fields.StringField()
@@ -100,6 +99,7 @@ class UniqueTogetherValidatorSerializer(DocumentSerializer):
         model = ValidatingModel
         validators = [UniqueTogetherValidator(queryset=ValidatingModel.objects, fields=('name', 'code'))]
 
+
 class NullUniqueTogetherValidatorSerializer(DocumentSerializer):
     class Meta:
         model = NullValidatingModel
@@ -154,7 +154,7 @@ class TestUniqueTogetherValidation(TestCase):
         """
         Failing unique together validation should result in non field errors.
         """
-        data = { 'name': 'example', 'code': 2}
+        data = {'name': 'example', 'code': 2}
         serializer = UniqueTogetherValidatorSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         assert serializer.errors == {
@@ -208,10 +208,11 @@ class TestUniqueTogetherValidation(TestCase):
             code=None,
             other="xxx"
         )
+
         class UniqueTogetherSerializer(DocumentSerializer):
             class Meta:
                 model = NullValidatingModel
-        data = { 'name': 'existing', 'code': None, 'other': "xxx" }
+        data = {'name': 'existing', 'code': None, 'other': "xxx"}
         serializer = NullUniqueTogetherValidatorSerializer(data=data)
         self.assertTrue(serializer.is_valid())
 
@@ -223,7 +224,7 @@ class TestUniqueTogetherValidation(TestCase):
             code=1,
             other="xxx"
         )
-        data = {'name': 'existing', 'code': 1, 'other': None }
+        data = {'name': 'existing', 'code': 1, 'other': None}
         serializer = NullUniqueTogetherValidatorSerializer(data=data)
         self.assertFalse(serializer.is_valid())
 
@@ -233,7 +234,7 @@ class TestUniqueTogetherValidation(TestCase):
 class UniqueTogetherModel(Document):
     meta = {
         'indexes': [
-            { 'fields': ['name','code'], 'unique': True }
+            {'fields': ['name', 'code'], 'unique': True}
         ]
     }
     name = fields.StringField()
@@ -270,7 +271,7 @@ class TestUniqueTogetherSerializer(TestCase):
         class UniqueTogetherSerializer(DocumentSerializer):
             class Meta:
                 model = UniqueTogetherModel
-                fields = ('id','name')
+                fields = ('id', 'name')
 
         serializer = UniqueTogetherSerializer()
 

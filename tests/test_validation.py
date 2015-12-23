@@ -1,10 +1,7 @@
 from __future__ import unicode_literals
 
-import pytest
 from django.test import TestCase
-
 from mongoengine import Document, fields
-
 from rest_framework import serializers
 from rest_framework_mongoengine.serializers import DocumentSerializer
 

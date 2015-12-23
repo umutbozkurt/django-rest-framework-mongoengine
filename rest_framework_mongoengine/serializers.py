@@ -3,32 +3,19 @@ from collections import OrderedDict
 
 from mongoengine import fields as me_fields
 from mongoengine.errors import ValidationError as me_ValidationError
-
-from rest_framework import serializers
 from rest_framework import fields as drf_fields
-from rest_framework.utils.field_mapping import ClassLookupDict
+from rest_framework import serializers
 from rest_framework.compat import unicode_to_repr
+from rest_framework.utils.field_mapping import ClassLookupDict
+from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
+                                                   UniqueValidator)
 
-from rest_framework_mongoengine.validators import UniqueValidator, UniqueTogetherValidator
-
-
-from .fields import (ObjectIdField,
-                     DocumentField,
-                     GenericEmbeddedDocumentField,
-                     DynamicField,
-                     ReferenceField,
-                     GenericReferenceField,
-                     GeoPointField,
-                     GeoJSONField)
-
-from .utils import (is_abstract_model,
-                    get_field_info,
-                    get_field_kwargs,
-                    get_relation_kwargs,
-                    has_default,
-                    COMPOUND_FIELD_TYPES)
-
+from .fields import (DocumentField, DynamicField, GenericEmbeddedDocumentField,
+                     GenericReferenceField, GeoJSONField, GeoPointField,
+                     ObjectIdField, ReferenceField)
 from .repr import serializer_repr
+from .utils import (COMPOUND_FIELD_TYPES, get_field_info, get_field_kwargs,
+                    get_relation_kwargs, has_default, is_abstract_model)
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
@@ -239,7 +226,6 @@ class DocumentSerializer(serializers.ModelSerializer):
                 'Cannot use ModelSerializer with Abstract Models.'
             )
 
-
         # Retrieve metadata about fields & relationships on the model class.
         self.field_info = get_field_info(model)
         field_names = self.get_field_names(declared_fields, self.field_info)
@@ -277,7 +263,6 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return fields
 
-
     def get_default_field_names(self, declared_fields, model_info):
         return (
             [model_info.pk.name] +
@@ -291,7 +276,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         if field_name in info.fields_and_pk:
             model_field = info.fields_and_pk[field_name]
             if isinstance(model_field, COMPOUND_FIELD_TYPES):
-                child_name = field_name+'.child'
+                child_name = field_name + '.child'
                 if child_name in info.fields or child_name in info.embedded:
                     child_class, child_kwargs = self.build_field(child_name, info, model_class, nested_depth)
                     child_field = child_class(**child_kwargs)
@@ -313,7 +298,6 @@ class DocumentSerializer(serializers.ModelSerializer):
             return self.build_property_field(field_name, model_class)
 
         return self.build_unknown_field(field_name, model_class)
-
 
     def build_standard_field(self, field_name, model_field):
         field_mapping = ClassLookupDict(self.serializer_field_mapping)
@@ -380,7 +364,7 @@ class DocumentSerializer(serializers.ModelSerializer):
                     depth = nested_depth - 1
 
             field_class = NestedSerializer
-            field_kwargs = { 'read_only': True }
+            field_kwargs = {'read_only': True}
         elif relation_info.related_model:
             field_class = ReferenceField
             field_kwargs = get_relation_kwargs(field_name, relation_info)
@@ -411,7 +395,6 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return field_class, field_kwargs
 
-
     def get_uniqueness_extra_kwargs(self, field_names, extra_kwargs):
         # extra_kwargs contains 'default', 'required', 'validators=[UniqValidator]'
         # hidden_fields contains fields involved in constraints, but missing in serializer fields
@@ -427,7 +410,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         # include `unique_with` from model indexes
         # so long as all the field names are included on the serializer.
-        uniq_indexes = filter(lambda i: i.get('unique',False), model._meta.get('index_specs',[]))
+        uniq_indexes = filter(lambda i: i.get('unique', False), model._meta.get('index_specs', []))
         for idx in uniq_indexes:
             field_set = set(map(lambda e: e[0], idx['fields']))
             if field_names.issuperset(field_set):
@@ -445,9 +428,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         for field_name in unique_together_fields:
             fld = model._fields[field_name]
             if has_default(fld):
-                uniq_extra_kwargs[field_name] = { 'default': fld.default }
+                uniq_extra_kwargs[field_name] = {'default': fld.default}
             else:
-                uniq_extra_kwargs[field_name] = { 'required': True }
+                uniq_extra_kwargs[field_name] = {'required': True}
 
         # Update `extra_kwargs` with any new options.
         for key, value in uniq_extra_kwargs.items():
@@ -465,9 +448,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         validators = []
         field_names = set(self.get_field_names(self._declared_fields, self.field_info))
 
-        uniq_indexes = filter(lambda i: i.get('unique',False), model._meta.get('index_specs',[]))
+        uniq_indexes = filter(lambda i: i.get('unique', False), model._meta.get('index_specs', []))
         for idx in uniq_indexes:
-            if not idx.get('unique',False):
+            if not idx.get('unique', False):
                 continue
             field_set = tuple(map(lambda e: e[0], idx['fields']))
             if len(field_set) > 1 and field_names.issuperset(set(field_set)):
@@ -506,7 +489,7 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
 
     def to_internal_value(self, data):
         # run nested validation and convert to document instance
-        data = super(EmbeddedDocumentSerializer,self).to_internal_value(data)
+        data = super(EmbeddedDocumentSerializer, self).to_internal_value(data)
         return self.Meta.model(**data)
 
 
@@ -516,7 +499,7 @@ class DynamicDocumentSerializer(DocumentSerializer):
     Maps all undefined fields to :class:`fields.DynamicField`.
     """
     def to_representation(self, instance):
-        ret = super(DynamicDocumentSerializer,self).to_representation(instance)
+        ret = super(DynamicDocumentSerializer, self).to_representation(instance)
 
         for field_name, field in self._map_dynamic_fields(instance).items():
             ret[field_name] = field.to_representation(field.get_attribute(instance))

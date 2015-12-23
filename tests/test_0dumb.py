@@ -1,13 +1,11 @@
-from __future__ import unicode_literals
 """ These are snippets to creatte other tests """
+
+from __future__ import unicode_literals
 
 import pytest
 from django.test import TestCase
-
 from mongoengine import Document, fields
-
 from rest_framework.compat import unicode_repr
-
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .utils import dedent
@@ -46,6 +44,7 @@ class TestIntegration(TestCase):
 
     def test_retrival(self):
         instance = MockModel.objects.create(foo="Foo")
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = MockModel
@@ -81,6 +80,7 @@ class TestIntegration(TestCase):
 
     def test_update(self):
         instance = MockModel.objects.create(foo="Foo")
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = MockModel

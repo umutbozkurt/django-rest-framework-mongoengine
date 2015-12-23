@@ -8,8 +8,8 @@ class MongoRouterMixin(object):
     """
     def get_default_base_name(self, viewset):
         queryset = getattr(viewset, 'queryset', None)
-        assert queryset is not None, ('`base_name` argument not specified, and could ' \
-                                      'not automatically determine the name from the viewset, as ' \
+        assert queryset is not None, ('`base_name` argument not specified, and could '
+                                      'not automatically determine the name from the viewset, as '
                                       'it does not have a `.queryset` attribute.')
         return queryset._document.__name__.lower()
 

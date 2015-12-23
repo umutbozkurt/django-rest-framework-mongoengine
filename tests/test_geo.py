@@ -1,143 +1,141 @@
-import pytest
-
 from django.test import TestCase
-
 from mongoengine import Document, fields
+from rest_framework.compat import unicode_repr
+from rest_framework_mongoengine.fields import GeoJSONField, GeoPointField
+from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .utils import FieldValues, dedent
 
-from rest_framework.compat import unicode_repr
-from rest_framework_mongoengine.fields import GeoPointField, GeoJSONField
-
-from rest_framework_mongoengine.serializers import DocumentSerializer
 
 class TestGeoPointField(TestCase, FieldValues):
     field = GeoPointField()
     valid_inputs = [
-        ([0.1, 0.2], [0.1,0.2]),
+        ([0.1, 0.2], [0.1, 0.2]),
         ([1, 2], [1.0, 2.0]),
-        (["0.1", "0.2"], [0.1,0.2])
+        (["0.1", "0.2"], [0.1, 0.2])
     ]
     invalid_inputs = [
         (0.1, "must be a list"),
         ([0.1, 0.2, 0.3], "must be a two-dimensional"),
-        (["xxx","xxx"], "must be float or int")
+        (["xxx", "xxx"], "must be float or int")
     ]
     outputs = [
-        ([0.1,0.2], [0.1,0.2])
+        ([0.1, 0.2], [0.1, 0.2])
     ]
+
 
 class TestPointField(TestCase, FieldValues):
     field = GeoJSONField('Point')
     valid_inputs = [
         ([0.1, 0.2], [0.1, 0.2]),
-        ({ 'type': "Point", 'coordinates': [0.1,0.2] }, [0.1, 0.2])
+        ({'type': "Point", 'coordinates': [0.1, 0.2]}, [0.1, 0.2])
     ]
     invalid_inputs = [
         (0.1, "must be a geojson geometry or a geojson coordinates"),
-        ({ 'type': "Polygon", 'coordinates': [[[0.1,0.2],[0.1,0.2]]] }, "expected to be 'Point'"),
-        ({ 'type': "Point", 'coordinates': 0.1 }, "can only accept lists"),  # from mongoengine
-        ([0.1, 0.2, 0.3], "must be a two-dimensional"), # from mongoengine
-        (["xxx","xxx"], "must be float or int") # from mongoengine
+        ({'type': "Polygon", 'coordinates': [[[0.1, 0.2], [0.1, 0.2]]]}, "expected to be 'Point'"),
+        ({'type': "Point", 'coordinates': 0.1}, "can only accept lists"),  # from mongoengine
+        ([0.1, 0.2, 0.3], "must be a two-dimensional"),  # from mongoengine
+        (["xxx", "xxx"], "must be float or int")  # from mongoengine
     ]
     outputs = [
-        ([0.1,0.2], { 'type': "Point", 'coordinates': [0.1,0.2] })
+        ([0.1, 0.2], {'type': "Point", 'coordinates': [0.1, 0.2]})
     ]
 
 
 class TestMultiPointField(TestCase, FieldValues):
     field = GeoJSONField('MultiPoint')
     valid_inputs = [
-        ([[0.1, 0.2],[0.3, 0.4]], [[0.1, 0.2],[0.3, 0.4]]),
-        ({ 'type': "MultiPoint", 'coordinates': [[0.1, 0.2],[0.3, 0.4]] }, [[0.1, 0.2],[0.3, 0.4]])
+        ([[0.1, 0.2], [0.3, 0.4]], [[0.1, 0.2], [0.3, 0.4]]),
+        ({'type': "MultiPoint", 'coordinates': [[0.1, 0.2], [0.3, 0.4]]}, [[0.1, 0.2], [0.3, 0.4]])
     ]
     invalid_inputs = [
         (0.1, "must be a geojson geometry or a geojson coordinates"),
-        ({ 'type': "Point", 'coordinates': [0.1,0.2] }, "expected to be 'MultiPoint'"),
-        ({ 'type': "MultiPoint", 'coordinates': 0.1 }, "can only accept lists"),  # from mongoengine
+        ({'type': "Point", 'coordinates': [0.1, 0.2]}, "expected to be 'MultiPoint'"),
+        ({'type': "MultiPoint", 'coordinates': 0.1}, "can only accept lists"),  # from mongoengine
         ([0.1, 0.2, 0.3, 0.4], "must contain at least one"),  # from mongoengine
         ([[0.1, 0.2], [0.3, 0.4, 0.5]], "must be a two-dimensional"),  # from mongoengine
-        ([[0.1, 0.2], ["xxx", "xxx"]],  "must be float or int")  # from mongoengine
+        ([[0.1, 0.2], ["xxx", "xxx"]], "must be float or int")  # from mongoengine
     ]
     outputs = [
-        ([[0.1, 0.2],[0.3, 0.4]], { 'type': "MultiPoint", 'coordinates': [[0.1, 0.2],[0.3, 0.4]] })
+        ([[0.1, 0.2], [0.3, 0.4]], {'type': "MultiPoint", 'coordinates': [[0.1, 0.2], [0.3, 0.4]]})
     ]
+
 
 class TestLineField(TestCase, FieldValues):
     field = GeoJSONField('LineString')
     valid_inputs = [
-        ([[0.1, 0.2],[0.3, 0.4]], [[0.1, 0.2],[0.3, 0.4]]),
-        ({ 'type': "LineString", 'coordinates': [[0.1, 0.2],[0.3, 0.4]] }, [[0.1, 0.2],[0.3, 0.4]])
+        ([[0.1, 0.2], [0.3, 0.4]], [[0.1, 0.2], [0.3, 0.4]]),
+        ({'type': "LineString", 'coordinates': [[0.1, 0.2], [0.3, 0.4]]}, [[0.1, 0.2], [0.3, 0.4]])
     ]
     invalid_inputs = [
         (0.1, "must be a geojson geometry or a geojson coordinates"),
-        ({ 'type': "Point", 'coordinates': [0.1,0.2] }, "expected to be 'LineString'"),
-        ({ 'type': "LineString", 'coordinates': 0.1 }, "can only accept lists"),  # from mongoengine
+        ({'type': "Point", 'coordinates': [0.1, 0.2]}, "expected to be 'LineString'"),
+        ({'type': "LineString", 'coordinates': 0.1}, "can only accept lists"),  # from mongoengine
         ([0.1, 0.2, 0.3, 0.4], "must contain at least one"),  # from mongoengine
         ([[0.1, 0.2], [0.3, 0.4, 0.5]], "must be a two-dimensional"),  # from mongoengine
-        ([[0.1, 0.2], ["xxx", "xxx"]],  "must be float or int")  # from mongoengine
+        ([[0.1, 0.2], ["xxx", "xxx"]], "must be float or int")  # from mongoengine
     ]
     outputs = [
-        ([[0.1, 0.2],[0.3, 0.4]], { 'type': "LineString", 'coordinates': [[0.1, 0.2],[0.3, 0.4]] })
+        ([[0.1, 0.2], [0.3, 0.4]], {'type': "LineString", 'coordinates': [[0.1, 0.2], [0.3, 0.4]]})
     ]
 
 
 class TestMultiLineField(TestCase, FieldValues):
     field = GeoJSONField('MultiLineString')
     valid_inputs = [
-        ([[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.7, 0.8]]], [[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.7, 0.8]]]),
-        ({'type': 'MultiLineString', 'coordinates': [[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.7, 0.8]]]}, [[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.7, 0.8]]]),
+        ([[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]], [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]]),
+        ({'type': 'MultiLineString', 'coordinates': [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]]}, [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]]),
     ]
     invalid_inputs = [
         (0.1, "must be a geojson geometry or a geojson coordinates"),
-        ({ 'type': "Point", 'coordinates': [0.1,0.2] }, "expected to be 'MultiLineString'"),
-        ({ 'type': "MultiLineString", 'coordinates': 0.1 }, "can only accept lists"),  # from mongoengine
+        ({'type': "Point", 'coordinates': [0.1, 0.2]}, "expected to be 'MultiLineString'"),
+        ({'type': "MultiLineString", 'coordinates': 0.1}, "can only accept lists"),  # from mongoengine
         ([0.1, 0.2, 0.3, 0.4], "must contain at least one"),  # from mongoengine
         ([[[0.1, 0.2], [0.3, 0.4, 0.5]]], "must be a two-dimensional"),  # from mongoengine
-        ([[[0.1, 0.2], ["xxx", "xxx"]]],  "must be float or int"),  # from mongoengine
+        ([[[0.1, 0.2], ["xxx", "xxx"]]], "must be float or int"),  # from mongoengine
     ]
     outputs = [
-        ([[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.7, 0.8]]], {'type': 'MultiLineString', 'coordinates': [[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.7, 0.8]]]}),
+        ([[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]], {'type': 'MultiLineString', 'coordinates': [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]]}),
     ]
 
 
 class TestPolyField(TestCase, FieldValues):
     field = GeoJSONField('Polygon')
     valid_inputs = [
-        ([[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]], [[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]),
-        ({'type': 'Polygon', 'coordinates': [[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]}, [[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]),
+        ([[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]], [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]),
+        ({'type': 'Polygon', 'coordinates': [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]}, [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]),
     ]
     invalid_inputs = [
         (0.1, "must be a geojson geometry or a geojson coordinates"),
-        ({ 'type': "Point", 'coordinates': [0.1,0.2] }, "expected to be 'Polygon'"),
-        ({ 'type': "Polygon", 'coordinates': 0.1 }, "can only accept lists"),  # from mongoengine
+        ({'type': "Point", 'coordinates': [0.1, 0.2]}, "expected to be 'Polygon'"),
+        ({'type': "Polygon", 'coordinates': 0.1}, "can only accept lists"),  # from mongoengine
         ([0.1, 0.2, 0.3, 0.4], "must contain at least one"),  # from mongoengine
         ([[[0.1, 0.2], [0.3, 0.4, 0.5]]], "must be a two-dimensional"),  # from mongoengine
-        ([[[0.1, 0.2], ["xxx", "xxx"]]],  "must be float or int"),  # from mongoengine
-        ([[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.7, 0.8]]], "must start and end"), # from mongoengine
+        ([[[0.1, 0.2], ["xxx", "xxx"]]], "must be float or int"),  # from mongoengine
+        ([[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]], "must start and end"),  # from mongoengine
     ]
     outputs = [
-        ([[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]], {'type': 'Polygon', 'coordinates': [[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]}),
+        ([[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]], {'type': 'Polygon', 'coordinates': [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]}),
     ]
 
 
 class TestMultiPolyField(TestCase, FieldValues):
     field = GeoJSONField('MultiPolygon')
     valid_inputs = [
-        ([[[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]], [[[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]]),
-        ({'type': 'MultiPolygon', 'coordinates': [[[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]]}, [[[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]]),
+        ([[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]], [[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]]),
+        ({'type': 'MultiPolygon', 'coordinates': [[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]]}, [[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]]),
     ]
     invalid_inputs = [
         (0.1, "must be a geojson geometry or a geojson coordinates"),
-        ({ 'type': "Point", 'coordinates': [0.1,0.2] }, "expected to be 'MultiPolygon'"),
-        ({ 'type': "MultiPolygon", 'coordinates': 0.1 }, "can only accept lists"),  # from mongoengine
+        ({'type': "Point", 'coordinates': [0.1, 0.2]}, "expected to be 'MultiPolygon'"),
+        ({'type': "MultiPolygon", 'coordinates': 0.1}, "can only accept lists"),  # from mongoengine
         ([0.1, 0.2, 0.3, 0.4], "must contain at least one"),  # from mongoengine
         ([[[[0.1, 0.2], [0.3, 0.4, 0.5]]]], "must be a two-dimensional"),  # from mongoengine
-        ([[[[0.1, 0.2], ["xxx", "xxx"]]]],  "must be float or int"),  # from mongoengine
-        ([[[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.7, 0.8]]]], "must start and end"), # from mongoengine
+        ([[[[0.1, 0.2], ["xxx", "xxx"]]]], "must be float or int"),  # from mongoengine
+        ([[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]]], "must start and end"),  # from mongoengine
     ]
     outputs = [
-        ([[[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]], {'type': 'MultiPolygon', 'coordinates': [[[[0.1, 0.2],[0.3, 0.4],[0.5, 0.6],[0.1, 0.2]]]]}),
+        ([[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]], {'type': 'MultiPolygon', 'coordinates': [[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]]}),
     ]
 
 

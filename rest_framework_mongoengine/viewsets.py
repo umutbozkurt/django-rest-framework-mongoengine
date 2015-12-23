@@ -7,6 +7,7 @@ class GenericViewSet(ViewSetMixin, GenericAPIView):
     """ Adaptation of DRF GenericViewSet """
     pass
 
+
 class ModelViewSet(mixins.CreateModelMixin,
                    mixins.RetrieveModelMixin,
                    mixins.UpdateModelMixin,

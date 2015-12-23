@@ -1,11 +1,10 @@
 from __future__ import unicode_literals
 
 from django.test import TestCase
-
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework import fields as drf_fields
-
-from rest_framework_mongoengine.serializers import DocumentSerializer, EmbeddedDocumentSerializer
+from rest_framework_mongoengine.serializers import (DocumentSerializer,
+                                                    EmbeddedDocumentSerializer)
 
 
 class EmbeddedThing(EmbeddedDocument):
@@ -37,6 +36,7 @@ class ImplicitSerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingThing
         depth = 1
+
 
 class Issue147Test(TestCase):
     def test_explicit_pass(self):

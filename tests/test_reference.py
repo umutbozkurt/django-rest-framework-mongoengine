@@ -1,31 +1,29 @@
-import pytest
 from collections import OrderedDict
 
 from django.test import TestCase
-from django.utils.encoding import smart_str
-
-from bson import ObjectId, DBRef
-from mongoengine import Document, fields as me_fields
+from mongoengine import fields as me_fields
+from mongoengine import Document
 from rest_framework.compat import unicode_repr
-from rest_framework.test import APISimpleTestCase
-from rest_framework.exceptions import ValidationError
 from rest_framework.fields import IntegerField
-
+from rest_framework_mongoengine.fields import (GenericReferenceField,
+                                               ReferenceField)
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from rest_framework_mongoengine.fields import ReferenceField, GenericReferenceField
 
-from .utils import dedent, BadType, FieldValues
+from .utils import dedent
 
 
 class ReferencedModel(Document):
     name = me_fields.StringField()
 
+
 class IntReferencedModel(Document):
     id = me_fields.IntField(primary_key=True)
     name = me_fields.StringField()
 
+
 class IntReferenceField(ReferenceField):
     pk_field_class = IntegerField
+
 
 class IntGenericReferenceField(GenericReferenceField):
     pk_field_class = IntegerField
@@ -44,8 +42,10 @@ class RefFieldsModel(Document):
     cached = me_fields.CachedReferenceField(ReferencedModel)
     generic = me_fields.GenericReferenceField()
 
+
 class ReferencingModel(Document):
     ref = me_fields.ReferenceField(ReferencedModel)
+
 
 class GenericReferencingModel(Document):
     ref = me_fields.GenericReferenceField()
@@ -68,7 +68,7 @@ class TestReferenceField(TestCase):
         instance = ReferencedModel.objects.create(name="foo")
         ref = instance.to_dbref()
         assert field.to_internal_value(str(instance.id)) == ref
-        assert field.to_internal_value({ '_id': str(instance.id) }) == ref
+        assert field.to_internal_value({'_id': str(instance.id)}) == ref
 
     def test_output(self):
         field = ReferenceField(ReferencedModel)
@@ -83,7 +83,7 @@ class TestReferenceField(TestCase):
         instance = OtherReferencedModel.objects.create(name="foo")
         ref = instance.to_dbref()
         assert field.to_internal_value(str(instance.id)) == ref
-        assert field.to_internal_value({ '_id': str(instance.id) }) == ref
+        assert field.to_internal_value({'_id': str(instance.id)}) == ref
 
     def test_output_other(self):
         field = ReferenceField(OtherReferencedModel)
@@ -99,12 +99,12 @@ class TestReferenceField(TestCase):
         ref = instance.to_dbref()
         assert field.to_internal_value(instance.id) == ref
         assert field.to_internal_value(str(instance.id)) == ref
-        assert field.to_internal_value({ '_id': instance.id }) == ref
-        assert field.to_internal_value({ '_id': str(instance.id) }) == ref
+        assert field.to_internal_value({'_id': instance.id}) == ref
+        assert field.to_internal_value({'_id': str(instance.id)}) == ref
 
     def test_output_int(self):
         field = IntReferenceField(IntReferencedModel)
-        instance = IntReferencedModel.objects.create(id=1,name="foo")
+        instance = IntReferencedModel.objects.create(id=1, name="foo")
         intid = instance.id
         ref = instance.to_dbref()
         assert field.to_representation(instance) == intid
@@ -121,7 +121,7 @@ class TestGenericReferenceField(TestCase):
         field = GenericReferenceField()
         instance = ReferencedModel.objects.create(name="foo")
         ref = instance.to_dbref()
-        value = field.to_internal_value({ '_cls': 'ReferencedModel', '_id': str(instance.id) })
+        value = field.to_internal_value({'_cls': 'ReferencedModel', '_id': str(instance.id)})
         assert value == ref
 
     def test_output(self):
@@ -129,40 +129,41 @@ class TestGenericReferenceField(TestCase):
         instance = ReferencedModel.objects.create(name="foo")
         ref = instance.to_dbref()
         strid = str(instance.id)
-        assert field.to_representation(instance) == { '_cls': 'ReferencedModel', '_id': strid }
-        assert field.to_representation(ref) == { '_cls': 'ReferencedModel', '_id': strid }
+        assert field.to_representation(instance) == {'_cls': 'ReferencedModel', '_id': strid}
+        assert field.to_representation(ref) == {'_cls': 'ReferencedModel', '_id': strid}
 
     def test_input_other(self):
         field = GenericReferenceField()
         instance = OtherReferencedModel.objects.create(name="foo")
         ref = instance.to_dbref()
-        assert field.to_internal_value({ '_cls': 'OtherReferencedModel', '_id': str(instance.id) }) == ref
+        assert field.to_internal_value({'_cls': 'OtherReferencedModel', '_id': str(instance.id)}) == ref
 
     def test_output_other(self):
         field = GenericReferenceField()
         instance = OtherReferencedModel.objects.create(name="foo")
         strid = str(instance.id)
         ref = instance.to_dbref()
-        assert field.to_representation(instance) == { '_cls': 'OtherReferencedModel', '_id': strid }
-        assert field.to_representation(ref) == { '_cls': 'OtherReferencedModel', '_id': strid }
+        assert field.to_representation(instance) == {'_cls': 'OtherReferencedModel', '_id': strid}
+        assert field.to_representation(ref) == {'_cls': 'OtherReferencedModel', '_id': strid}
 
     def test_input_int(self):
         field = IntGenericReferenceField()
         instance = IntReferencedModel.objects.create(id=1, name="foo")
         ref = instance.to_dbref()
-        assert field.to_internal_value({ '_cls': 'IntReferencedModel', '_id': instance.id }) == ref
-        assert field.to_internal_value({ '_cls': 'IntReferencedModel', '_id': str(instance.id) }) == ref
+        assert field.to_internal_value({'_cls': 'IntReferencedModel', '_id': instance.id}) == ref
+        assert field.to_internal_value({'_cls': 'IntReferencedModel', '_id': str(instance.id)}) == ref
 
     def test_output_int(self):
         field = IntGenericReferenceField()
-        instance = IntReferencedModel.objects.create(id=1,name="foo")
+        instance = IntReferencedModel.objects.create(id=1, name="foo")
         ref = instance.to_dbref()
-        assert field.to_representation(instance) == { '_cls': 'IntReferencedModel', '_id': instance.id }
-        assert field.to_representation(ref) == { '_cls': 'IntReferencedModel', '_id': instance.id }
+        assert field.to_representation(instance) == {'_cls': 'IntReferencedModel', '_id': instance.id}
+        assert field.to_representation(ref) == {'_cls': 'IntReferencedModel', '_id': instance.id}
 
 
 class TestReferenceMapping(TestCase):
     maxDiff = 1000
+
     def test_referenced(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
@@ -253,6 +254,7 @@ class TestRelationalFieldDisplayValue(TestCase):
                                 (self.ids[2], 'My Blue Color')])
         self.assertEqual(serializer.fields['color'].choices, expected)
 
+
 class TestReferenceIntegration(TestCase):
     def setUp(self):
         self.target = ReferencedModel.objects.create(
@@ -265,6 +267,7 @@ class TestReferenceIntegration(TestCase):
 
     def test_retrival(self):
         instance = ReferencingModel.objects.create(ref=self.target)
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingModel
@@ -279,6 +282,7 @@ class TestReferenceIntegration(TestCase):
 
     def test_retrival_deep(self):
         instance = ReferencingModel.objects.create(ref=self.target)
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingModel
@@ -287,10 +291,9 @@ class TestReferenceIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'ref': { 'id': str(self.target.id), 'name': "Foo" }
+            'ref': {'id': str(self.target.id), 'name': "Foo"}
         }
         self.assertEqual(serializer.data, expected)
-
 
     def test_create(self):
         class TestSerializer(DocumentSerializer):
@@ -321,6 +324,7 @@ class TestReferenceIntegration(TestCase):
 
     def test_update(self):
         instance = ReferencingModel.objects.create(ref=self.target)
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingModel
@@ -358,6 +362,7 @@ class TestGenericReferenceIntegration(TestCase):
 
     def test_retrival(self):
         instance = GenericReferencingModel.objects.create(ref=self.target)
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GenericReferencingModel
@@ -366,12 +371,13 @@ class TestGenericReferenceIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'ref': {'_cls': 'ReferencedModel', '_id': str(self.target.id) },
+            'ref': {'_cls': 'ReferencedModel', '_id': str(self.target.id)},
         }
         self.assertEqual(serializer.data, expected)
 
     def test_retrival_deep(self):
         instance = GenericReferencingModel.objects.create(ref=self.target)
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GenericReferencingModel
@@ -380,10 +386,9 @@ class TestGenericReferenceIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'ref': {'_cls': 'ReferencedModel', '_id': str(self.target.id) },
+            'ref': {'_cls': 'ReferencedModel', '_id': str(self.target.id)},
         }
         self.assertEqual(serializer.data, expected)
-
 
     def test_create(self):
         class TestSerializer(DocumentSerializer):
@@ -394,7 +399,7 @@ class TestGenericReferenceIntegration(TestCase):
             name="Bar"
         )
         data = {
-            'ref': { '_cls': 'ReferencedModel', '_id': new_target.id  }
+            'ref': {'_cls': 'ReferencedModel', '_id': new_target.id}
         }
 
         serializer = TestSerializer(data=data)
@@ -405,19 +410,20 @@ class TestGenericReferenceIntegration(TestCase):
 
         expected = {
             'id': str(instance.id),
-            'ref': { '_cls': 'ReferencedModel', '_id': str(new_target.id)  }
+            'ref': {'_cls': 'ReferencedModel', '_id': str(new_target.id)}
         }
         self.assertEqual(serializer.data, expected)
 
     def test_update(self):
         instance = GenericReferencingModel.objects.create(ref=self.target)
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GenericReferencingModel
 
         new_target = OtherReferencedModel.objects.create(name="Bar")
         data = {
-            'ref': { '_cls': 'OtherReferencedModel', '_id': new_target.id  }
+            'ref': {'_cls': 'OtherReferencedModel', '_id': new_target.id}
         }
 
         # Serializer should validate okay.
@@ -431,6 +437,6 @@ class TestGenericReferenceIntegration(TestCase):
         # Representation should be correct.
         expected = {
             'id': str(instance.id),
-            'ref': { '_cls': 'OtherReferencedModel', '_id': str(new_target.id)  }
+            'ref': {'_cls': 'OtherReferencedModel', '_id': str(new_target.id)}
         }
         self.assertEqual(serializer.data, expected)

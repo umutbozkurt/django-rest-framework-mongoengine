@@ -4,21 +4,21 @@ of serializer classes and serializer fields.
 """
 from __future__ import unicode_literals
 
-from django.utils import six
-from django.utils.encoding import force_str
-
 import re
 
+from django.utils import six
+from django.utils.encoding import force_str
+from mongoengine.base import BaseDocument
+from mongoengine.fields import BaseField
+from mongoengine.queryset import QuerySet
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import Field
-from mongoengine.queryset import QuerySet
-from mongoengine.fields import BaseField
-from mongoengine.base import BaseDocument
 
 
 def manager_repr(value):
     model = value._document
     return '%s.objects' % (model.__name__,)
+
 
 def mongo_field_repr(value):
     # mimic django models.Field.__repr__
@@ -27,6 +27,7 @@ def mongo_field_repr(value):
     if name is not None:
         return '<%s: %s>' % (path, name)
     return '<%s>' % path
+
 
 def mongo_doc_repr(value):
     # mimic django models.Model.__repr__
@@ -37,6 +38,7 @@ def mongo_doc_repr(value):
     return force_str('<%s: %s>' % (value.__class__.__name__, u))
 
 uni_lit_re = re.compile("u'(.*?)'")
+
 
 def smart_repr(value):
     if isinstance(value, QuerySet):

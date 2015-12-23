@@ -1,9 +1,8 @@
 from __future__ import unicode_literals
 
-from mongoengine.errors import ValidationError as mongo_ValidationError
 from rest_framework import validators
-from rest_framework.exceptions import ValidationError
 from rest_framework.compat import unicode_to_repr
+from rest_framework.exceptions import ValidationError
 from rest_framework_mongoengine.repr import smart_repr
 
 
@@ -50,7 +49,6 @@ class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherVali
         if None not in checked_values and queryset.first():
             field_names = ', '.join(self.fields)
             raise ValidationError(self.message.format(field_names=field_names))
-
 
     def __repr__(self):
         return unicode_to_repr('<%s(queryset=%s, fields=%s)>' % (

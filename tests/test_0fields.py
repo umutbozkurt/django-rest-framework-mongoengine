@@ -1,16 +1,13 @@
 from __future__ import unicode_literals
 
 import pytest
-
 from bson import ObjectId
-
 from django.test import TestCase
-
-from rest_framework.exceptions import ValidationError
-
 from mongoengine import Document, EmbeddedDocument, fields
-
-from rest_framework_mongoengine.fields import (ObjectIdField, DocumentField, GenericEmbeddedField, GenericField)
+from rest_framework.exceptions import ValidationError
+from rest_framework_mongoengine.fields import (DocumentField,
+                                               GenericEmbeddedField,
+                                               GenericField, ObjectIdField)
 
 from .utils import FieldValues
 
@@ -63,16 +60,17 @@ class TestGenericEmbeddedField(FieldValues, TestCase):
     field = GenericEmbeddedField()
 
     valid_inputs = [
-        ({ '_cls': 'MockEmbeddedModel', 'foo': "Foo"}, MockEmbeddedModel(foo="Foo")),
+        ({'_cls': 'MockEmbeddedModel', 'foo': "Foo"}, MockEmbeddedModel(foo="Foo")),
     ]
 
     invalid_inputs = [
-        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, "Document `InvalidModel` has not been defined."),
+        ({'_cls': 'InvalidModel', 'foo': "Foo"}, "Document `InvalidModel` has not been defined."),
     ]
 
     outputs = [
-        (MockEmbeddedModel(foo="Foo"), { '_cls': 'MockEmbeddedModel', 'foo': "Foo"}),
+        (MockEmbeddedModel(foo="Foo"), {'_cls': 'MockEmbeddedModel', 'foo': "Foo"}),
     ]
+
 
 class TestGenericField(FieldValues, TestCase):
     field = GenericField()
@@ -80,22 +78,22 @@ class TestGenericField(FieldValues, TestCase):
     valid_inputs = [
         ("str", "str"),
         (123, 123),
-        ([1,2,3], [1,2,3]),
-        ({'foo':"Foo"}, {'foo':"Foo"}),
-        ({ '_cls': 'MockEmbeddedModel', 'foo': "Foo"}, MockEmbeddedModel(foo="Foo")),
-        ({ 'emb': { '_cls': 'MockEmbeddedModel', 'foo': "Foo"}}, {'emb': MockEmbeddedModel(foo="Foo")}),
+        ([1, 2, 3], [1, 2, 3]),
+        ({'foo': "Foo"}, {'foo': "Foo"}),
+        ({'_cls': 'MockEmbeddedModel', 'foo': "Foo"}, MockEmbeddedModel(foo="Foo")),
+        ({'emb': {'_cls': 'MockEmbeddedModel', 'foo': "Foo"}}, {'emb': MockEmbeddedModel(foo="Foo")}),
     ]
 
     invalid_inputs = [
-        ({ '_cls': 'InvalidModel', 'foo': "Foo"}, "Document `InvalidModel` has not been defined."),
-        ({'emb': { '_cls': 'InvalidModel', 'foo': "Foo"}}, "Document `InvalidModel` has not been defined."),
+        ({'_cls': 'InvalidModel', 'foo': "Foo"}, "Document `InvalidModel` has not been defined."),
+        ({'emb': {'_cls': 'InvalidModel', 'foo': "Foo"}}, "Document `InvalidModel` has not been defined."),
     ]
 
     outputs = [
         ("str", "str"),
         (123, 123),
-        ([1,2,3], [1,2,3]),
-        ({'foo':"Foo"}, {'foo':"Foo"}),
-        (MockEmbeddedModel(foo="Foo"), { '_cls': 'MockEmbeddedModel', 'foo': "Foo"}),
-        ({'emb': MockEmbeddedModel(foo="Foo")}, { 'emb': { '_cls': 'MockEmbeddedModel', 'foo': "Foo"}}),
+        ([1, 2, 3], [1, 2, 3]),
+        ({'foo': "Foo"}, {'foo': "Foo"}),
+        (MockEmbeddedModel(foo="Foo"), {'_cls': 'MockEmbeddedModel', 'foo': "Foo"}),
+        ({'emb': MockEmbeddedModel(foo="Foo")}, {'emb': {'_cls': 'MockEmbeddedModel', 'foo': "Foo"}}),
     ]
