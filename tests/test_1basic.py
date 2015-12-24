@@ -17,6 +17,7 @@ from django.test import TestCase
 from mongoengine import Document, fields
 from rest_framework import serializers
 from rest_framework.compat import unicode_repr
+
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .utils import dedent

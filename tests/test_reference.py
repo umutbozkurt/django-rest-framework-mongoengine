@@ -5,6 +5,7 @@ from mongoengine import fields as me_fields
 from mongoengine import Document
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import IntegerField
+
 from rest_framework_mongoengine.fields import (GenericReferenceField,
                                                ReferenceField)
 from rest_framework_mongoengine.serializers import DocumentSerializer
