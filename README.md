@@ -32,7 +32,7 @@ The features and differences of this package are described in [API documentation
 
 ### do not use git clone!
 
-It may contain non-working code.
+It may contain non-working code. Before using it, run tests to ensure the code is working.  
 
 ## Usage
 
@@ -50,6 +50,23 @@ INSTALLED_APPS = (
 ### Import modules
 
 Use corresponding classes from this package in place of original DRF stuff. Refer to API documentation.
+
+## Testing
+
+If you discover something does not work on the DRFM side, the best way to ensure that and report an issue - is to write a test case, with minimal code that fails. 
+You may use [this template](https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/tests/test_0dumb.py) to create your case.
+
+If you have something (Django, DRF, mongoengine) at a version, not mentioned in release notes, you better run all the tests in your environment to ensure the DRFM is compatible with that version.
+
+For tests to work, you need pytest in your environment. 
+
+To run all the tests:
+
+```./runtests.py --fast```
+
+To run tests from separate file, class or method:
+
+```./runtests.py --fast test_name```
 
 ## Releases
 
