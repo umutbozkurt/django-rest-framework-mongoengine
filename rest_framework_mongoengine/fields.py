@@ -481,3 +481,29 @@ class GeoJSONField(MongoValidatingField, serializers.Field):
 
     def to_representation(self, value):
         return {'type': self.mongo_field._type, 'coordinates': value}
+
+
+class FileField(serializers.FileField):
+    """ Field for files, stored in gridfs.
+
+    Corresponds to ``DRF.serializers.FileField``
+
+    Internal value: a file-like object.
+    For uploaded files it is a ``django.core.files.File`` (provided by django and DRF parsers).
+    For gridfs files it is ``mongoengine.fields.GridFSProxy`` (provided by mongoengine).
+
+    Representation: str(grid_id)
+    """
+
+    def to_representation(self, value):
+        return smart_text(value.grid_id)
+
+
+class ImageField(serializers.ImageField):
+    """ Field for images, stored in gridfs.
+
+    Corresponds to ``DRF.serializers.ImageField``, the same way as ``FileField``
+    """
+
+    def to_representation(self, value):
+        return smart_text(value.grid_id)
