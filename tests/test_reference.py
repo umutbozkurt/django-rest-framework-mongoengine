@@ -43,6 +43,7 @@ class RefFieldsModel(Document):
     dbref = me_fields.ReferenceField(ReferencedModel, dbref=True)
     cached = me_fields.CachedReferenceField(ReferencedModel)
     generic = me_fields.GenericReferenceField()
+    ref_list = me_fields.ListField(me_fields.ReferenceField(ReferencedModel))
 
 
 class ReferencingModel(Document):
@@ -56,6 +57,10 @@ class GenericReferencingModel(Document):
 class ReferencedSerializer(DocumentSerializer):
     class Meta:
         model = ReferencedModel
+
+
+class ListReferencingModel(Document):
+    refs = me_fields.ListField(ReferenceField(ReferencedModel))
 
 
 class TestReferenceField(TestCase):
@@ -204,9 +209,11 @@ class TestReferenceMapping(TestCase):
                 model = RefFieldsModel
                 depth = 0
 
+        # order is broken
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
+                ref_list = ListField(child=ReferenceField(queryset=ReferencedModel.objects), required=False)
                 ref = ReferenceField(queryset=ReferencedModel.objects)
                 dbref = ReferenceField(queryset=ReferencedModel.objects)
                 cached = ReferenceField(queryset=ReferencedModel.objects)
@@ -223,6 +230,9 @@ class TestReferenceMapping(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
+                ref_list = NestedSerializer(many=True, required=False):
+                    id = ObjectIdField(read_only=True)
+                    name = CharField(required=False)
                 ref = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)

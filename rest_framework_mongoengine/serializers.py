@@ -278,7 +278,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             model_field = info.fields_and_pk[field_name]
             if isinstance(model_field, COMPOUND_FIELD_TYPES):
                 child_name = field_name + '.child'
-                if child_name in info.fields or child_name in info.embedded:
+                if child_name in info.fields or child_name in info.embedded or child_name in info.references:
                     child_class, child_kwargs = self.build_field(child_name, info, model_class, nested_depth)
                     child_field = child_class(**child_kwargs)
                 else:
