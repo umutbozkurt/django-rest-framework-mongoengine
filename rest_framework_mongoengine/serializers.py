@@ -239,8 +239,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         fields = OrderedDict()
 
         for field_name in field_names:
-            if '.' in field_name:
-                continue
             # If the field is explicitly declared on the class then use that.
             if field_name in declared_fields:
                 fields[field_name] = declared_fields[field_name]
@@ -263,6 +261,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         fields.update(hidden_fields)
 
         return fields
+
+    def get_field_names(self, declared_fields, model_info):
+        field_names = super(DocumentSerializer, self).get_field_names(declared_fields, model_info)
+        # filter out child fields
+        return [fn for fn in field_names if '.child' not in fn]
 
     def get_default_field_names(self, declared_fields, model_info):
         return (

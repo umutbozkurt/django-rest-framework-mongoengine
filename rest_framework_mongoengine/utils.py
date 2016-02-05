@@ -82,6 +82,8 @@ def get_field_info(model):
             fields[name] = field
             if field.field:
                 add_field(name + '.child', field.field)
+        elif field is pk:
+            return
         else:
             fields[name] = field
 
