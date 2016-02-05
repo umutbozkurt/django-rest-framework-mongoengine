@@ -17,6 +17,10 @@ class EmbeddingModel(Document):
     embedded = fields.EmbeddedDocumentField(EmbeddedModel)
 
 
+class EmbeddingModel2(Document):
+    embedded = fields.EmbeddedDocumentField(EmbeddedModel, required=True)
+
+
 class ListEmbeddingModel(Document):
     embedded_list = fields.EmbeddedDocumentListField(EmbeddedModel)
 
@@ -63,6 +67,20 @@ class TestEmbeddedMapping(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 embedded = NestedSerializer(required=False):
+                    foo = CharField(required=False)
+                    bar = CharField(required=False)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
+
+    def test_embedded_required(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = EmbeddingModel2
+                depth = 1
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                embedded = NestedSerializer(required=True):
                     foo = CharField(required=False)
                     bar = CharField(required=False)
         """)

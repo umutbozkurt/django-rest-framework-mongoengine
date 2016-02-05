@@ -6,7 +6,8 @@ from mongoengine import Document
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import IntegerField
 
-from rest_framework_mongoengine.fields import (GenericReferenceField,
+from rest_framework_mongoengine.fields import (ComboReferenceField,
+                                               GenericReferenceField,
                                                ReferenceField)
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
@@ -50,6 +51,11 @@ class ReferencingModel(Document):
 
 class GenericReferencingModel(Document):
     ref = me_fields.GenericReferenceField()
+
+
+class ReferencedSerializer(DocumentSerializer):
+    class Meta:
+        model = ReferencedModel
 
 
 class TestReferenceField(TestCase):
@@ -160,6 +166,33 @@ class TestGenericReferenceField(TestCase):
         ref = instance.to_dbref()
         assert field.to_representation(instance) == {'_cls': 'IntReferencedModel', '_id': instance.id}
         assert field.to_representation(ref) == {'_cls': 'IntReferencedModel', '_id': instance.id}
+
+
+class TestComboReferenceField(TestCase):
+    def tearDown(self):
+        ReferencedModel.drop_collection()
+
+    def test_input_ref(self):
+        field = ComboReferenceField(serializer=ReferencedSerializer)
+        instance = ReferencedModel.objects.create(name="foo")
+        ref = instance.to_dbref()
+        assert field.to_internal_value(str(instance.id)) == ref
+        assert field.to_internal_value({'_id': str(instance.id)}) == ref
+
+    def test_input_data(self):
+        field = ComboReferenceField(serializer=ReferencedSerializer)
+        value = field.to_internal_value({'name': "Foo"})
+        self.assertIsInstance(value, ReferencedModel)
+        self.assertEqual(value.name, "Foo")
+        self.assertIsNone(value.id)
+
+    def test_output(self):
+        field = ComboReferenceField(serializer=ReferencedSerializer)
+        instance = ReferencedModel.objects.create(name="foo")
+        strid = str(instance.id)
+        ref = instance.to_dbref()
+        assert field.to_representation(instance) == strid
+        assert field.to_representation(ref) == strid
 
 
 class TestReferenceMapping(TestCase):
@@ -301,22 +334,15 @@ class TestReferenceIntegration(TestCase):
             class Meta:
                 model = ReferencingModel
 
-        new_target = ReferencedModel.objects.create(
-            name="Bar"
-        )
-        data = {
-            'ref': new_target.id
-        }
+        new_target = ReferencedModel.objects.create(name="Bar")
+        data = {'ref': new_target.id}
 
-        # Serializer should validate okay.
         serializer = TestSerializer(data=data)
         assert serializer.is_valid()
 
-        # Creating the instance, relationship attributes should be set.
         instance = serializer.save()
         assert instance.ref.id == new_target.id
 
-        # Representation should be correct.
         expected = {
             'id': str(instance.id),
             'ref': str(new_target.id)
@@ -439,5 +465,130 @@ class TestGenericReferenceIntegration(TestCase):
         expected = {
             'id': str(instance.id),
             'ref': {'_cls': 'OtherReferencedModel', '_id': str(new_target.id)}
+        }
+        self.assertEqual(serializer.data, expected)
+
+
+class ComboReferencingSerializer(DocumentSerializer):
+    class Meta:
+        model = ReferencingModel
+    ref = ComboReferenceField(serializer=ReferencedSerializer)
+
+    def save_subdocs(self, validated_data):
+        doc = validated_data['ref']
+        if isinstance(doc, Document):
+            doc.save()
+
+    def create(self, validated_data):
+        self.save_subdocs(validated_data)
+        return super(ComboReferencingSerializer, self).create(validated_data)
+
+    def update(self, instance, validated_data):
+        self.save_subdocs(validated_data)
+        return super(ComboReferencingSerializer, self).update(instance, validated_data)
+
+
+class TestComboReferenceIntegration(TestCase):
+    def setUp(self):
+        self.target = ReferencedModel.objects.create(name='Foo')
+
+    def tearDown(self):
+        ReferencedModel.drop_collection()
+        ReferencingModel.drop_collection()
+
+    def test_retrival(self):
+        instance = ReferencingModel.objects.create(ref=self.target)
+        serializer = ComboReferencingSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'ref': str(self.target.id),
+        }
+        self.assertEqual(serializer.data, expected)
+
+    def test_retrival_deep(self):
+        instance = ReferencingModel.objects.create(ref=self.target)
+
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingModel
+                depth = 1
+            ref = ComboReferenceField(serializer=ReferencedSerializer)
+
+        serializer = TestSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'ref': {'id': str(self.target.id), 'name': "Foo"}
+        }
+        self.assertEqual(serializer.data, expected)
+
+    def test_create_ref(self):
+        new_target = ReferencedModel.objects.create(name="Bar")
+        data = {'ref': new_target.id}
+
+        serializer = ComboReferencingSerializer(data=data)
+        assert serializer.is_valid()
+
+        instance = serializer.save()
+        assert instance.ref.id == new_target.id
+
+        expected = {
+            'id': str(instance.id),
+            'ref': str(new_target.id)
+        }
+        self.assertEqual(serializer.data, expected)
+
+    def test_create_data(self):
+        data = {'ref': {'name': "Bar"}}
+
+        serializer = ComboReferencingSerializer(data=data)
+        assert serializer.is_valid()
+
+        instance = serializer.save()
+
+        new_target = ReferencedModel.objects.get(name="Bar")
+
+        assert instance.ref.id == new_target.id
+
+        expected = {
+            'id': str(instance.id),
+            'ref': str(new_target.id)
+        }
+        self.assertEqual(serializer.data, expected)
+
+    def test_update_ref(self):
+        instance = ReferencingModel.objects.create(ref=self.target)
+
+        new_target = ReferencedModel.objects.create(name="Bar")
+        data = {'ref': new_target.id}
+
+        serializer = ComboReferencingSerializer(instance, data=data)
+        assert serializer.is_valid()
+
+        instance = serializer.save()
+        assert instance.ref.id == new_target.id
+
+        expected = {
+            'id': str(instance.id),
+            'ref': str(new_target.id)
+        }
+        self.assertEqual(serializer.data, expected)
+
+    def test_update_data(self):
+        instance = ReferencingModel.objects.create(ref=self.target)
+
+        data = {'ref': {'name': "Bar"}}
+
+        serializer = ComboReferencingSerializer(instance, data=data)
+        assert serializer.is_valid()
+
+        instance = serializer.save()
+
+        new_target = ReferencedModel.objects.get(name="Bar")
+
+        assert instance.ref.id == new_target.id
+
+        expected = {
+            'id': str(instance.id),
+            'ref': str(new_target.id)
         }
         self.assertEqual(serializer.data, expected)

@@ -183,16 +183,21 @@ class DynamicField(GenericField, AttributedDocumentField):
 class ReferenceField(serializers.Field):
     """ Field for References.
 
-    Should be specified with ``model`` or ``queryset`` argument pointing to referenced model.
+    Argument ``model`` or ``queryset`` should be given to specify referencing model.
 
     Internal value: DBRef.
 
-    Representation: ``str(id)``, or ``{ _id: str(id) }`` (for compatibility with GenericReference).
+    Representation: ``id_value``
+
+    Parsing: ``id_value`` or ``{ _id: id_value }``
+
+    Formatting and parsing the id_value is handled by ``.pk_field_class``. By default it is ObjectIdField, it inputs ``ObjectId`` type, and outputs ``str``.
 
     Validation checks existance of referenced object.
+
     """
     default_error_messages = {
-        'invalid_input': _('Invalid input. Expected `str` or `{ _id: str }`.'),
+        'invalid_input': _('Invalid input. Expected `id_value` or `{ _id: id_value }`.'),
         'invalid_id': _('Cannot parse "{pk_value}" as {pk_type}.'),
         'not_found': _('Document with id={pk_value} does not exist.'),
     }
@@ -280,6 +285,48 @@ class ReferenceField(serializers.Field):
         assert isinstance(value, (Document, DBRef))
         doc_id = value.id
         return self.pk_field.to_representation(doc_id)
+
+
+class ComboReferenceField(ReferenceField):
+    """ Field for References.
+
+    Can parse either reference or nested document data.
+
+    """
+
+    default_error_messages = {
+        'invalid_input': _('Invalid input. Expected `id_value` or `{ _id: id_value }`, or `{ data }`.'),
+    }
+
+    def __init__(self, serializer, **kwargs):
+        self.serializer = serializer
+        self.model = serializer.Meta.model
+        if 'model' not in kwargs:
+            kwargs['model'] = self.model
+        super(ComboReferenceField, self).__init__(**kwargs)
+
+    def to_internal_value(self, value):
+        if not isinstance(value, dict) or list(value.keys()) == ['_id']:
+            return super(ComboReferenceField, self).to_internal_value(value)
+        if '_id' in value:
+            self.fail('invalid_input')
+
+        ser = self.serializer(data=value)
+        ser.is_valid(raise_exception=True)
+        obj = self.model(**ser.validated_data)
+
+        return obj
+
+    def to_representation(self, value):
+        if self.parent is None or getattr(self.parent.Meta, 'depth', 0) == 0:
+            return super(ComboReferenceField, self).to_representation(value)
+
+        assert isinstance(value, (Document, DBRef))
+        if isinstance(value, DBRef):
+            value = self.model._get_db().dereference(value)
+
+        ser = self.serializer(instance=value)
+        return ser.data
 
 
 class GenericReferenceField(serializers.Field):
