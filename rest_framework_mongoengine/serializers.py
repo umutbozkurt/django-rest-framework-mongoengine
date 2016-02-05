@@ -11,9 +11,8 @@ from rest_framework.utils.field_mapping import ClassLookupDict
 from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
                                                    UniqueValidator)
 
-from .fields import (DocumentField, DynamicField, GenericEmbeddedDocumentField,
-                     GenericReferenceField, GeoJSONField, GeoPointField,
-                     ObjectIdField, ReferenceField)
+from rest_framework_mongoengine import fields as drfm_fields
+
 from .repr import serializer_repr
 from .utils import (COMPOUND_FIELD_TYPES, get_field_info, get_field_kwargs,
                     get_relation_kwargs, has_default, is_abstract_model)
@@ -129,14 +128,14 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.BooleanField: drf_fields.BooleanField,
         me_fields.DateTimeField: drf_fields.DateTimeField,
         me_fields.ComplexDateTimeField: drf_fields.DateTimeField,
-        me_fields.ObjectIdField: ObjectIdField,
-        me_fields.FileField: drf_fields.FileField,
-        me_fields.ImageField: drf_fields.ImageField,
+        me_fields.ObjectIdField: drfm_fields.ObjectIdField,
+        me_fields.FileField: drfm_fields.FileField,
+        me_fields.ImageField: drfm_fields.ImageField,
         me_fields.SequenceField: drf_fields.IntegerField,
         me_fields.UUIDField: drf_fields.UUIDField,
-        me_fields.GeoPointField: GeoPointField,
-        me_fields.GeoJsonBaseField: GeoJSONField,
-        me_fields.BaseField: DocumentField
+        me_fields.GeoPointField: drfm_fields.GeoPointField,
+        me_fields.GeoJsonBaseField: drfm_fields.GeoJSONField,
+        me_fields.BaseField: drfm_fields.DocumentField
     }
 
     # induct failure if they occasionally used somewhere
@@ -327,7 +326,7 @@ class DocumentSerializer(serializers.ModelSerializer):
                 if key not in valid_kwargs:
                     field_kwargs.pop(key)
 
-        if not issubclass(field_class, DocumentField):
+        if not issubclass(field_class, drfm_fields.DocumentField):
             # `model_field` is only valid for the fallback case of
             # `ModelField`, which is used when no other typed field
             # matched to the model field.
@@ -370,10 +369,10 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_class = NestedSerializer
             field_kwargs = {'read_only': True}
         elif relation_info.related_model:
-            field_class = ReferenceField
+            field_class = drfm_fields.ReferenceField
             field_kwargs = get_relation_kwargs(field_name, relation_info)
         else:
-            field_class = GenericReferenceField
+            field_class = drfm_fields.GenericReferenceField
             field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
             field_kwargs.pop('model_field', None)
 
@@ -394,7 +393,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
             field_kwargs.pop('model_field')
         else:
-            field_class = GenericEmbeddedDocumentField
+            field_class = drfm_fields.GenericEmbeddedDocumentField
             field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
 
         return field_class, field_kwargs
@@ -519,7 +518,7 @@ class DynamicDocumentSerializer(DocumentSerializer):
         dynamic_fields = {}
         if document._dynamic:
             for name, field in document._dynamic_fields.items():
-                dfield = DynamicField(model_field=field, required=False)
+                dfield = drfm_fields.DynamicField(model_field=field, required=False)
                 dfield.bind(name, self)
                 dynamic_fields[name] = dfield
         return dynamic_fields
