@@ -143,6 +143,13 @@ class DocumentSerializer(serializers.ModelSerializer):
     serializer_related_to_field = None
     serializer_url_field = None
 
+    " class used to map ReferenceField "
+    serializer_reference_field = drfm_fields.ReferenceField
+    " class used to map GenericReferenceField "
+    serializer_generic_reference_field = drfm_fields.GenericReferenceField
+    " class used to map GenericEmbeddedDocumentField "
+    serializer_generic_embedded_field = drfm_fields.GenericEmbeddedDocumentField
+
     def create(self, validated_data):
         raise_errors_on_nested_writes('create', self, validated_data)
 
@@ -369,10 +376,10 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_class = NestedSerializer
             field_kwargs = {'read_only': True}
         elif relation_info.related_model:
-            field_class = drfm_fields.ReferenceField
+            field_class = self.serializer_reference_field
             field_kwargs = get_relation_kwargs(field_name, relation_info)
         else:
-            field_class = drfm_fields.GenericReferenceField
+            field_class = self.serializer_generic_reference_field
             field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
             field_kwargs.pop('model_field', None)
 
@@ -393,7 +400,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
             field_kwargs.pop('model_field')
         else:
-            field_class = drfm_fields.GenericEmbeddedDocumentField
+            field_class = self.serializer_generic_embedded_field
             field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
 
         return field_class, field_kwargs
