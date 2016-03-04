@@ -480,7 +480,12 @@ class GeoJSONField(MongoValidatingField, serializers.Field):
         return value['coordinates']
 
     def to_representation(self, value):
-        return {'type': self.mongo_field._type, 'coordinates': value}
+        if isinstance(value, dict):
+            val = value['coordinates']
+        else:
+            val = value
+        # return value
+        return {'type': self.mongo_field._type, 'coordinates': val}
 
 
 class FileField(serializers.FileField):
