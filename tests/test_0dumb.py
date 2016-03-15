@@ -12,8 +12,8 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 from .utils import dedent
 
 
-class MockModel(Document):
-    foo = fields.StringField()
+class DumbModel(Document):
+    name = fields.StringField()
 
 
 @pytest.mark.skipif(True, reason="dumb")
@@ -24,12 +24,12 @@ class TestMapping(TestCase):
     def test_mapping(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = MockModel
+                model = DumbModel
 
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                foo = CharField(required=False)
+                name = CharField(required=False)
         """)
 
         self.assertEqual(unicode_repr(TestSerializer()), expected)
@@ -41,14 +41,14 @@ class TestIntegration(TestCase):
     Test if primary methods work.
     """
     def tearDown(self):
-        MockModel.drop_collection()
+        DumbModel.drop_collection()
 
     def test_retrival(self):
-        instance = MockModel.objects.create(foo="Foo")
+        instance = DumbModel.objects.create(foo="Foo")
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = MockModel
+                model = DumbModel
 
         serializer = TestSerializer(instance)
         expected = {
@@ -61,7 +61,7 @@ class TestIntegration(TestCase):
     def test_create(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = MockModel
+                model = DumbModel
 
         data = {
             'foo': "Foo"
@@ -80,11 +80,11 @@ class TestIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_update(self):
-        instance = MockModel.objects.create(foo="Foo")
+        instance = DumbModel.objects.create(foo="Foo")
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = MockModel
+                model = DumbModel
 
         data = {
             'foo': "Bar"

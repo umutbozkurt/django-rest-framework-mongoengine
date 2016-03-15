@@ -7,13 +7,13 @@ from rest_framework import serializers
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 
-class ValidatingModel(Document):
+class OuterValidatingModel(Document):
     name = fields.StringField()
 
 
 class ValidationMethodSerializer(DocumentSerializer):
     class Meta:
-        model = ValidatingModel
+        model = OuterValidatingModel
 
     def validate_name(self, value):
         if len(value) < 3:
@@ -23,7 +23,7 @@ class ValidationMethodSerializer(DocumentSerializer):
 
 class RenamedValidationMethodSerializer(DocumentSerializer):
     class Meta:
-        model = ValidatingModel
+        model = OuterValidatingModel
 
     renamed = serializers.CharField(source='name', required=False)
 
@@ -41,7 +41,7 @@ def custom_field_validator(value):
 
 class FieldValidatorSerializer(DocumentSerializer):
     class Meta:
-        model = ValidatingModel
+        model = OuterValidatingModel
 
     name = serializers.CharField(validators=[custom_field_validator])
 
@@ -53,7 +53,7 @@ def custom_model_validator(data):
 
 class ModelValidatorSerializer(DocumentSerializer):
     class Meta:
-        model = ValidatingModel
+        model = OuterValidatingModel
         validators = [custom_model_validator]
 
 

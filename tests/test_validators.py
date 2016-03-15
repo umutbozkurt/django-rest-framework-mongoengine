@@ -11,8 +11,13 @@ from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
 from .utils import dedent
 
 
-class ValidatingModel(Document):
+class NonValidatingModel(Document):
     name = fields.StringField()
+    code = fields.IntField()
+
+
+class UniqueValidatingModel(Document):
+    name = fields.StringField(unique=True)
     code = fields.IntField()
 
 
@@ -27,24 +32,24 @@ class NullValidatingModel(Document):
 
 class UniqueValidatorSerializer(DocumentSerializer):
     class Meta:
-        model = ValidatingModel
+        model = NonValidatingModel
 
-    name = serializers.CharField(validators=[UniqueValidator(queryset=ValidatingModel.objects)])
+    name = serializers.CharField(validators=[UniqueValidator(queryset=NonValidatingModel.objects)])
 
 
 class TestUniqueValidation(TestCase):
     def setUp(self):
-        self.instance = ValidatingModel.objects.create(name='existing')
+        self.instance = NonValidatingModel.objects.create(name='existing')
 
     def tearDown(self):
-        ValidatingModel.drop_collection()
+        NonValidatingModel.drop_collection()
 
     def test_repr(self):
         serializer = UniqueValidatorSerializer()
         expected = dedent("""
             UniqueValidatorSerializer():
                 id = ObjectIdField(read_only=True)
-                name = CharField(validators=[<UniqueValidator(queryset=ValidatingModel.objects)>])
+                name = CharField(validators=[<UniqueValidator(queryset=NonValidatingModel.objects)>])
                 code = IntegerField(required=False)
         """)
         assert repr(serializer) == expected
@@ -71,10 +76,6 @@ class TestUniqueValidation(TestCase):
 # Tests for implicit `UniqueValidator`
 # ------------------------------------
 
-class UniqueValidatingModel(Document):
-    name = fields.StringField(unique=True)
-    code = fields.IntField()
-
 
 class TestUniqueSerializer(TestCase):
     def test_repr(self):
@@ -97,8 +98,8 @@ class TestUniqueSerializer(TestCase):
 # -----------------------------------
 class UniqueTogetherValidatorSerializer(DocumentSerializer):
     class Meta:
-        model = ValidatingModel
-        validators = [UniqueTogetherValidator(queryset=ValidatingModel.objects, fields=('name', 'code'))]
+        model = NonValidatingModel
+        validators = [UniqueTogetherValidator(queryset=NonValidatingModel.objects, fields=('name', 'code'))]
 
 
 class NullUniqueTogetherValidatorSerializer(DocumentSerializer):
@@ -109,21 +110,21 @@ class NullUniqueTogetherValidatorSerializer(DocumentSerializer):
 
 class TestUniqueTogetherValidation(TestCase):
     def setUp(self):
-        self.instance = ValidatingModel.objects.create(
+        self.instance = NonValidatingModel.objects.create(
             name='example',
             code=1
         )
-        ValidatingModel.objects.create(
+        NonValidatingModel.objects.create(
             name='example',
             code=2
         )
-        ValidatingModel.objects.create(
+        NonValidatingModel.objects.create(
             name='other',
             code=1
         )
 
     def tearDown(self):
-        ValidatingModel.drop_collection()
+        NonValidatingModel.drop_collection()
         NullValidatingModel.drop_collection()
 
     def test_repr(self):
@@ -134,7 +135,7 @@ class TestUniqueTogetherValidation(TestCase):
                 name = CharField(required=False)
                 code = IntegerField(required=False)
                 class Meta:
-                    validators = [<UniqueTogetherValidator(queryset=ValidatingModel.objects, fields=('name', 'code'))>]
+                    validators = [<UniqueTogetherValidator(queryset=NonValidatingModel.objects, fields=('name', 'code'))>]
         """)
         assert repr(serializer) == expected
 
@@ -244,7 +245,7 @@ class UniqueTogetherModel(Document):
 
 class TestUniqueTogetherSerializer(TestCase):
     def tearDown(self):
-        ValidatingModel.drop_collection()
+        NonValidatingModel.drop_collection()
         NullValidatingModel.drop_collection()
 
     def test_repr(self):

@@ -7,12 +7,12 @@ from rest_framework_mongoengine.routers import DefaultRouter, SimpleRouter
 from rest_framework_mongoengine.viewsets import GenericViewSet
 
 
-class DumbModel(Document):
+class RoutedModel(Document):
     foo = fields.StringField()
 
 
 class DumbViewSet(GenericViewSet):
-    queryset = DumbModel.objects
+    queryset = RoutedModel.objects
 
     def list(self, request):
         pass
@@ -26,10 +26,10 @@ class TestRouters(TestCase):
         router = SimpleRouter()
         router.register('dumb', DumbViewSet)
         urlnames = set(map(lambda r: r.name, router.urls))
-        assert urlnames == set(('dumbmodel-list', 'dumbmodel-detail'))
+        assert urlnames == set(('routedmodel-list', 'routedmodel-detail'))
 
     def test_default(self):
         router = DefaultRouter()
         router.register('dumb', DumbViewSet)
         urlnames = set(map(lambda r: r.name, router.urls))
-        assert urlnames == set(('api-root', 'dumbmodel-list', 'dumbmodel-detail'))
+        assert urlnames == set(('api-root', 'routedmodel-list', 'routedmodel-detail'))

@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import os
 pwd = os.path.dirname(os.path.realpath(__file__)) + os.path.sep
 
-import pytest
 from django.test import TestCase
 from django.core.files.utils import FileProxyMixin
 from mongoengine import Document, fields
@@ -14,13 +13,13 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 from .utils import dedent
 
 
-class MockModel(Document):
+class FilesModel(Document):
     fil = fields.FileField(collection_name='files')
 
 
 class TestSerializer(DocumentSerializer):
     class Meta:
-        model = MockModel
+        model = FilesModel
 
 
 class TestMapping(TestCase):
@@ -50,11 +49,11 @@ class TestIntegration(TestCase):
         self.file2 = MockUpload(pwd + "cat2.jpg")
 
     def tearDown(self):
-        MockModel.drop_collection()
-        MockModel._get_db().drop_collection('files')
+        FilesModel.drop_collection()
+        FilesModel._get_db().drop_collection('files')
 
     def test_retrival(self):
-        instance = MockModel.objects.create(fil=self.file1.file)
+        instance = FilesModel.objects.create(fil=self.file1.file)
 
         serializer = TestSerializer(instance)
         expected = {
@@ -81,7 +80,7 @@ class TestIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_update(self):
-        instance = MockModel.objects.create(fil=self.file1.file)
+        instance = FilesModel.objects.create(fil=self.file1.file)
         data = {'fil': self.file2}
 
         serializer = TestSerializer(instance, data=data)

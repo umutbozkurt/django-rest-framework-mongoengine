@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import pytest
 from django.test import TestCase
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework.fields import Field as BaseField
@@ -11,16 +10,16 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 from .utils import dedent
 
 
-class ReferencedModel(Document):
+class CustomReferencedModel(Document):
     name = fields.StringField()
 
 
-class EmbeddedModel(EmbeddedDocument):
+class CustomEmbeddedModel(EmbeddedDocument):
     name = fields.StringField()
 
 
-class MockModel(Document):
-    ref = fields.ReferenceField(ReferencedModel)
+class CustomReferencedModel(Document):
+    ref = fields.ReferenceField(CustomReferencedModel)
     genref = fields.GenericReferenceField()
     genemb = fields.GenericEmbeddedDocumentField()
 
@@ -49,7 +48,7 @@ class TestMapping(TestCase):
     def test_mapping_deep(self):
         class TestSerializer(CustomSerializer):
             class Meta:
-                model = MockModel
+                model = CustomReferencedModel
                 depth = 1
 
         expected = dedent("""
@@ -67,13 +66,13 @@ class TestMapping(TestCase):
     def test_mapping_shallow(self):
         class TestSerializer(CustomSerializer):
             class Meta:
-                model = MockModel
+                model = CustomReferencedModel
                 depth = 0
 
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                ref = CustomRefField(queryset=ReferencedModel.objects)
+                ref = CustomRefField(queryset=CustomReferencedModel.objects)
                 genref = CustomGenRefField(required=False)
                 genemb = HiddenField(default=None)
         """)
