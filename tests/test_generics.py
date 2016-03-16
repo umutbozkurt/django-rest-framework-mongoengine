@@ -8,29 +8,27 @@ from rest_framework.test import APIRequestFactory
 from rest_framework_mongoengine import generics
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
-
-class BasicModel(Document):
-    text = fields.StringField()
+from .models import DumbDocument
 
 
-class BasicSerializer(DocumentSerializer):
+class DumbSerializer(DocumentSerializer):
     class Meta:
-        model = BasicModel
+        model = DumbDocument
 
 
 class ListView(generics.ListAPIView):
-    queryset = BasicModel.objects
-    serializer_class = BasicSerializer
+    queryset = DumbDocument.objects
+    serializer_class = DumbSerializer
 
 
 class BasicPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        return obj.text != 'baz'
+        return obj.name != 'baz'
 
 
 class RetrView(generics.RetrieveAPIView):
-    queryset = BasicModel.objects
-    serializer_class = BasicSerializer
+    queryset = DumbDocument.objects
+    serializer_class = DumbSerializer
     permission_classes = [BasicPermission]
 
 
@@ -39,19 +37,19 @@ class TestBasicViews(TestCase):
 
     def setUp(self):
         """
-        Create 3 BasicModel instances.
+        Create 3 DumbDocument instances.
         """
         items = ['foo', 'bar', 'baz']
         for item in items:
-            BasicModel(text=item).save()
-        self.objects = BasicModel.objects
+            DumbDocument(name=item).save()
+        self.objects = DumbDocument.objects
         self.data = [
-            {'id': str(obj.id), 'text': obj.text}
+            {'id': str(obj.id), 'name': obj.name, 'foo': None}
             for obj in self.objects.all()
         ]
 
     def tearDown(self):
-        BasicModel.drop_collection()
+        DumbDocument.drop_collection()
 
     def test_list(self):
         view = ListView.as_view()

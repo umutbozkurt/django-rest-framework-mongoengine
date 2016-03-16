@@ -1,8 +1,9 @@
 from collections import OrderedDict
 
+import pytest
+
 from django.test import TestCase
-from mongoengine import fields as me_fields
-from mongoengine import Document
+from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import IntegerField
 
@@ -14,13 +15,20 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 from .utils import dedent
 
 
-class ReferencedModel(Document):
-    name = me_fields.StringField()
+class ReferencedDoc(Document):
+    name = fields.StringField()
 
 
-class IntReferencedModel(Document):
-    id = me_fields.IntField(primary_key=True)
-    name = me_fields.StringField()
+class IntReferencedDoc(Document):
+    id = fields.IntField(primary_key=True)
+    name = fields.StringField()
+
+
+class OtherReferencedDoc(Document):
+    _meta = {
+        'collection': 'other_colection'
+    }
+    name = fields.StringField()
 
 
 class IntReferenceField(ReferenceField):
@@ -31,83 +39,76 @@ class IntGenericReferenceField(GenericReferenceField):
     pk_field_class = IntegerField
 
 
-class OtherReferencedModel(Document):
-    _meta = {
-        'collection': 'other_colection'
-    }
-    name = me_fields.StringField()
-
-
 class RefFieldsModel(Document):
-    ref = me_fields.ReferenceField(ReferencedModel)
-    dbref = me_fields.ReferenceField(ReferencedModel, dbref=True)
-    cached = me_fields.CachedReferenceField(ReferencedModel)
-    generic = me_fields.GenericReferenceField()
-    ref_list = me_fields.ListField(me_fields.ReferenceField(ReferencedModel))
+    ref = fields.ReferenceField(ReferencedDoc)
+    dbref = fields.ReferenceField(ReferencedDoc, dbref=True)
+    cached = fields.CachedReferenceField(ReferencedDoc)
+    generic = fields.GenericReferenceField()
+    ref_list = fields.ListField(fields.ReferenceField(ReferencedDoc))
 
 
 class ReferencingModel(Document):
-    ref = me_fields.ReferenceField(ReferencedModel)
+    ref = fields.ReferenceField(ReferencedDoc)
 
 
 class GenericReferencingModel(Document):
-    ref = me_fields.GenericReferenceField()
+    ref = fields.GenericReferenceField()
 
 
 class ReferencedSerializer(DocumentSerializer):
     class Meta:
-        model = ReferencedModel
+        model = ReferencedDoc
 
 
 class ListReferencingModel(Document):
-    refs = me_fields.ListField(ReferenceField(ReferencedModel))
+    refs = fields.ListField(ReferenceField(ReferencedDoc))
 
 
 class TestReferenceField(TestCase):
     def tearDown(self):
-        ReferencedModel.drop_collection()
-        IntReferencedModel.drop_collection()
-        OtherReferencedModel.drop_collection()
+        ReferencedDoc.drop_collection()
+        IntReferencedDoc.drop_collection()
+        OtherReferencedDoc.drop_collection()
 
     def test_init_with_model(self):
-        ReferenceField(ReferencedModel)
+        ReferenceField(ReferencedDoc)
 
     def test_init_with_queryset(self):
-        ReferenceField(queryset=ReferencedModel.objects.all())
+        ReferenceField(queryset=ReferencedDoc.objects.all())
 
     def test_input(self):
-        field = ReferenceField(ReferencedModel)
-        instance = ReferencedModel.objects.create(name="foo")
+        field = ReferenceField(ReferencedDoc)
+        instance = ReferencedDoc.objects.create(name="foo")
         ref = instance.to_dbref()
         assert field.to_internal_value(str(instance.id)) == ref
         assert field.to_internal_value({'_id': str(instance.id)}) == ref
 
     def test_output(self):
-        field = ReferenceField(ReferencedModel)
-        instance = ReferencedModel.objects.create(name="foo")
+        field = ReferenceField(ReferencedDoc)
+        instance = ReferencedDoc.objects.create(name="foo")
         strid = str(instance.id)
         ref = instance.to_dbref()
         assert field.to_representation(instance) == strid
         assert field.to_representation(ref) == strid
 
     def test_input_other(self):
-        field = ReferenceField(OtherReferencedModel)
-        instance = OtherReferencedModel.objects.create(name="foo")
+        field = ReferenceField(OtherReferencedDoc)
+        instance = OtherReferencedDoc.objects.create(name="foo")
         ref = instance.to_dbref()
         assert field.to_internal_value(str(instance.id)) == ref
         assert field.to_internal_value({'_id': str(instance.id)}) == ref
 
     def test_output_other(self):
-        field = ReferenceField(OtherReferencedModel)
-        instance = OtherReferencedModel.objects.create(name="foo")
+        field = ReferenceField(OtherReferencedDoc)
+        instance = OtherReferencedDoc.objects.create(name="foo")
         strid = str(instance.id)
         ref = instance.to_dbref()
         assert field.to_representation(instance) == strid
         assert field.to_representation(ref) == strid
 
     def test_input_int(self):
-        field = IntReferenceField(IntReferencedModel)
-        instance = IntReferencedModel.objects.create(id=1, name="foo")
+        field = IntReferenceField(IntReferencedDoc)
+        instance = IntReferencedDoc.objects.create(id=1, name="foo")
         ref = instance.to_dbref()
         assert field.to_internal_value(instance.id) == ref
         assert field.to_internal_value(str(instance.id)) == ref
@@ -115,8 +116,8 @@ class TestReferenceField(TestCase):
         assert field.to_internal_value({'_id': str(instance.id)}) == ref
 
     def test_output_int(self):
-        field = IntReferenceField(IntReferencedModel)
-        instance = IntReferencedModel.objects.create(id=1, name="foo")
+        field = IntReferenceField(IntReferencedDoc)
+        instance = IntReferencedDoc.objects.create(id=1, name="foo")
         intid = instance.id
         ref = instance.to_dbref()
         assert field.to_representation(instance) == intid
@@ -125,61 +126,61 @@ class TestReferenceField(TestCase):
 
 class TestGenericReferenceField(TestCase):
     def tearDown(self):
-        ReferencedModel.drop_collection()
-        IntReferencedModel.drop_collection()
-        OtherReferencedModel.drop_collection()
+        ReferencedDoc.drop_collection()
+        IntReferencedDoc.drop_collection()
+        OtherReferencedDoc.drop_collection()
 
     def test_input(self):
         field = GenericReferenceField()
-        instance = ReferencedModel.objects.create(name="foo")
+        instance = ReferencedDoc.objects.create(name="foo")
         ref = instance.to_dbref()
-        value = field.to_internal_value({'_cls': 'ReferencedModel', '_id': str(instance.id)})
+        value = field.to_internal_value({'_cls': 'ReferencedDoc', '_id': str(instance.id)})
         assert value == ref
 
     def test_output(self):
         field = GenericReferenceField()
-        instance = ReferencedModel.objects.create(name="foo")
+        instance = ReferencedDoc.objects.create(name="foo")
         ref = instance.to_dbref()
         strid = str(instance.id)
-        assert field.to_representation(instance) == {'_cls': 'ReferencedModel', '_id': strid}
-        assert field.to_representation(ref) == {'_cls': 'ReferencedModel', '_id': strid}
+        assert field.to_representation(instance) == {'_cls': 'ReferencedDoc', '_id': strid}
+        assert field.to_representation(ref) == {'_cls': 'ReferencedDoc', '_id': strid}
 
     def test_input_other(self):
         field = GenericReferenceField()
-        instance = OtherReferencedModel.objects.create(name="foo")
+        instance = OtherReferencedDoc.objects.create(name="foo")
         ref = instance.to_dbref()
-        assert field.to_internal_value({'_cls': 'OtherReferencedModel', '_id': str(instance.id)}) == ref
+        assert field.to_internal_value({'_cls': 'OtherReferencedDoc', '_id': str(instance.id)}) == ref
 
     def test_output_other(self):
         field = GenericReferenceField()
-        instance = OtherReferencedModel.objects.create(name="foo")
+        instance = OtherReferencedDoc.objects.create(name="foo")
         strid = str(instance.id)
         ref = instance.to_dbref()
-        assert field.to_representation(instance) == {'_cls': 'OtherReferencedModel', '_id': strid}
-        assert field.to_representation(ref) == {'_cls': 'OtherReferencedModel', '_id': strid}
+        assert field.to_representation(instance) == {'_cls': 'OtherReferencedDoc', '_id': strid}
+        assert field.to_representation(ref) == {'_cls': 'OtherReferencedDoc', '_id': strid}
 
     def test_input_int(self):
         field = IntGenericReferenceField()
-        instance = IntReferencedModel.objects.create(id=1, name="foo")
+        instance = IntReferencedDoc.objects.create(id=1, name="foo")
         ref = instance.to_dbref()
-        assert field.to_internal_value({'_cls': 'IntReferencedModel', '_id': instance.id}) == ref
-        assert field.to_internal_value({'_cls': 'IntReferencedModel', '_id': str(instance.id)}) == ref
+        assert field.to_internal_value({'_cls': 'IntReferencedDoc', '_id': instance.id}) == ref
+        assert field.to_internal_value({'_cls': 'IntReferencedDoc', '_id': str(instance.id)}) == ref
 
     def test_output_int(self):
         field = IntGenericReferenceField()
-        instance = IntReferencedModel.objects.create(id=1, name="foo")
+        instance = IntReferencedDoc.objects.create(id=1, name="foo")
         ref = instance.to_dbref()
-        assert field.to_representation(instance) == {'_cls': 'IntReferencedModel', '_id': instance.id}
-        assert field.to_representation(ref) == {'_cls': 'IntReferencedModel', '_id': instance.id}
+        assert field.to_representation(instance) == {'_cls': 'IntReferencedDoc', '_id': instance.id}
+        assert field.to_representation(ref) == {'_cls': 'IntReferencedDoc', '_id': instance.id}
 
 
 class TestComboReferenceField(TestCase):
     def tearDown(self):
-        ReferencedModel.drop_collection()
+        ReferencedDoc.drop_collection()
 
     def test_input_ref(self):
         field = ComboReferenceField(serializer=ReferencedSerializer)
-        instance = ReferencedModel.objects.create(name="foo")
+        instance = ReferencedDoc.objects.create(name="foo")
         ref = instance.to_dbref()
         assert field.to_internal_value(str(instance.id)) == ref
         assert field.to_internal_value({'_id': str(instance.id)}) == ref
@@ -187,13 +188,13 @@ class TestComboReferenceField(TestCase):
     def test_input_data(self):
         field = ComboReferenceField(serializer=ReferencedSerializer)
         value = field.to_internal_value({'name': "Foo"})
-        self.assertIsInstance(value, ReferencedModel)
+        self.assertIsInstance(value, ReferencedDoc)
         self.assertEqual(value.name, "Foo")
         self.assertIsNone(value.id)
 
     def test_output(self):
         field = ComboReferenceField(serializer=ReferencedSerializer)
-        instance = ReferencedModel.objects.create(name="foo")
+        instance = ReferencedDoc.objects.create(name="foo")
         strid = str(instance.id)
         ref = instance.to_dbref()
         assert field.to_representation(instance) == strid
@@ -213,10 +214,10 @@ class TestReferenceMapping(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                ref_list = ListField(child=ReferenceField(queryset=ReferencedModel.objects), required=False)
-                ref = ReferenceField(queryset=ReferencedModel.objects)
-                dbref = ReferenceField(queryset=ReferencedModel.objects)
-                cached = ReferenceField(queryset=ReferencedModel.objects)
+                ref_list = ListField(child=ReferenceField(queryset=ReferencedDoc.objects), required=False)
+                ref = ReferenceField(queryset=ReferencedDoc.objects)
+                dbref = ReferenceField(queryset=ReferencedDoc.objects)
+                cached = ReferenceField(queryset=ReferencedDoc.objects)
                 generic = GenericReferenceField(required=False)
         """)
         assert unicode_repr(TestSerializer()) == expected
@@ -246,16 +247,31 @@ class TestReferenceMapping(TestCase):
         """)
         assert unicode_repr(TestSerializer()) == expected
 
+    @pytest.mark.skipif(True, reason="TODO")
+    def test_custom_field(self):
+        " should use alternative field class for references "
+        pass
+
+    @pytest.mark.skipif(True, reason="TODO")
+    def test_custom_serializer(self):
+        " should use alternative serializer class for nested "
+        pass
+
+    @pytest.mark.skipif(True, reason="TODO")
+    def test_custom_field_serializer(self):
+        " should use alternative serializer class provided via custom field"
+        pass
+
 
 class DisplayableReferencedModel(Document):
-    name = me_fields.StringField()
+    name = fields.StringField()
 
     def __str__(self):
         return '%s Color' % (self.name)
 
 
 class DisplayableReferencingModel(Document):
-    color = me_fields.ReferenceField(DisplayableReferencedModel)
+    color = fields.ReferenceField(DisplayableReferencedModel)
 
 
 class TestRelationalFieldDisplayValue(TestCase):
@@ -301,12 +317,12 @@ class TestRelationalFieldDisplayValue(TestCase):
 
 class TestReferenceIntegration(TestCase):
     def setUp(self):
-        self.target = ReferencedModel.objects.create(
+        self.target = ReferencedDoc.objects.create(
             name='Foo'
         )
 
     def tearDown(self):
-        ReferencedModel.drop_collection()
+        ReferencedDoc.drop_collection()
         ReferencingModel.drop_collection()
 
     def test_retrival(self):
@@ -344,7 +360,7 @@ class TestReferenceIntegration(TestCase):
             class Meta:
                 model = ReferencingModel
 
-        new_target = ReferencedModel.objects.create(name="Bar")
+        new_target = ReferencedDoc.objects.create(name="Bar")
         data = {'ref': new_target.id}
 
         serializer = TestSerializer(data=data)
@@ -366,7 +382,7 @@ class TestReferenceIntegration(TestCase):
             class Meta:
                 model = ReferencingModel
 
-        new_target = ReferencedModel.objects.create(
+        new_target = ReferencedDoc.objects.create(
             name="Bar"
         )
         data = {
@@ -391,10 +407,10 @@ class TestReferenceIntegration(TestCase):
 
 class TestGenericReferenceIntegration(TestCase):
     def setUp(self):
-        self.target = ReferencedModel.objects.create(name='Foo')
+        self.target = ReferencedDoc.objects.create(name='Foo')
 
     def tearDown(self):
-        ReferencedModel.drop_collection()
+        ReferencedDoc.drop_collection()
         GenericReferencingModel.drop_collection()
 
     def test_retrival(self):
@@ -408,7 +424,7 @@ class TestGenericReferenceIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'ref': {'_cls': 'ReferencedModel', '_id': str(self.target.id)},
+            'ref': {'_cls': 'ReferencedDoc', '_id': str(self.target.id)},
         }
         self.assertEqual(serializer.data, expected)
 
@@ -423,7 +439,7 @@ class TestGenericReferenceIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'ref': {'_cls': 'ReferencedModel', '_id': str(self.target.id)},
+            'ref': {'_cls': 'ReferencedDoc', '_id': str(self.target.id)},
         }
         self.assertEqual(serializer.data, expected)
 
@@ -432,11 +448,11 @@ class TestGenericReferenceIntegration(TestCase):
             class Meta:
                 model = GenericReferencingModel
 
-        new_target = ReferencedModel.objects.create(
+        new_target = ReferencedDoc.objects.create(
             name="Bar"
         )
         data = {
-            'ref': {'_cls': 'ReferencedModel', '_id': new_target.id}
+            'ref': {'_cls': 'ReferencedDoc', '_id': new_target.id}
         }
 
         serializer = TestSerializer(data=data)
@@ -447,7 +463,7 @@ class TestGenericReferenceIntegration(TestCase):
 
         expected = {
             'id': str(instance.id),
-            'ref': {'_cls': 'ReferencedModel', '_id': str(new_target.id)}
+            'ref': {'_cls': 'ReferencedDoc', '_id': str(new_target.id)}
         }
         self.assertEqual(serializer.data, expected)
 
@@ -458,9 +474,9 @@ class TestGenericReferenceIntegration(TestCase):
             class Meta:
                 model = GenericReferencingModel
 
-        new_target = OtherReferencedModel.objects.create(name="Bar")
+        new_target = OtherReferencedDoc.objects.create(name="Bar")
         data = {
-            'ref': {'_cls': 'OtherReferencedModel', '_id': new_target.id}
+            'ref': {'_cls': 'OtherReferencedDoc', '_id': new_target.id}
         }
 
         # Serializer should validate okay.
@@ -474,7 +490,7 @@ class TestGenericReferenceIntegration(TestCase):
         # Representation should be correct.
         expected = {
             'id': str(instance.id),
-            'ref': {'_cls': 'OtherReferencedModel', '_id': str(new_target.id)}
+            'ref': {'_cls': 'OtherReferencedDoc', '_id': str(new_target.id)}
         }
         self.assertEqual(serializer.data, expected)
 
@@ -500,10 +516,10 @@ class ComboReferencingSerializer(DocumentSerializer):
 
 class TestComboReferenceIntegration(TestCase):
     def setUp(self):
-        self.target = ReferencedModel.objects.create(name='Foo')
+        self.target = ReferencedDoc.objects.create(name='Foo')
 
     def tearDown(self):
-        ReferencedModel.drop_collection()
+        ReferencedDoc.drop_collection()
         ReferencingModel.drop_collection()
 
     def test_retrival(self):
@@ -532,7 +548,7 @@ class TestComboReferenceIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_create_ref(self):
-        new_target = ReferencedModel.objects.create(name="Bar")
+        new_target = ReferencedDoc.objects.create(name="Bar")
         data = {'ref': new_target.id}
 
         serializer = ComboReferencingSerializer(data=data)
@@ -555,7 +571,7 @@ class TestComboReferenceIntegration(TestCase):
 
         instance = serializer.save()
 
-        new_target = ReferencedModel.objects.get(name="Bar")
+        new_target = ReferencedDoc.objects.get(name="Bar")
 
         assert instance.ref.id == new_target.id
 
@@ -568,7 +584,7 @@ class TestComboReferenceIntegration(TestCase):
     def test_update_ref(self):
         instance = ReferencingModel.objects.create(ref=self.target)
 
-        new_target = ReferencedModel.objects.create(name="Bar")
+        new_target = ReferencedDoc.objects.create(name="Bar")
         data = {'ref': new_target.id}
 
         serializer = ComboReferencingSerializer(instance, data=data)
@@ -593,7 +609,7 @@ class TestComboReferenceIntegration(TestCase):
 
         instance = serializer.save()
 
-        new_target = ReferencedModel.objects.get(name="Bar")
+        new_target = ReferencedDoc.objects.get(name="Bar")
 
         assert instance.ref.id == new_target.id
 

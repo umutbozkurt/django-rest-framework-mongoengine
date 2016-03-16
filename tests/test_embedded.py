@@ -1,45 +1,61 @@
+import pytest
+
 from django.test import TestCase
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework.compat import unicode_repr
 
+from rest_framework_mongoengine.fields import GenericEmbeddedField
 from rest_framework_mongoengine.serializers import (DocumentSerializer,
                                                     EmbeddedDocumentSerializer)
 
-from .utils import dedent
+from .utils import dedent, FieldValues
+from .models import DumbEmbedded, OtherEmbedded
 
 
-class EmbeddedModel(EmbeddedDocument):
-    foo = fields.StringField()
-    bar = fields.StringField()
+class TestGenericEmbeddedField(FieldValues, TestCase):
+    field = GenericEmbeddedField()
+
+    valid_inputs = [
+        ({'_cls': 'DumbEmbedded', 'name': "Name"}, DumbEmbedded(name="Name")),
+    ]
+
+    invalid_inputs = [
+        ({'_cls': 'InvalidModel', 'name': "Name"}, "Document `InvalidModel` has not been defined."),
+    ]
+
+    outputs = [
+        (DumbEmbedded(name="Name"), {'_cls': 'DumbEmbedded', 'name': "Name", 'foo': None}),
+    ]
 
 
-class EmbeddingModel(Document):
-    embedded = fields.EmbeddedDocumentField(EmbeddedModel)
+class NestedEmbeddedDoc(EmbeddedDocument):
+    name = fields.StringField()
+    embedded = fields.EmbeddedDocumentField(DumbEmbedded)
 
 
-class EmbeddingModel2(Document):
-    embedded = fields.EmbeddedDocumentField(EmbeddedModel, required=True)
-
-
-class ListEmbeddingModel(Document):
-    embedded_list = fields.EmbeddedDocumentListField(EmbeddedModel)
-
-
-class NestedEmbeddedModel(EmbeddedDocument):
-    embedded = fields.EmbeddedDocumentField(EmbeddedModel)
-
-
-class NestedEmbeddingModel(Document):
-    embedded = fields.EmbeddedDocumentField(NestedEmbeddedModel)
-
-
-class SelfEmbeddedModel(EmbeddedDocument):
-    foo = fields.StringField()
+class SelfEmbeddingDoc(EmbeddedDocument):
+    name = fields.StringField()
     embedded = fields.EmbeddedDocumentField('self')
 
 
-class RecursiveEmbeddingModel(Document):
-    embedded = fields.EmbeddedDocumentField(SelfEmbeddedModel)
+class EmbeddingDoc(Document):
+    embedded = fields.EmbeddedDocumentField(DumbEmbedded)
+
+
+class RequiredEmbeddingDoc(Document):
+    embedded = fields.EmbeddedDocumentField(DumbEmbedded, required=True)
+
+
+class ListEmbeddingDoc(Document):
+    embedded_list = fields.EmbeddedDocumentListField(DumbEmbedded)
+
+
+class NestedEmbeddingDoc(Document):
+    embedded = fields.EmbeddedDocumentField(NestedEmbeddedDoc)
+
+
+class RecursiveEmbeddingDoc(Document):
+    embedded = fields.EmbeddedDocumentField(SelfEmbeddingDoc)
 
 
 class GenericEmbeddingModel(Document):
@@ -47,63 +63,36 @@ class GenericEmbeddingModel(Document):
 
 
 class TestEmbeddedMapping(TestCase):
-    def test_embdoc(self):
+    def test_embbedded(self):
         class TestSerializer(EmbeddedDocumentSerializer):
             class Meta:
-                model = EmbeddedModel
+                model = DumbEmbedded
         expected = dedent("""
             TestSerializer():
-                foo = CharField(required=False)
-                bar = CharField(required=False)
+                name = CharField(required=False)
+                foo = IntegerField(required=False)
         """)
         assert unicode_repr(TestSerializer()) == expected
 
-    def test_embedded(self):
+    def test_embedding(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = EmbeddingModel
+                model = EmbeddingDoc
                 depth = 1
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 embedded = NestedSerializer(required=False):
-                    foo = CharField(required=False)
-                    bar = CharField(required=False)
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
         """)
         assert unicode_repr(TestSerializer()) == expected
 
-    def test_embedded_required(self):
+    def test_embedding_nodepth(self):
+        # FIXME: should be the same
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = EmbeddingModel2
-                depth = 1
-        expected = dedent("""
-            TestSerializer():
-                id = ObjectIdField(read_only=True)
-                embedded = NestedSerializer(required=True):
-                    foo = CharField(required=False)
-                    bar = CharField(required=False)
-        """)
-        assert unicode_repr(TestSerializer()) == expected
-
-    def test_embedded_list(self):
-        class TestSerializer(DocumentSerializer):
-            class Meta:
-                model = ListEmbeddingModel
-                depth = 1
-        expected = dedent("""
-            TestSerializer():
-                id = ObjectIdField(read_only=True)
-                embedded_list = NestedSerializer(many=True, required=False):
-                    foo = CharField(required=False)
-                    bar = CharField(required=False)
-        """)
-        assert unicode_repr(TestSerializer()) == expected
-
-    def test_shallow(self):
-        class TestSerializer(DocumentSerializer):
-            class Meta:
-                model = EmbeddingModel
+                model = EmbeddingDoc
                 depth = 0
         expected = dedent("""
             TestSerializer():
@@ -112,77 +101,104 @@ class TestEmbeddedMapping(TestCase):
         """)
         assert unicode_repr(TestSerializer()) == expected
 
-    def test_nested(self):
+    def test_embedding_list(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = NestedEmbeddingModel
-                depth = 2
-        expected = dedent("""
-            TestSerializer():
-                id = ObjectIdField(read_only=True)
-                embedded = NestedSerializer(required=False):
-                    embedded = NestedSerializer(required=False):
-                        foo = CharField(required=False)
-                        bar = CharField(required=False)
-        """)
-        assert unicode_repr(TestSerializer()) == expected
-
-    def test_nested_shallow(self):
-        class TestSerializer(DocumentSerializer):
-            class Meta:
-                model = NestedEmbeddingModel
+                model = ListEmbeddingDoc
                 depth = 1
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                embedded = NestedSerializer(required=False):
-                    embedded = HiddenField(default=None)
+                embedded_list = NestedSerializer(many=True, required=False):
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
         """)
         assert unicode_repr(TestSerializer()) == expected
 
-    def test_recursive(self):
+    def test_embedding_required(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = RecursiveEmbeddingModel
+                model = RequiredEmbeddingDoc
+                depth = 1
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                embedded = NestedSerializer(required=True):
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
+
+    def test_embedding_nested(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = NestedEmbeddingDoc
+                depth = 10
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                embedded = NestedSerializer(required=False):
+                    name = CharField(required=False)
+                    embedded = NestedSerializer(required=False):
+                        name = CharField(required=False)
+                        foo = IntegerField(required=False)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
+
+    def test_embedding_recursive(self):
+        # FIXME: should be something
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RecursiveEmbeddingDoc
                 depth = 3
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 embedded = NestedSerializer(required=False):
-                    foo = CharField(required=False)
+                    name = CharField(required=False)
                     embedded = NestedSerializer(required=False):
-                        foo = CharField(required=False)
+                        name = CharField(required=False)
                         embedded = NestedSerializer(required=False):
-                            foo = CharField(required=False)
+                            name = CharField(required=False)
                             embedded = HiddenField(default=None)
         """)
         assert unicode_repr(TestSerializer()) == expected
 
+    @pytest.mark.skipif(True, reason="TODO")
+    def test_embedding_custom_class(self):
+        """ should use alternative nested serializer class """
+        pass
+
+    @pytest.mark.skipif(True, reason="TODO")
+    def test_embedding_custom_generic(self):
+        """ should use alternative field for genericembedded """
+        pass
+
 
 class TestEmbeddedIntegration(TestCase):
     def tearDown(self):
-        EmbeddingModel.drop_collection()
+        EmbeddingDoc.drop_collection()
 
     def test_retrival(self):
-        instance = EmbeddingModel.objects.create(
-            embedded=EmbeddedModel(foo="Foo")
+        instance = EmbeddingDoc.objects.create(
+            embedded=DumbEmbedded(name="Foo")
         )
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = EmbeddingModel
+                model = EmbeddingDoc
                 depth = 1
 
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'embedded': {'foo': "Foo", 'bar': None},
+            'embedded': {'name': "Foo", 'foo': None},
         }
         assert serializer.data == expected
 
     def test_gen_retrival(self):
         instance = GenericEmbeddingModel.objects.create(
-            embedded=EmbeddedModel(foo="Foo")
+            embedded=OtherEmbedded(name="Dumb2")
         )
 
         class TestSerializer(DocumentSerializer):
@@ -193,57 +209,19 @@ class TestEmbeddedIntegration(TestCase):
         serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
-            'embedded': {'_cls': 'EmbeddedModel', 'foo': "Foo", 'bar': None}
+            'embedded': {'_cls': 'OtherEmbedded', 'name': "Dumb2", 'bar': None}
         }
 
-        assert serializer.data == expected
-
-    def test_retrival_recursive(self):
-        instance = RecursiveEmbeddingModel.objects.create(
-            embedded=SelfEmbeddedModel(foo="Foo1", embedded=SelfEmbeddedModel(foo="Foo2", embedded=SelfEmbeddedModel(foo="Foo3")))
-        )
-
-        class TestSerializer(DocumentSerializer):
-            class Meta:
-                model = RecursiveEmbeddingModel
-                depth = 3
-
-        serializer = TestSerializer(instance)
-        expected = {
-            'id': str(instance.id),
-            'embedded': {'foo': "Foo1",
-                         'embedded': {'foo': "Foo2",
-                                      'embedded': {'foo': "Foo3"}
-                                      }
-                         }
-        }
-        assert serializer.data == expected
-
-    def test_retrival_recursive_nodepth(self):
-        instance = RecursiveEmbeddingModel.objects.create(
-            embedded=SelfEmbeddedModel(foo="Foo1", embedded=SelfEmbeddedModel(foo="Foo2", embedded=SelfEmbeddedModel(foo="Foo3")))
-        )
-
-        class TestSerializer(DocumentSerializer):
-            class Meta:
-                model = RecursiveEmbeddingModel
-                depth = 1
-
-        serializer = TestSerializer(instance)
-        expected = {
-            'id': str(instance.id),
-            'embedded': {'foo': "Foo1"}
-        }
         assert serializer.data == expected
 
     def test_create(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = EmbeddingModel
+                model = EmbeddingDoc
                 depth = 1
 
         data = {
-            'embedded': {'foo': "Foo"}
+            'embedded': {'name': "Dumb"}
         }
 
         # Serializer should validate okay.
@@ -252,12 +230,12 @@ class TestEmbeddedIntegration(TestCase):
 
         # Creating the instance, relationship attributes should be set.
         instance = serializer.save()
-        assert instance.embedded.foo == "Foo"
+        assert instance.embedded.name == "Dumb"
 
         # Representation should be correct.
         expected = {
             'id': str(instance.id),
-            'embedded': {'foo': "Foo", 'bar': None}
+            'embedded': {'name': "Dumb", 'foo': None}
         }
         assert serializer.data == expected
 
@@ -268,52 +246,53 @@ class TestEmbeddedIntegration(TestCase):
                 depth = 1
 
         data = {
-            'embedded': {'_cls': 'EmbeddedModel', 'foo': "Foo"}
+            'embedded': {'_cls': 'DumbEmbedded', 'name': "Dumb"}
         }
 
         serializer = TestSerializer(data=data)
         assert serializer.is_valid()
 
         instance = serializer.save()
-        self.assertIsInstance(instance.embedded, EmbeddedModel)
-        assert instance.embedded.foo == "Foo"
+        self.assertIsInstance(instance.embedded, DumbEmbedded)
+        assert instance.embedded.name == "Dumb"
 
         expected = {
             'id': str(instance.id),
-            'embedded': {'_cls': 'EmbeddedModel', 'foo': "Foo", 'bar': None}
+            'embedded': {'_cls': 'DumbEmbedded', 'name': "Dumb", 'foo': None}
         }
         assert serializer.data == expected
 
     def test_update(self):
-        instance = EmbeddingModel.objects.create(
-            embedded=EmbeddedModel(foo="Foo", bar="Bar")
+        " whole embedded is overwritten "
+        instance = EmbeddingDoc.objects.create(
+            embedded=DumbEmbedded(name="Dumb", foo=123)
         )
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = EmbeddingModel
+                model = EmbeddingDoc
                 depth = 1
 
         data = {
-            'embedded': {'bar': "Baz"}
+            'embedded': {'foo': 321}
         }
         serializer = TestSerializer(instance, data=data)
 
         assert serializer.is_valid()
 
         instance = serializer.save()
-        assert instance.embedded.foo is None
-        assert instance.embedded.bar == "Baz"
+        assert instance.embedded.name is None
+        assert instance.embedded.foo == 321
 
         expected = {
             'id': str(instance.id),
-            'embedded': {'foo': None, 'bar': "Baz"}
+            'embedded': {'name': None, 'foo': 321}
         }
         assert serializer.data == expected
 
     def test_gen_update(self):
         instance = GenericEmbeddingModel.objects.create(
-            embedded=EmbeddedModel(foo="Foo", bar="Bar")
+            embedded=OtherEmbedded(name="Dumb", bar=123)
         )
 
         class TestSerializer(DocumentSerializer):
@@ -322,18 +301,18 @@ class TestEmbeddedIntegration(TestCase):
                 depth = 1
 
         data = {
-            'embedded': {'_cls': 'EmbeddedModel', 'bar': "Baz"}
+            'embedded': {'_cls': 'OtherEmbedded', 'bar': 321}
         }
         serializer = TestSerializer(instance, data=data)
         self.assertTrue(serializer.is_valid())
 
         instance = serializer.save()
-        assert instance.embedded.foo is None
-        assert instance.embedded.bar == "Baz"
+        assert instance.embedded.name is None
+        assert instance.embedded.bar == 321
 
         expected = {
             'id': str(instance.id),
-            'embedded': {'_cls': 'EmbeddedModel', 'foo': None, 'bar': "Baz"}
+            'embedded': {'_cls': 'OtherEmbedded', 'name': None, 'bar': 321}
         }
         assert serializer.data == expected
 

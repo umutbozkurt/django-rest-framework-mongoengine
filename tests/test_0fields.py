@@ -1,16 +1,16 @@
+""" test for some general fields """
+
 from __future__ import unicode_literals
 
 import pytest
 from bson import ObjectId
 from django.test import TestCase
-from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework.exceptions import ValidationError
 
-from rest_framework_mongoengine.fields import (DocumentField,
-                                               GenericEmbeddedField,
-                                               GenericField, ObjectIdField)
+from rest_framework_mongoengine.fields import (DocumentField, GenericField, ObjectIdField)
 
 from .utils import FieldValues
+from .models import DumbDocument, DumbEmbedded
 
 
 class TestObjectId(FieldValues, TestCase):
@@ -29,16 +29,12 @@ class TestObjectId(FieldValues, TestCase):
     }
 
 
-class MockModel(Document):
-    foo = fields.IntField()
-
-
 class TestDocumentField(TestCase):
 
     def tearDown(self):
-        MockModel.drop_collection()
+        DumbDocument.drop_collection()
 
-    field = DocumentField(model_field=MockModel.foo)
+    field = DocumentField(model_field=DumbDocument.foo)
 
     def test_inputs(self):
         assert self.field.to_internal_value("123") == 123
@@ -49,28 +45,8 @@ class TestDocumentField(TestCase):
             self.field.run_validation("xxx")
 
     def test_output(self):
-        instance = MockModel.objects.create(foo=123)
+        instance = DumbDocument.objects.create(foo=123)
         assert self.field.to_representation(instance) == 123
-
-
-class MockEmbeddedModel(EmbeddedDocument):
-    foo = fields.IntField()
-
-
-class TestGenericEmbeddedField(FieldValues, TestCase):
-    field = GenericEmbeddedField()
-
-    valid_inputs = [
-        ({'_cls': 'MockEmbeddedModel', 'foo': "Foo"}, MockEmbeddedModel(foo="Foo")),
-    ]
-
-    invalid_inputs = [
-        ({'_cls': 'InvalidModel', 'foo': "Foo"}, "Document `InvalidModel` has not been defined."),
-    ]
-
-    outputs = [
-        (MockEmbeddedModel(foo="Foo"), {'_cls': 'MockEmbeddedModel', 'foo': "Foo"}),
-    ]
 
 
 class TestGenericField(FieldValues, TestCase):
@@ -81,8 +57,8 @@ class TestGenericField(FieldValues, TestCase):
         (123, 123),
         ([1, 2, 3], [1, 2, 3]),
         ({'foo': "Foo"}, {'foo': "Foo"}),
-        ({'_cls': 'MockEmbeddedModel', 'foo': "Foo"}, MockEmbeddedModel(foo="Foo")),
-        ({'emb': {'_cls': 'MockEmbeddedModel', 'foo': "Foo"}}, {'emb': MockEmbeddedModel(foo="Foo")}),
+        ({'_cls': 'DumbEmbedded', 'foo': "Foo"}, DumbEmbedded(foo="Foo")),
+        ({'emb': {'_cls': 'DumbEmbedded', 'foo': "Foo"}}, {'emb': DumbEmbedded(foo="Foo")}),
     ]
 
     invalid_inputs = [
@@ -95,6 +71,6 @@ class TestGenericField(FieldValues, TestCase):
         (123, 123),
         ([1, 2, 3], [1, 2, 3]),
         ({'foo': "Foo"}, {'foo': "Foo"}),
-        (MockEmbeddedModel(foo="Foo"), {'_cls': 'MockEmbeddedModel', 'foo': "Foo"}),
-        ({'emb': MockEmbeddedModel(foo="Foo")}, {'emb': {'_cls': 'MockEmbeddedModel', 'foo': "Foo"}}),
+        (DumbEmbedded(foo="Foo"), {'_cls': 'DumbEmbedded', 'foo': "Foo", 'name': None}),
+        ({'emb': DumbEmbedded(foo="Foo")}, {'emb': {'_cls': 'DumbEmbedded', 'foo': "Foo", 'name': None}}),
     ]

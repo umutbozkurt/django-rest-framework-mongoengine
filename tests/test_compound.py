@@ -1,3 +1,6 @@
+""" testing compound fields list and dict """
+from __future__ import unicode_literals
+
 from django.test import TestCase
 from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr
@@ -7,7 +10,7 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 from .test_1basic import dedent
 
 
-class BasicCompoundFieldsModel(Document):
+class BasicCompoundDoc(Document):
     list_field = fields.ListField()
     int_list_field = fields.ListField(fields.IntField())
     dict_field = fields.DictField()
@@ -15,11 +18,11 @@ class BasicCompoundFieldsModel(Document):
     int_map_field = fields.MapField(fields.IntField())
 
 
-class OptionsCompoundFieldsModel(Document):
+class OptionsCompoundDoc(Document):
     int_list_field = fields.ListField(fields.IntField(min_value=3, max_value=7))
 
 
-class NestedCompoundFieldsModel(Document):
+class NestedCompoundDoc(Document):
     dict_list_field = fields.ListField(fields.DictField())
     list_dict_field = fields.MapField(fields.ListField())
     list_dict_list_field = fields.ListField(fields.MapField(fields.ListField()))
@@ -31,7 +34,7 @@ class TestCompundFieldMappings(TestCase):
     def test_basic(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = BasicCompoundFieldsModel
+                model = BasicCompoundDoc
 
         expected = dedent("""
             TestSerializer():
@@ -47,7 +50,7 @@ class TestCompundFieldMappings(TestCase):
     def test_suboptions(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = OptionsCompoundFieldsModel
+                model = OptionsCompoundDoc
 
         expected = dedent("""
             TestSerializer():
@@ -59,7 +62,7 @@ class TestCompundFieldMappings(TestCase):
     def test_nested(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = NestedCompoundFieldsModel
+                model = NestedCompoundDoc
 
         expected = dedent("""
             TestSerializer():
@@ -73,10 +76,10 @@ class TestCompundFieldMappings(TestCase):
 
 class TestIntegration(TestCase):
     def tearDown(self):
-        BasicCompoundFieldsModel.drop_collection()
+        BasicCompoundDoc.drop_collection()
 
     def test_retrival(self):
-        instance = BasicCompoundFieldsModel.objects.create(
+        instance = BasicCompoundDoc.objects.create(
             list_field=["1", 2, 3.0],
             int_list_field=[1, 2, 3],
             dict_field={'a': "1", 'b': 2, 'c': 3.0},
@@ -86,7 +89,7 @@ class TestIntegration(TestCase):
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = BasicCompoundFieldsModel
+                model = BasicCompoundDoc
 
         serializer = TestSerializer(instance)
         expected = {
@@ -102,7 +105,7 @@ class TestIntegration(TestCase):
     def test_create(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = BasicCompoundFieldsModel
+                model = BasicCompoundDoc
 
         data = {
             'list_field': ["1", 2, 3.0],
@@ -133,7 +136,7 @@ class TestIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_update(self):
-        instance = BasicCompoundFieldsModel.objects.create(
+        instance = BasicCompoundDoc.objects.create(
             list_field=["1", 2, 3.0],
             int_list_field=[1, 2, 3],
             dict_field={'a': "1", 'b': 2, 'c': 3.0},
@@ -143,7 +146,7 @@ class TestIntegration(TestCase):
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = BasicCompoundFieldsModel
+                model = BasicCompoundDoc
 
         data = {
             'list_field': ["0", 1, 2.0],
@@ -176,7 +179,7 @@ class TestIntegration(TestCase):
 
 class ValidatingSerializer(DocumentSerializer):
     class Meta:
-        model = OptionsCompoundFieldsModel
+        model = OptionsCompoundDoc
 
 
 class TestCompoundValidation(TestCase):

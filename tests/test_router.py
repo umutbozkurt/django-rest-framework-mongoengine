@@ -6,13 +6,11 @@ from mongoengine import Document, fields
 from rest_framework_mongoengine.routers import DefaultRouter, SimpleRouter
 from rest_framework_mongoengine.viewsets import GenericViewSet
 
-
-class RoutedModel(Document):
-    foo = fields.StringField()
+from .models import DumbDocument
 
 
 class DumbViewSet(GenericViewSet):
-    queryset = RoutedModel.objects
+    queryset = DumbDocument.objects
 
     def list(self, request):
         pass
@@ -24,12 +22,12 @@ class DumbViewSet(GenericViewSet):
 class TestRouters(TestCase):
     def test_simple(self):
         router = SimpleRouter()
-        router.register('dumb', DumbViewSet)
+        router.register('dmb', DumbViewSet)
         urlnames = set(map(lambda r: r.name, router.urls))
-        assert urlnames == set(('routedmodel-list', 'routedmodel-detail'))
+        assert urlnames == set(('dumbdocument-list', 'dumbdocument-detail'))
 
     def test_default(self):
         router = DefaultRouter()
-        router.register('dumb', DumbViewSet)
+        router.register('dmb', DumbViewSet)
         urlnames = set(map(lambda r: r.name, router.urls))
-        assert urlnames == set(('api-root', 'routedmodel-list', 'routedmodel-detail'))
+        assert urlnames == set(('api-root', 'dumbdocument-list', 'dumbdocument-detail'))

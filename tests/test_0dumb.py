@@ -4,16 +4,12 @@ from __future__ import unicode_literals
 
 import pytest
 from django.test import TestCase
-from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .utils import dedent
-
-
-class DumbModel(Document):
-    name = fields.StringField()
+from .models import DumbDocument
 
 
 @pytest.mark.skipif(True, reason="dumb")
@@ -24,12 +20,13 @@ class TestMapping(TestCase):
     def test_mapping(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = DumbModel
+                model = DumbDocument
 
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 name = CharField(required=False)
+                foo = IntegerField(required=False)
         """)
 
         self.assertEqual(unicode_repr(TestSerializer()), expected)
@@ -41,14 +38,14 @@ class TestIntegration(TestCase):
     Test if primary methods work.
     """
     def tearDown(self):
-        DumbModel.drop_collection()
+        DumbDocument.drop_collection()
 
     def test_retrival(self):
-        instance = DumbModel.objects.create(foo="Foo")
+        instance = DumbDocument.objects.create(foo="Foo")
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = DumbModel
+                model = DumbDocument
 
         serializer = TestSerializer(instance)
         expected = {
@@ -61,7 +58,7 @@ class TestIntegration(TestCase):
     def test_create(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = DumbModel
+                model = DumbDocument
 
         data = {
             'foo': "Foo"
@@ -80,11 +77,11 @@ class TestIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_update(self):
-        instance = DumbModel.objects.create(foo="Foo")
+        instance = DumbDocument.objects.create(foo="Foo")
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = DumbModel
+                model = DumbDocument
 
         data = {
             'foo': "Bar"
