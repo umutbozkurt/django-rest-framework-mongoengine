@@ -143,12 +143,23 @@ class DocumentSerializer(serializers.ModelSerializer):
     serializer_related_to_field = None
     serializer_url_field = None
 
-    " class used to map ReferenceField "
+    " class to create fields for references "
     serializer_reference_field = drfm_fields.ReferenceField
-    " class used to map GenericReferenceField "
-    serializer_generic_reference_field = drfm_fields.GenericReferenceField
-    " class used to map GenericEmbeddedDocumentField "
-    serializer_generic_embedded_field = drfm_fields.GenericEmbeddedDocumentField
+
+    " class to create fields for generic references "
+    serializer_reference_generic = drfm_fields.GenericReferenceField
+
+    " class to create nested serializers for referenced (defaults to DocumentSerializer) "
+    serializer_reference_nested = None
+
+    " class to create fields for embedded (instead of creating nested) "
+    serializer_embedded_field = None
+
+    " class to create fields for generic embedded "
+    serializer_embedded_generic = drfm_fields.GenericEmbeddedDocumentField
+
+    " class to create nested serializers for embedded (defaults to EmbeddedDocumentSerializer) "
+    serializer_embedded_nested = None
 
     def create(self, validated_data):
         raise_errors_on_nested_writes('create', self, validated_data)
@@ -367,31 +378,38 @@ class DocumentSerializer(serializers.ModelSerializer):
         return field_class, field_kwargs
 
     def build_reference_field(self, field_name, relation_info, nested_depth):
-        if relation_info.related_model and nested_depth:
-            class NestedSerializer(DocumentSerializer):
+        if not relation_info.related_model:
+            field_class = self.serializer_reference_generic
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+            if not issubclass(field_class, drfm_fields.DocumentField):
+                field_kwargs.pop('model_field', None)
+        elif nested_depth:
+            subclass = self.serializer_reference_nested or DocumentSerializer
+
+            class NestedSerializer(subclass):
                 class Meta:
                     model = relation_info.related_model
                     depth = nested_depth - 1
 
             field_class = NestedSerializer
             field_kwargs = {'read_only': True}
-        elif relation_info.related_model:
+        else:
             field_class = self.serializer_reference_field
             field_kwargs = get_relation_kwargs(field_name, relation_info)
-        else:
-            field_class = self.serializer_generic_reference_field
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
-            field_kwargs.pop('model_field', None)
 
         return field_class, field_kwargs
 
     def build_embedded_field(self, field_name, relation_info, nested_depth):
-        if not nested_depth:
-            # just skip
-            field_class = drf_fields.HiddenField
-            field_kwargs = {'default': None}
-        elif relation_info.related_model:
-            class NestedSerializer(EmbeddedDocumentSerializer):
+        if not relation_info.related_model:
+            field_class = self.serializer_embedded_generic
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+        elif self.serializer_embedded_field:
+            field_class = self.serializer_embedded_field
+            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+        elif nested_depth:
+            subclass = self.serializer_embedded_nested or EmbeddedDocumentSerializer
+
+            class NestedSerializer(subclass):
                 class Meta:
                     model = relation_info.related_model
                     depth = nested_depth - 1
@@ -400,8 +418,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
             field_kwargs.pop('model_field')
         else:
-            field_class = self.serializer_generic_embedded_field
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+            field_class = drf_fields.HiddenField
+            field_kwargs = {'default': None}
 
         return field_class, field_kwargs
 

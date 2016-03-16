@@ -4,7 +4,9 @@ from django.test import TestCase
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework.compat import unicode_repr
 
-from rest_framework_mongoengine.fields import GenericEmbeddedField
+from rest_framework.serializers import Serializer
+from rest_framework import fields as drf_fields
+from rest_framework_mongoengine.fields import DocumentField, GenericEmbeddedField
 from rest_framework_mongoengine.serializers import (DocumentSerializer,
                                                     EmbeddedDocumentSerializer)
 
@@ -164,15 +166,62 @@ class TestEmbeddedMapping(TestCase):
         """)
         assert unicode_repr(TestSerializer()) == expected
 
-    @pytest.mark.skipif(True, reason="TODO")
-    def test_embedding_custom_class(self):
-        """ should use alternative nested serializer class """
-        pass
+    def test_embedding_custom_field(self):
 
-    @pytest.mark.skipif(True, reason="TODO")
+        class CustomEmbedding(DocumentField):
+            pass
+
+        class TestSerializer(DocumentSerializer):
+            serializer_embedded_field = CustomEmbedding
+
+            class Meta:
+                model = EmbeddingDoc
+                depth = 1
+
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                embedded = CustomEmbedding(model_field=<mongoengine.fields.EmbeddedDocumentField: embedded>, required=False)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
+
     def test_embedding_custom_generic(self):
-        """ should use alternative field for genericembedded """
-        pass
+
+        class CustomEmbedding(DocumentField):
+            pass
+
+        class TestSerializer(DocumentSerializer):
+            serializer_embedded_generic = CustomEmbedding
+
+            class Meta:
+                model = GenericEmbeddingModel
+                depth = 1
+
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                embedded = CustomEmbedding(model_field=<mongoengine.fields.GenericEmbeddedDocumentField: embedded>, required=False)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
+
+    def test_embedding_custom_nested(self):
+        class CustomEmbeddingSerializer(Serializer):
+            ref = drf_fields.CharField()
+
+        class TestSerializer(DocumentSerializer):
+            serializer_embedded_nested = CustomEmbeddingSerializer
+
+            class Meta:
+                model = EmbeddingDoc
+                depth = 1
+
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                embedded = NestedSerializer(required=False):
+                    ref = CharField()
+        """)
+        assert unicode_repr(TestSerializer()) == expected
 
 
 class TestEmbeddedIntegration(TestCase):

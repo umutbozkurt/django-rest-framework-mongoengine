@@ -6,10 +6,12 @@ from django.test import TestCase
 from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import IntegerField
+from rest_framework.serializers import Serializer
 
 from rest_framework_mongoengine.fields import (ComboReferenceField,
                                                GenericReferenceField,
-                                               ReferenceField)
+                                               ReferenceField,
+                                               DocumentField)
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .utils import dedent
@@ -47,11 +49,11 @@ class RefFieldsModel(Document):
     ref_list = fields.ListField(fields.ReferenceField(ReferencedDoc))
 
 
-class ReferencingModel(Document):
+class ReferencingDoc(Document):
     ref = fields.ReferenceField(ReferencedDoc)
 
 
-class GenericReferencingModel(Document):
+class GenericReferencingDoc(Document):
     ref = fields.GenericReferenceField()
 
 
@@ -247,20 +249,61 @@ class TestReferenceMapping(TestCase):
         """)
         assert unicode_repr(TestSerializer()) == expected
 
-    @pytest.mark.skipif(True, reason="TODO")
     def test_custom_field(self):
-        " should use alternative field class for references "
-        pass
 
-    @pytest.mark.skipif(True, reason="TODO")
-    def test_custom_serializer(self):
-        " should use alternative serializer class for nested "
-        pass
+        class CustomReferencing(ReferenceField):
+            pass
 
-    @pytest.mark.skipif(True, reason="TODO")
-    def test_custom_field_serializer(self):
-        " should use alternative serializer class provided via custom field"
-        pass
+        class TestSerializer(DocumentSerializer):
+            serializer_reference_field = CustomReferencing
+
+            class Meta:
+                model = ReferencingDoc
+                depth = 0
+
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                ref = CustomReferencing(queryset=ReferencedDoc.objects)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
+
+    def test_custom_generic(self):
+        class CustomReferencing(DocumentField):
+            pass
+
+        class TestSerializer(DocumentSerializer):
+            serializer_reference_generic = CustomReferencing
+
+            class Meta:
+                model = GenericReferencingDoc
+                depth = 0
+
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                ref = CustomReferencing(model_field=<mongoengine.fields.GenericReferenceField: ref>, required=False)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
+
+    def test_custom_nested(self):
+        class CustomReferencing(Serializer):
+            foo = IntegerField()
+
+        class TestSerializer(DocumentSerializer):
+            serializer_reference_nested = CustomReferencing
+
+            class Meta:
+                model = ReferencingDoc
+                depth = 1
+
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                ref = NestedSerializer(read_only=True):
+                    foo = IntegerField()
+        """)
+        assert unicode_repr(TestSerializer()) == expected
 
 
 class DisplayableReferencedModel(Document):
@@ -323,14 +366,14 @@ class TestReferenceIntegration(TestCase):
 
     def tearDown(self):
         ReferencedDoc.drop_collection()
-        ReferencingModel.drop_collection()
+        ReferencingDoc.drop_collection()
 
     def test_retrival(self):
-        instance = ReferencingModel.objects.create(ref=self.target)
+        instance = ReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = ReferencingModel
+                model = ReferencingDoc
                 depth = 0
 
         serializer = TestSerializer(instance)
@@ -341,11 +384,11 @@ class TestReferenceIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_retrival_deep(self):
-        instance = ReferencingModel.objects.create(ref=self.target)
+        instance = ReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = ReferencingModel
+                model = ReferencingDoc
                 depth = 1
 
         serializer = TestSerializer(instance)
@@ -358,7 +401,7 @@ class TestReferenceIntegration(TestCase):
     def test_create(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = ReferencingModel
+                model = ReferencingDoc
 
         new_target = ReferencedDoc.objects.create(name="Bar")
         data = {'ref': new_target.id}
@@ -376,11 +419,11 @@ class TestReferenceIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_update(self):
-        instance = ReferencingModel.objects.create(ref=self.target)
+        instance = ReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = ReferencingModel
+                model = ReferencingDoc
 
         new_target = ReferencedDoc.objects.create(
             name="Bar"
@@ -411,14 +454,14 @@ class TestGenericReferenceIntegration(TestCase):
 
     def tearDown(self):
         ReferencedDoc.drop_collection()
-        GenericReferencingModel.drop_collection()
+        GenericReferencingDoc.drop_collection()
 
     def test_retrival(self):
-        instance = GenericReferencingModel.objects.create(ref=self.target)
+        instance = GenericReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = GenericReferencingModel
+                model = GenericReferencingDoc
                 depth = 0
 
         serializer = TestSerializer(instance)
@@ -429,11 +472,11 @@ class TestGenericReferenceIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_retrival_deep(self):
-        instance = GenericReferencingModel.objects.create(ref=self.target)
+        instance = GenericReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = GenericReferencingModel
+                model = GenericReferencingDoc
                 depth = 1
 
         serializer = TestSerializer(instance)
@@ -446,7 +489,7 @@ class TestGenericReferenceIntegration(TestCase):
     def test_create(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = GenericReferencingModel
+                model = GenericReferencingDoc
 
         new_target = ReferencedDoc.objects.create(
             name="Bar"
@@ -468,11 +511,11 @@ class TestGenericReferenceIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_update(self):
-        instance = GenericReferencingModel.objects.create(ref=self.target)
+        instance = GenericReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = GenericReferencingModel
+                model = GenericReferencingDoc
 
         new_target = OtherReferencedDoc.objects.create(name="Bar")
         data = {
@@ -497,7 +540,7 @@ class TestGenericReferenceIntegration(TestCase):
 
 class ComboReferencingSerializer(DocumentSerializer):
     class Meta:
-        model = ReferencingModel
+        model = ReferencingDoc
     ref = ComboReferenceField(serializer=ReferencedSerializer)
 
     def save_subdocs(self, validated_data):
@@ -520,10 +563,10 @@ class TestComboReferenceIntegration(TestCase):
 
     def tearDown(self):
         ReferencedDoc.drop_collection()
-        ReferencingModel.drop_collection()
+        ReferencingDoc.drop_collection()
 
     def test_retrival(self):
-        instance = ReferencingModel.objects.create(ref=self.target)
+        instance = ReferencingDoc.objects.create(ref=self.target)
         serializer = ComboReferencingSerializer(instance)
         expected = {
             'id': str(instance.id),
@@ -532,11 +575,11 @@ class TestComboReferenceIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_retrival_deep(self):
-        instance = ReferencingModel.objects.create(ref=self.target)
+        instance = ReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = ReferencingModel
+                model = ReferencingDoc
                 depth = 1
             ref = ComboReferenceField(serializer=ReferencedSerializer)
 
@@ -582,7 +625,7 @@ class TestComboReferenceIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_update_ref(self):
-        instance = ReferencingModel.objects.create(ref=self.target)
+        instance = ReferencingDoc.objects.create(ref=self.target)
 
         new_target = ReferencedDoc.objects.create(name="Bar")
         data = {'ref': new_target.id}
@@ -600,7 +643,7 @@ class TestComboReferenceIntegration(TestCase):
         self.assertEqual(serializer.data, expected)
 
     def test_update_data(self):
-        instance = ReferencingModel.objects.create(ref=self.target)
+        instance = ReferencingDoc.objects.create(ref=self.target)
 
         data = {'ref': {'name': "Bar"}}
 
