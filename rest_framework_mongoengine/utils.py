@@ -2,6 +2,7 @@ from collections import OrderedDict, namedtuple
 
 import mongoengine
 from django.utils.text import capfirst
+from mongoengine import EmbeddedDocument
 from mongoengine import fields as me_fields
 from rest_framework.utils.field_mapping import needs_label
 
@@ -48,7 +49,7 @@ COMPOUND_FIELD_TYPES = (
 def get_relation_info(model_field):
     return RelationInfo(
         model_field=model_field,
-        related_model=getattr(model_field, 'document_type', None),
+        related_model=getattr(model_field, 'document_type', None)
     )
 
 
@@ -110,7 +111,7 @@ def is_abstract_model(model):
 
 def get_field_kwargs(field_name, model_field):
     """
-    Creates a default instance of a basic non-relational field.
+    Creating a default instance of a basic non-relational field.
     """
     kwargs = {}
 
@@ -143,16 +144,14 @@ def get_field_kwargs(field_name, model_field):
         kwargs['read_only'] = True
         return kwargs
 
-    kwargs['required'] = model_field.required
-
-    if model_field.default:
-        kwargs['required'] = False
-
     if model_field.default and not isinstance(model_field, me_fields.ComplexBaseField):
         kwargs['default'] = model_field.default
 
     if model_field.null:
         kwargs['allow_null'] = True
+
+    if 'default' not in kwargs:
+        kwargs['required'] = model_field.required
 
     if model_field.choices:
         # If this model field contains choices, then return early.
@@ -181,33 +180,49 @@ def get_field_kwargs(field_name, model_field):
 
 def get_relation_kwargs(field_name, relation_info):
     """
-    Creates a default instance of a flat relational field.
+    Creating a default instance of a flat relational field.
     """
     model_field, related_model = relation_info
     kwargs = {}
-    if related_model:
+    if related_model and not issubclass(related_model, EmbeddedDocument):
         kwargs['queryset'] = related_model.objects
-    else:
-        kwargs['read_only'] = True
 
     if model_field:
         if hasattr(model_field, 'verbose_name') and needs_label(model_field, field_name):
             kwargs['label'] = capfirst(model_field.verbose_name)
         if hasattr(model_field, 'help_text'):
             kwargs['help_text'] = model_field.help_text
-        if kwargs.get('read_only', False):
-            # If this field is read-only, then return early.
-            # No further keyword arguments are valid.
-            return kwargs
 
-        if model_field.default or model_field.null:
-            kwargs['required'] = False
+        kwargs['required'] = model_field.required
+
         if model_field.null:
             kwargs['allow_null'] = True
         if getattr(model_field, 'unique', False):
             validator = UniqueValidator(queryset=model_field.model.objects)
             kwargs['validators'] = [validator]
 
+    return kwargs
+
+
+def get_nested_relation_kwargs(field_name, relation_info):
+    """
+    Creating a default instance of a nested serializer
+    """
+    kwargs = get_relation_kwargs(field_name, relation_info)
+    kwargs.pop('queryset')
+    kwargs.pop('required')
+    kwargs['read_only'] = True
+    return kwargs
+
+
+def get_generic_embedded_kwargs(field_name, relation_info):
+    kwargs = get_relation_kwargs(field_name, relation_info)
+    kwargs['model_field'] = relation_info.model_field
+    return kwargs
+
+
+def get_nested_embedded_kwargs(field_name, relation_info):
+    kwargs = get_relation_kwargs(field_name, relation_info)
     return kwargs
 
 

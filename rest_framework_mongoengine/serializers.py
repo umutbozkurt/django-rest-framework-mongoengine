@@ -14,8 +14,13 @@ from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
 from rest_framework_mongoengine import fields as drfm_fields
 
 from .repr import serializer_repr
-from .utils import (COMPOUND_FIELD_TYPES, get_field_info, get_field_kwargs,
-                    get_relation_kwargs, has_default, is_abstract_model)
+from .utils import (COMPOUND_FIELD_TYPES, get_field_info,
+                    has_default, is_abstract_model,
+                    get_field_kwargs,
+                    get_relation_kwargs,
+                    get_nested_relation_kwargs,
+                    get_generic_embedded_kwargs,
+                    get_nested_embedded_kwargs)
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
@@ -149,17 +154,17 @@ class DocumentSerializer(serializers.ModelSerializer):
     " class to create fields for generic references "
     serializer_reference_generic = drfm_fields.GenericReferenceField
 
-    " class to create nested serializers for referenced (defaults to DocumentSerializer) "
+    " class to create nested serializers for references (defaults to DocumentSerializer) "
     serializer_reference_nested = None
-
-    " class to create fields for embedded (instead of creating nested) "
-    serializer_embedded_field = None
 
     " class to create fields for generic embedded "
     serializer_embedded_generic = drfm_fields.GenericEmbeddedDocumentField
 
     " class to create nested serializers for embedded (defaults to EmbeddedDocumentSerializer) "
     serializer_embedded_nested = None
+
+    " class to create nested serializers for embedded at max recursion "
+    serializer_embedded_bottom = drf_fields.HiddenField
 
     def create(self, validated_data):
         raise_errors_on_nested_writes('create', self, validated_data)
@@ -228,6 +233,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             )
         )
         depth = getattr(self.Meta, 'depth', 0)
+        depth_embedding = getattr(self.Meta, 'depth_embedding', 5)
 
         if depth is not None:
             assert depth >= 0, "'depth' may not be negative."
@@ -263,7 +269,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
             # Determine the serializer field class and keyword arguments.
             field_class, field_kwargs = self.build_field(
-                field_name, self.field_info, model, depth
+                field_name, self.field_info, model, depth, depth_embedding
             )
 
             extra_field_kwargs = extra_kwargs.get(field_name, {})
@@ -293,13 +299,13 @@ class DocumentSerializer(serializers.ModelSerializer):
             list(model_info.embedded.keys())
         )
 
-    def build_field(self, field_name, info, model_class, nested_depth):
+    def build_field(self, field_name, info, model_class, nested_depth, embedded_depth):
         if field_name in info.fields_and_pk:
             model_field = info.fields_and_pk[field_name]
             if isinstance(model_field, COMPOUND_FIELD_TYPES):
                 child_name = field_name + '.child'
                 if child_name in info.fields or child_name in info.embedded or child_name in info.references:
-                    child_class, child_kwargs = self.build_field(child_name, info, model_class, nested_depth)
+                    child_class, child_kwargs = self.build_field(child_name, info, model_class, nested_depth, embedded_depth)
                     child_field = child_class(**child_kwargs)
                 else:
                     child_field = None
@@ -309,11 +315,19 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         if field_name in info.references:
             relation_info = info.references[field_name]
-            return self.build_reference_field(field_name, relation_info, nested_depth)
+            if nested_depth and relation_info.related_model:
+                return self.build_nested_reference_field(field_name, relation_info, nested_depth)
+            else:
+                return self.build_reference_field(field_name, relation_info, nested_depth)
 
         if field_name in info.embedded:
             relation_info = info.embedded[field_name]
-            return self.build_embedded_field(field_name, relation_info, nested_depth)
+            if not relation_info.related_model:
+                return self.build_generic_embedded_field(field_name, relation_info, embedded_depth)
+            if embedded_depth:
+                return self.build_nested_embedded_field(field_name, relation_info, embedded_depth)
+            else:
+                return self.build_bottom_embedded_field(field_name, relation_info, embedded_depth)
 
         if hasattr(model_class, field_name):
             return self.build_property_field(field_name, model_class)
@@ -380,47 +394,48 @@ class DocumentSerializer(serializers.ModelSerializer):
     def build_reference_field(self, field_name, relation_info, nested_depth):
         if not relation_info.related_model:
             field_class = self.serializer_reference_generic
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
+            field_kwargs = get_relation_kwargs(field_name, relation_info)
             if not issubclass(field_class, drfm_fields.DocumentField):
                 field_kwargs.pop('model_field', None)
-        elif nested_depth:
-            subclass = self.serializer_reference_nested or DocumentSerializer
-
-            class NestedSerializer(subclass):
-                class Meta:
-                    model = relation_info.related_model
-                    depth = nested_depth - 1
-
-            field_class = NestedSerializer
-            field_kwargs = {'read_only': True}
         else:
             field_class = self.serializer_reference_field
             field_kwargs = get_relation_kwargs(field_name, relation_info)
 
         return field_class, field_kwargs
 
-    def build_embedded_field(self, field_name, relation_info, nested_depth):
-        if not relation_info.related_model:
-            field_class = self.serializer_embedded_generic
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
-        elif self.serializer_embedded_field:
-            field_class = self.serializer_embedded_field
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
-        elif nested_depth:
-            subclass = self.serializer_embedded_nested or EmbeddedDocumentSerializer
+    def build_nested_reference_field(self, field_name, relation_info, nested_depth):
+        subclass = self.serializer_reference_nested or DocumentSerializer
 
-            class NestedSerializer(subclass):
-                class Meta:
-                    model = relation_info.related_model
-                    depth = nested_depth - 1
+        class NestedSerializer(subclass):
+            class Meta:
+                model = relation_info.related_model
+                depth = nested_depth - 1
 
-            field_class = NestedSerializer
-            field_kwargs = get_field_kwargs(field_name, relation_info.model_field)
-            field_kwargs.pop('model_field')
-        else:
-            field_class = drf_fields.HiddenField
-            field_kwargs = {'default': None}
+        field_class = NestedSerializer
+        field_kwargs = get_nested_relation_kwargs(field_name, relation_info)
+        return field_class, field_kwargs
 
+    def build_generic_embedded_field(self, field_name, relation_info, embedded_depth):
+        field_class = self.serializer_embedded_generic
+        field_kwargs = get_generic_embedded_kwargs(field_name, relation_info)
+        return field_class, field_kwargs
+
+    def build_nested_embedded_field(self, field_name, relation_info, embedded_depth):
+        subclass = self.serializer_embedded_nested or EmbeddedDocumentSerializer
+
+        class NestedSerializer(subclass):
+            class Meta:
+                model = relation_info.related_model
+                depth_embedding = embedded_depth - 1
+
+        field_class = NestedSerializer
+        field_kwargs = get_nested_embedded_kwargs(field_name, relation_info)
+        return field_class, field_kwargs
+
+    def build_bottom_embedded_field(self, field_name, relation_info, embedded_depth):
+        field_class = self.serializer_embedded_bottom
+        field_kwargs = get_nested_embedded_kwargs(field_name, relation_info)
+        field_kwargs['default'] = None
         return field_class, field_kwargs
 
     def get_uniqueness_extra_kwargs(self, field_names, extra_kwargs):
