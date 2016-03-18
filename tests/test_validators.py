@@ -57,19 +57,19 @@ class TestUniqueValidation(TestCase):
     def test_is_not_unique(self):
         data = {'name': 'existing'}
         serializer = UniqueValidatorSerializer(data=data)
-        self.assertFalse(serializer.is_valid())
+        assert not serializer.is_valid()
         assert serializer.errors == {'name': ['This field must be unique.']}
 
     def test_is_unique(self):
         data = {'name': 'other'}
         serializer = UniqueValidatorSerializer(data=data)
-        self.assertTrue(serializer.is_valid())
+        assert serializer.is_valid(), serializer.errors
         assert serializer.validated_data == {'name': 'other'}
 
     def test_updated_instance_excluded(self):
         data = {'name': 'existing'}
         serializer = UniqueValidatorSerializer(self.instance, data=data)
-        self.assertTrue(serializer.is_valid())
+        assert serializer.is_valid(), serializer.errors
         assert serializer.validated_data == {'name': 'existing'}
 
 
@@ -158,7 +158,7 @@ class TestUniqueTogetherValidation(TestCase):
         """
         data = {'name': 'example', 'code': 2}
         serializer = UniqueTogetherValidatorSerializer(data=data)
-        self.assertFalse(serializer.is_valid())
+        assert not serializer.is_valid()
         assert serializer.errors == {
             'non_field_errors': [
                 'The fields name, code must make a unique set.'
@@ -172,7 +172,7 @@ class TestUniqueTogetherValidation(TestCase):
         """
         data = {'name': 'other', 'code': 2}
         serializer = UniqueTogetherValidatorSerializer(data=data)
-        self.assertTrue(serializer.is_valid())
+        assert serializer.is_valid(), serializer.errors
         assert serializer.validated_data == {
             'name': 'other',
             'code': 2
@@ -185,7 +185,7 @@ class TestUniqueTogetherValidation(TestCase):
         """
         data = {'name': 'example', 'code': 1}
         serializer = UniqueTogetherValidatorSerializer(self.instance, data=data)
-        self.assertTrue(serializer.is_valid())
+        assert serializer.is_valid(), serializer.errors
         assert serializer.validated_data == {
             'name': 'example',
             'code': 1
@@ -197,7 +197,7 @@ class TestUniqueTogetherValidation(TestCase):
         """
         data = {'code': 2}
         serializer = UniqueTogetherValidatorSerializer(data=data, partial=True)
-        self.assertFalse(serializer.is_valid())
+        assert not serializer.is_valid()
         assert serializer.errors == {
             'name': ['This field is required.']
         }
@@ -216,7 +216,7 @@ class TestUniqueTogetherValidation(TestCase):
                 model = NullValidatingModel
         data = {'name': 'existing', 'code': None, 'other': "xxx"}
         serializer = NullUniqueTogetherValidatorSerializer(data=data)
-        self.assertTrue(serializer.is_valid())
+        assert serializer.is_valid(), serializer.errors
 
     def test_do_not_ignore_validation_for_null_fields(self):
         # None values that are not on fields part of the uniqueness constraint
@@ -228,7 +228,7 @@ class TestUniqueTogetherValidation(TestCase):
         )
         data = {'name': 'existing', 'code': 1, 'other': None}
         serializer = NullUniqueTogetherValidatorSerializer(data=data)
-        self.assertFalse(serializer.is_valid())
+        assert not serializer.is_valid()
 
 
 # Tests for implicit `UniqueTogetherValidator`

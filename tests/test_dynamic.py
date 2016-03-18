@@ -22,7 +22,7 @@ class TestDynamicMapping(TestCase):
                 name = CharField(required=False)
                 foo = IntegerField(required=False)
         """)
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_extended(self):
         class TestSerializer(DynamicDocumentSerializer):
@@ -41,7 +41,7 @@ class TestDynamicMapping(TestCase):
         assert unicode_repr(TestSerializer()) == expected
 
 
-class DynamicSerializer(DynamicDocumentSerializer):
+class TestSerializer(DynamicDocumentSerializer):
     class Meta:
         model = DumbDynamic
 
@@ -50,9 +50,26 @@ class TestDynamicIntegration(TestCase):
     def tearDown(self):
         DumbDynamic.drop_collection()
 
+    def test_parsing(self):
+        input_data = {
+            'foo': 42,
+            'bar': 43,
+            'baz': "Baz"
+        }
+
+        serializer = TestSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+
+        expected = {
+            'foo': 42,
+            'bar': 43,
+            'baz': "Baz"
+        }
+        assert serializer.validated_data == expected
+
     def test_retrival(self):
         instance = DumbDynamic.objects.create(foo=42, bar=43, baz="Baz")
-        serializer = DynamicSerializer(instance)
+        serializer = TestSerializer(instance)
         expected = {
             'id': str(instance.id),
             'name': None,
@@ -69,8 +86,8 @@ class TestDynamicIntegration(TestCase):
             'baz': "Baz"
         }
 
-        serializer = DynamicSerializer(data=data)
-        assert serializer.is_valid()
+        serializer = TestSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
         assert instance.foo == 42
@@ -91,8 +108,8 @@ class TestDynamicIntegration(TestCase):
 
         data = {'foo': 142, 'bar': 143, 'baz': "Baz"}
 
-        serializer = DynamicSerializer(instance, data=data)
-        assert serializer.is_valid()
+        serializer = TestSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
         assert instance.foo == 142

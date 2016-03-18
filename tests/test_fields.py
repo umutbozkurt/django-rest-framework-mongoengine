@@ -9,12 +9,13 @@ from rest_framework.exceptions import ValidationError
 
 from rest_framework_mongoengine.fields import (DocumentField, GenericField, ObjectIdField)
 
-from .utils import FieldValues
+from .utils import FieldTest
 from .models import DumbDocument, DumbEmbedded
 
 
-class TestObjectId(FieldValues, TestCase):
+class TestObjectId(FieldTest, TestCase):
     field = ObjectIdField()
+
     valid_inputs = {
         ObjectId('56353a4aa21aab2c49d86ebb'): ObjectId('56353a4aa21aab2c49d86ebb'),
         '56353a4aa21aab2c49d86ebb': ObjectId('56353a4aa21aab2c49d86ebb')
@@ -49,7 +50,7 @@ class TestDocumentField(TestCase):
         assert self.field.to_representation(instance) == 123
 
 
-class TestGenericField(FieldValues, TestCase):
+class TestGenericField(FieldTest, TestCase):
     field = GenericField()
 
     valid_inputs = [

@@ -1,19 +1,8 @@
 import pytest
 from rest_framework.exceptions import ValidationError
 
-
 def dedent(blocktext):
     return '\n'.join([line[12:] for line in blocktext.splitlines()[1:-1]])
-
-
-class BadType(object):
-    """
-    When used as a lookup with a `MockQueryset`, these objects
-    will raise a `TypeError`, as occurs in Django when making
-    queryset lookups with an incorrect type for the lookup value.
-    """
-    def __eq__(self):
-        raise TypeError()
 
 
 def get_items(mapping_or_list_of_two_tuples):
@@ -25,7 +14,7 @@ def get_items(mapping_or_list_of_two_tuples):
     return mapping_or_list_of_two_tuples
 
 
-class FieldValues():
+class FieldTest():
     """
     Base class for testing valid and invalid input values.
     """

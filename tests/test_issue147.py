@@ -42,24 +42,24 @@ class ImplicitSerializer(DocumentSerializer):
 class Issue147Test(TestCase):
     def test_explicit_pass(self):
         serializer = ExplicitSerializer(data={'embedded': [{'test_field': 'Test'}]})
-        self.assertTrue(serializer.is_valid())
+        assert serializer.is_valid(), serializer.errors
 
     def test_explicit_fail(self):
         serializer = ExplicitSerializer(data={'embedded': [{'test_field': 'Te'}]})
-        self.assertFalse(serializer.is_valid())
+        assert not serializer.is_valid()
 
     def test_explicitmany_pass(self):
         serializer = ExplicitManySerializer(data={'embedded': [{'test_field': 'Test'}]})
-        self.assertTrue(serializer.is_valid())
+        assert serializer.is_valid(), serializer.errors
 
     def test_explicitmany_fail(self):
         serializer = ExplicitManySerializer(data={'embedded': [{'test_field': 'Te'}]})
-        self.assertFalse(serializer.is_valid())
+        assert not serializer.is_valid()
 
     def test_implicit_pass(self):
         serializer = ImplicitSerializer(data={'embedded': [{'test_field': 'Test'}]})
-        self.assertTrue(serializer.is_valid())
+        assert serializer.is_valid(), serializer.errors
 
     def test_implicit_fail(self):
         serializer = ImplicitSerializer(data={'embedded': [{'test_field': 'Te'}]})
-        self.assertFalse(serializer.is_valid())
+        assert not serializer.is_valid()

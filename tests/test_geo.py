@@ -5,10 +5,10 @@ from rest_framework.compat import unicode_repr
 from rest_framework_mongoengine.fields import GeoJSONField, GeoPointField
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
-from .utils import FieldValues, dedent
+from .utils import FieldTest, dedent
 
 
-class TestGeoPointField(TestCase, FieldValues):
+class TestGeoPointField(FieldTest, TestCase):
     field = GeoPointField()
     valid_inputs = [
         ([0.1, 0.2], [0.1, 0.2]),
@@ -25,7 +25,7 @@ class TestGeoPointField(TestCase, FieldValues):
     ]
 
 
-class TestPointField(TestCase, FieldValues):
+class TestPointField(FieldTest, TestCase):
     field = GeoJSONField('Point')
     valid_inputs = [
         ([0.1, 0.2], [0.1, 0.2]),
@@ -43,7 +43,7 @@ class TestPointField(TestCase, FieldValues):
     ]
 
 
-class TestMultiPointField(TestCase, FieldValues):
+class TestMultiPointField(FieldTest, TestCase):
     field = GeoJSONField('MultiPoint')
     valid_inputs = [
         ([[0.1, 0.2], [0.3, 0.4]], [[0.1, 0.2], [0.3, 0.4]]),
@@ -62,7 +62,7 @@ class TestMultiPointField(TestCase, FieldValues):
     ]
 
 
-class TestLineField(TestCase, FieldValues):
+class TestLineField(FieldTest, TestCase):
     field = GeoJSONField('LineString')
     valid_inputs = [
         ([[0.1, 0.2], [0.3, 0.4]], [[0.1, 0.2], [0.3, 0.4]]),
@@ -81,7 +81,7 @@ class TestLineField(TestCase, FieldValues):
     ]
 
 
-class TestMultiLineField(TestCase, FieldValues):
+class TestMultiLineField(FieldTest, TestCase):
     field = GeoJSONField('MultiLineString')
     valid_inputs = [
         ([[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]], [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]]),
@@ -100,7 +100,7 @@ class TestMultiLineField(TestCase, FieldValues):
     ]
 
 
-class TestPolyField(TestCase, FieldValues):
+class TestPolyField(FieldTest, TestCase):
     field = GeoJSONField('Polygon')
     valid_inputs = [
         ([[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]], [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]),
@@ -120,7 +120,7 @@ class TestPolyField(TestCase, FieldValues):
     ]
 
 
-class TestMultiPolyField(TestCase, FieldValues):
+class TestMultiPolyField(FieldTest, TestCase):
     field = GeoJSONField('MultiPolygon')
     valid_inputs = [
         ([[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]], [[[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.1, 0.2]]]]),
@@ -140,7 +140,7 @@ class TestMultiPolyField(TestCase, FieldValues):
     ]
 
 
-class GeoModel(Document):
+class GeoDoc(Document):
     geo_point_field = fields.GeoPointField()
     point_field = fields.PointField()
     line_field = fields.LineStringField()
@@ -154,7 +154,7 @@ class TestGeoMapping(TestCase):
     def test_mapping(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
-                model = GeoModel
+                model = GeoDoc
 
         expected = dedent("""
             TestSerializer():

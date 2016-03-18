@@ -10,8 +10,7 @@ from rest_framework.serializers import Serializer
 
 from rest_framework_mongoengine.fields import (ComboReferenceField,
                                                GenericReferenceField,
-                                               ReferenceField,
-                                               DocumentField)
+                                               ReferenceField)
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .utils import dedent
@@ -194,9 +193,9 @@ class TestComboReferenceField(TestCase):
     def test_input_data(self):
         field = ComboReferenceField(serializer=ReferencedSerializer)
         value = field.to_internal_value({'name': "Foo"})
-        self.assertIsInstance(value, ReferencedDoc)
-        self.assertEqual(value.name, "Foo")
-        self.assertIsNone(value.id)
+        assert isinstance(value, ReferencedDoc)
+        assert value.name == "Foo"
+        assert value.id is None
 
     def test_output(self):
         field = ComboReferenceField(serializer=ReferencedSerializer)
@@ -274,61 +273,61 @@ class TestReferenceMapping(TestCase):
         """)
         assert unicode_repr(TestSerializer()) == expected
 
-    # def test_custom_field(self):
+    def test_custom_field(self):
 
-    #     class CustomReferencing(ReferenceField):
-    #         pass
+        class CustomReferencing(ReferenceField):
+            pass
 
-    #     class TestSerializer(DocumentSerializer):
-    #         serializer_reference_field = CustomReferencing
+        class TestSerializer(DocumentSerializer):
+            serializer_reference_field = CustomReferencing
 
-    #         class Meta:
-    #             model = ReferencingDoc
-    #             depth = 0
+            class Meta:
+                model = ReferencingDoc
+                depth = 0
 
-    #     expected = dedent("""
-    #         TestSerializer():
-    #             id = ObjectIdField(read_only=True)
-    #             ref = CustomReferencing(queryset=ReferencedDoc.objects, required=False)
-    #     """)
-    #     assert unicode_repr(TestSerializer()) == expected
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                ref = CustomReferencing(queryset=ReferencedDoc.objects, required=False)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
 
-    # def test_custom_generic(self):
-    #     class CustomReferencing(GenericReferenceField):
-    #         pass
+    def test_custom_generic(self):
+        class CustomReferencing(GenericReferenceField):
+            pass
 
-    #     class TestSerializer(DocumentSerializer):
-    #         serializer_reference_generic = CustomReferencing
+        class TestSerializer(DocumentSerializer):
+            serializer_reference_generic = CustomReferencing
 
-    #         class Meta:
-    #             model = GenericReferencingDoc
-    #             depth = 0
+            class Meta:
+                model = GenericReferencingDoc
+                depth = 0
 
-    #     expected = dedent("""
-    #         TestSerializer():
-    #             id = ObjectIdField(read_only=True)
-    #             ref = CustomReferencing(required=False, required=False)
-    #     """)
-    #     assert unicode_repr(TestSerializer()) == expected
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                ref = CustomReferencing(required=False)
+        """)
+        assert unicode_repr(TestSerializer()) == expected
 
-    # def test_custom_nested(self):
-    #     class CustomReferencing(Serializer):
-    #         foo = IntegerField()
+    def test_custom_nested(self):
+        class CustomReferencing(Serializer):
+            foo = IntegerField()
 
-    #     class TestSerializer(DocumentSerializer):
-    #         serializer_reference_nested = CustomReferencing
+        class TestSerializer(DocumentSerializer):
+            serializer_reference_nested = CustomReferencing
 
-    #         class Meta:
-    #             model = ReferencingDoc
-    #             depth = 1
+            class Meta:
+                model = ReferencingDoc
+                depth = 1
 
-    #     expected = dedent("""
-    #         TestSerializer():
-    #             id = ObjectIdField(read_only=True)
-    #             ref = NestedSerializer(read_only=True):
-    #                 foo = IntegerField()
-    #     """)
-    #     assert unicode_repr(TestSerializer()) == expected
+        expected = dedent("""
+            TestSerializer():
+                id = ObjectIdField(read_only=True)
+                ref = NestedSerializer(read_only=True):
+                    foo = IntegerField()
+        """)
+        assert unicode_repr(TestSerializer()) == expected
 
 
 class DisplayableReferencedModel(Document):
@@ -363,7 +362,7 @@ class TestRelationalFieldDisplayValue(TestCase):
         expected = OrderedDict([(self.ids[0], 'Red Color'),
                                 (self.ids[1], 'Green Color'),
                                 (self.ids[2], 'Blue Color')])
-        self.assertEqual(serializer.fields['color'].choices, expected)
+        assert serializer.fields['color'].choices == expected
 
     def test_custom_display_value(self):
         class TestField(ReferenceField):
@@ -380,7 +379,7 @@ class TestRelationalFieldDisplayValue(TestCase):
         expected = OrderedDict([(self.ids[0], 'My Red Color'),
                                 (self.ids[1], 'My Green Color'),
                                 (self.ids[2], 'My Blue Color')])
-        self.assertEqual(serializer.fields['color'].choices, expected)
+        assert serializer.fields['color'].choices == expected
 
 
 class TestReferenceIntegration(TestCase):
@@ -406,7 +405,7 @@ class TestReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(self.target.id),
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_retrival_deep(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
@@ -421,7 +420,7 @@ class TestReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': {'id': str(self.target.id), 'name': "Foo"}
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_create(self):
         class TestSerializer(DocumentSerializer):
@@ -432,7 +431,7 @@ class TestReferenceIntegration(TestCase):
         data = {'ref': new_target.id}
 
         serializer = TestSerializer(data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
         assert instance.ref.id == new_target.id
@@ -441,7 +440,7 @@ class TestReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(new_target.id)
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_update(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
@@ -459,7 +458,7 @@ class TestReferenceIntegration(TestCase):
 
         # Serializer should validate okay.
         serializer = TestSerializer(instance, data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         # Creating the instance, relationship attributes should be set.
         instance = serializer.save()
@@ -470,7 +469,7 @@ class TestReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(new_target.id)
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
 
 class TestGenericReferenceIntegration(TestCase):
@@ -494,7 +493,7 @@ class TestGenericReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': {'_cls': 'ReferencedDoc', '_id': str(self.target.id)},
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_retrival_deep(self):
         instance = GenericReferencingDoc.objects.create(ref=self.target)
@@ -509,7 +508,7 @@ class TestGenericReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': {'_cls': 'ReferencedDoc', '_id': str(self.target.id)},
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_create(self):
         class TestSerializer(DocumentSerializer):
@@ -524,7 +523,7 @@ class TestGenericReferenceIntegration(TestCase):
         }
 
         serializer = TestSerializer(data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
         assert instance.ref == new_target.to_dbref()
@@ -533,7 +532,7 @@ class TestGenericReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': {'_cls': 'ReferencedDoc', '_id': str(new_target.id)}
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_update(self):
         instance = GenericReferencingDoc.objects.create(ref=self.target)
@@ -549,7 +548,7 @@ class TestGenericReferenceIntegration(TestCase):
 
         # Serializer should validate okay.
         serializer = TestSerializer(instance, data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         # Creating the instance, relationship attributes should be set.
         instance = serializer.save()
@@ -560,7 +559,7 @@ class TestGenericReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': {'_cls': 'OtherReferencedDoc', '_id': str(new_target.id)}
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
 
 class ComboReferencingSerializer(DocumentSerializer):
@@ -597,7 +596,7 @@ class TestComboReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(self.target.id),
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_retrival_deep(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
@@ -613,14 +612,14 @@ class TestComboReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': {'id': str(self.target.id), 'name': "Foo"}
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_create_ref(self):
         new_target = ReferencedDoc.objects.create(name="Bar")
         data = {'ref': new_target.id}
 
         serializer = ComboReferencingSerializer(data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
         assert instance.ref.id == new_target.id
@@ -629,13 +628,13 @@ class TestComboReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(new_target.id)
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_create_data(self):
         data = {'ref': {'name': "Bar"}}
 
         serializer = ComboReferencingSerializer(data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
 
@@ -647,7 +646,7 @@ class TestComboReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(new_target.id)
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_update_ref(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
@@ -656,7 +655,7 @@ class TestComboReferenceIntegration(TestCase):
         data = {'ref': new_target.id}
 
         serializer = ComboReferencingSerializer(instance, data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
         assert instance.ref.id == new_target.id
@@ -665,7 +664,7 @@ class TestComboReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(new_target.id)
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected
 
     def test_update_data(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
@@ -673,7 +672,7 @@ class TestComboReferenceIntegration(TestCase):
         data = {'ref': {'name': "Bar"}}
 
         serializer = ComboReferencingSerializer(instance, data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
 
@@ -685,4 +684,4 @@ class TestComboReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(new_target.id)
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected

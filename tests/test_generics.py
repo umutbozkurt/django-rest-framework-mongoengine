@@ -55,20 +55,20 @@ class TestBasicViews(TestCase):
         view = ListView.as_view()
         request = self.client.get('/')
         response = view(request).render()
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, self.data)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == self.data
 
     def test_retr(self):
         view = RetrView.as_view()
         oid = self.objects[1].id
         request = self.client.get('/' + str(oid))
         response = view(request, id=oid).render()
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, self.data[1])
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == self.data[1]
 
     def test_retr_denied(self):
         view = RetrView.as_view()
         oid = self.objects[2].id
         request = self.client.get('/' + str(oid))
         response = view(request, id=oid).render()
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assert response.status_code == status.HTTP_403_FORBIDDEN

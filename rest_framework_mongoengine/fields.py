@@ -107,7 +107,8 @@ class GenericEmbeddedField(serializers.Field):
     def to_representation(self, doc):
         if not isinstance(doc, EmbeddedDocument):
             self.fail('not_a_doc', input_type=type(doc).__name__)
-        data = {'_cls': doc.__class__.__name__}
+        data = OrderedDict()
+        data['_cls'] = doc.__class__.__name__
         for field_name in doc._fields:
             if not hasattr(doc, field_name):
                 continue
@@ -494,21 +495,18 @@ class FileField(serializers.FileField):
     Corresponds to ``DRF.serializers.FileField``
 
     Internal value: a file-like object.
-    For uploaded files it is a ``django.core.files.File`` (provided by django and DRF parsers).
+    For uploaded files it is a ``django.core.files.UploadedFile`` (provided by django and DRF parsers).
     For gridfs files it is ``mongoengine.fields.GridFSProxy`` (provided by mongoengine).
 
-    Representation: str(grid_id)
+    Representation: None or str(grid_id)
     """
 
     def to_representation(self, value):
-        return smart_text(value.grid_id)
+        return smart_text(value.grid_id) if hasattr(value, 'grid_id') else None
 
 
-class ImageField(serializers.ImageField):
+class ImageField(FileField):
     """ Field for images, stored in gridfs.
 
     Corresponds to ``DRF.serializers.ImageField``, the same way as ``FileField``
     """
-
-    def to_representation(self, value):
-        return smart_text(value.grid_id)

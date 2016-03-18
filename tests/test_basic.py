@@ -20,6 +20,8 @@ from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
+import pytest
+
 from .utils import dedent
 
 
@@ -110,10 +112,10 @@ class TestRegularFieldMappings(TestCase):
                 uuid_field = UUIDField(required=False)
                 id_field = ObjectIdField(required=False)
                 decimal_field = DecimalField(decimal_places=2, max_digits=65536, required=False)
-                custom_field = DocumentField(model_field=<tests.test_1basic.CustomField: custom_field>, required=False)
+                custom_field = DocumentField(model_field=<tests.test_basic.CustomField: custom_field>, required=False)
         """)
 
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_meta_fields(self):
         """
@@ -130,7 +132,7 @@ class TestRegularFieldMappings(TestCase):
                 str_field = CharField(required=False)
         """)
 
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_meta_exclude(self):
         """
@@ -157,7 +159,7 @@ class TestRegularFieldMappings(TestCase):
                 id_field = ObjectIdField(required=False)
         """)
 
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_field_options(self):
         class TestSerializer(DocumentSerializer):
@@ -181,7 +183,7 @@ class TestRegularFieldMappings(TestCase):
         #         "('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')",
         #         "(u'red', u'Red'), (u'blue', u'Blue'), (u'green', u'Green')"
         #     )
-        self.assertEqual(unicode_repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_method_field(self):
         """
@@ -198,7 +200,7 @@ class TestRegularFieldMappings(TestCase):
                 id = ObjectIdField(read_only=True)
                 method = ReadOnlyField()
         """)
-        self.assertEqual(repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_pk_fields(self):
         """
@@ -214,7 +216,7 @@ class TestRegularFieldMappings(TestCase):
                 pk = IntegerField(read_only=True)
                 auto_field = IntegerField(read_only=True)
         """)
-        self.assertEqual(repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_id_field(self):
         """
@@ -229,7 +231,7 @@ class TestRegularFieldMappings(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
         """)
-        self.assertEqual(repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_extra_field_kwargs(self):
         """
@@ -246,7 +248,7 @@ class TestRegularFieldMappings(TestCase):
                 id = ObjectIdField(read_only=True)
                 str_field = CharField(default='extra')
         """)
-        self.assertEqual(repr(TestSerializer()), expected)
+        assert unicode_repr(TestSerializer()) == expected
 
     def test_invalid_field(self):
         """
@@ -258,10 +260,10 @@ class TestRegularFieldMappings(TestCase):
                 model = RegularModel
                 fields = ('id', 'invalid')
 
-        with self.assertRaises(ImproperlyConfigured) as excinfo:
+        with pytest.raises(ImproperlyConfigured) as exc:
             TestSerializer().fields
         expected = 'Field name `invalid` is not valid for model `RegularModel`.'
-        assert str(excinfo.exception) == expected
+        assert expected in str(exc.value)
 
     def test_missing_field(self):
         """
@@ -275,13 +277,13 @@ class TestRegularFieldMappings(TestCase):
                 model = RegularModel
                 fields = ('id',)
 
-        with self.assertRaises(AssertionError) as excinfo:
+        with pytest.raises(AssertionError) as exc:
             TestSerializer().fields
         expected = (
             "The field 'missing' was declared on serializer TestSerializer, "
             "but has not been included in the 'fields' option."
         )
-        assert str(excinfo.exception) == expected
+        assert expected in str(exc.value)
 
     def test_missing_superclass_field_not_included(self):
         """
@@ -354,6 +356,45 @@ class TestIntegration(TestCase):
     def tearDown(self):
         RegularModel.drop_collection()
 
+    def test_parsing(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RegularModel
+
+        input_data = {
+            'str_field': "str",
+            'url_field': "http://qwe.qw/",
+            'email_field': "qwe@qwe.qw",
+            'int_field': "42",
+            'long_field': "9223372036854775807",
+            'float_field': "42e-10",
+            'boolean_field': "True",
+            'nullboolean_field': None,
+            'date_field': "2015-11-14T06:13:14.123000",
+            'complexdate_field': "2015-11-14T06:13:14.123456",
+            'uuid_field': "36195645-d9d8-4c86-bd88-29143cdb7ad4",
+            'id_field': "56467a4ba21aab16872f5867",
+            'decimal_field': "12.3"
+        }
+        serializer = TestSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+        expected = {
+            'str_field': "str",
+            'url_field': "http://qwe.qw/",
+            'email_field': "qwe@qwe.qw",
+            'int_field': 42,
+            'long_field': 9223372036854775807,
+            'float_field': 42e-10,
+            'boolean_field': True,
+            'nullboolean_field': None,
+            'date_field': datetime(2015, 11, 14, 6, 13, 14, 123000),
+            'complexdate_field': datetime(2015, 11, 14, 6, 13, 14, 123456),
+            'uuid_field': UUID("36195645-d9d8-4c86-bd88-29143cdb7ad4"),
+            'id_field': ObjectId("56467a4ba21aab16872f5867"),
+            'decimal_field': Decimal('12.3')
+        }
+        assert serializer.validated_data == expected
+
     def test_retrival(self):
         instance = RegularModel.objects.create(
             str_field="str",
@@ -394,7 +435,6 @@ class TestIntegration(TestCase):
             'custom_field': None
         }
         assert serializer.data == expected
-        # self.assertEqual(serializer.data, expected)
 
     def test_create(self):
         class TestSerializer(DocumentSerializer):
@@ -418,7 +458,7 @@ class TestIntegration(TestCase):
         }
 
         serializer = TestSerializer(data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
         assert instance.str_field == "str"
@@ -453,7 +493,6 @@ class TestIntegration(TestCase):
             'custom_field': None
         }
         assert serializer.data == expected
-        # self.assertEqual(serializer.data, expected)
 
     def test_update(self):
         instance = RegularModel.objects.create(
@@ -493,7 +532,7 @@ class TestIntegration(TestCase):
         }
 
         serializer = TestSerializer(instance, data=data)
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
         assert instance.str_field == "str1"
@@ -527,4 +566,4 @@ class TestIntegration(TestCase):
             'decimal_field': "0.31",
             'custom_field': None
         }
-        self.assertEqual(serializer.data, expected)
+        assert serializer.data == expected

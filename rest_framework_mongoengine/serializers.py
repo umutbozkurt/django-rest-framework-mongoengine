@@ -423,12 +423,12 @@ class DocumentSerializer(serializers.ModelSerializer):
     def build_nested_embedded_field(self, field_name, relation_info, embedded_depth):
         subclass = self.serializer_embedded_nested or EmbeddedDocumentSerializer
 
-        class NestedSerializer(subclass):
+        class EmbeddedSerializer(subclass):
             class Meta:
                 model = relation_info.related_model
                 depth_embedding = embedded_depth - 1
 
-        field_class = NestedSerializer
+        field_class = EmbeddedSerializer
         field_kwargs = get_nested_embedded_kwargs(field_name, relation_info)
         return field_class, field_kwargs
 

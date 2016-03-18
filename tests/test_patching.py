@@ -1,6 +1,4 @@
-import pytest
 from django.test import TestCase
-from rest_framework.exceptions import ValidationError
 
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework.test import APITestCase, APIRequestFactory
