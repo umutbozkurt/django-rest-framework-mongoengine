@@ -9,7 +9,6 @@ class DumbDocument(Document):
     foo = fields.IntField()
 
 
-
 class IntIdDocument(Document):
     id = fields.IntField(primary_key=True)
     name = fields.StringField()
