@@ -4,7 +4,7 @@ from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework.test import APITestCase, APIRequestFactory
 from rest_framework_mongoengine.viewsets import GenericViewSet
 
-from rest_framework_mongoengine.patching import Patch, PatchModelMixin
+from rest_framework_mongoengine.contrib.patching import Patch, PatchModelMixin
 
 
 class MockEmbedded(EmbeddedDocument):
@@ -42,8 +42,8 @@ class TestPatchParsing(TestCase):
 
         assert patch.is_valid()
         expected = [
-            ('set__foo', 123),
-            ('push__bar__items', "Bar")
+            {'path': ("foo", ), 'op': "set", 'value': 123},
+            {'path': ("bar", "items"), 'op': "push", 'value': "Bar"},
         ]
         assert patch.validated_data == expected
 

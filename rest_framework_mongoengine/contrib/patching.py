@@ -1,21 +1,22 @@
+from collections import OrderedDict
 from rest_framework.serializers import ListSerializer, DictField
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 
+import pdb
+
 
 class PatchItem(DictField):
+    """ just a dict with keys: path, op, value """
     def to_internal_value(self, value):
         value = super(PatchItem, self).to_internal_value(value)
         if set(value.keys()) != set(['op', 'path', 'value']):
             raise ValidationError("Missing some of required parts: 'path', 'op', 'value'")
         if value['path'][0] != '/':
             raise ValidationError("Invalid path")
-
-        fld = "__".join(value['path'].split('/')[1:])
-        key = value['op'] + "__" + fld
-        arg = value['value']
-        return (key, arg)
+        value['path'] = tuple(value['path'].split('/')[1:])
+        return value
 
     def to_representation(self, value):
         return {value[0]: value[1]}
@@ -34,9 +35,21 @@ class Patch(ListSerializer):
     child = PatchItem()
 
     def update_queryset(self, queryset):
-        # maybe merged for optimizaion, if keys are unique
-        for k, v in self.validated_data:
-            queryset.update(**{k: v})
+        # split items to non-key-overlapping sets
+        subpatches = [(set(), list())]  # keys, items
+        for item in self.validated_data:
+            subpatch = subpatches[-1]
+            if item['path'] in subpatch[0]:
+                subpatch = (set(), list())
+                subpatches.append(subpatch)
+            subpatch[0].add(item['path'])
+            subpatch[1].append(item)
+
+        for subpatch in subpatches:
+            update = OrderedDict()
+            for item in subpatch[1]:
+                update[item['op'] + "__" + ("__".join(item['path']))] = item['value']
+            queryset.update(**update)
 
 
 class PatchModelMixin():
