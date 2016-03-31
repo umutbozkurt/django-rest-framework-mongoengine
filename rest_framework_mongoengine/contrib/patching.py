@@ -7,6 +7,23 @@ from rest_framework import status
 import pdb
 
 
+def get_field_for_path(serializer, path):
+    head = path[0]
+    tail = path[1:]
+
+    if hasattr(serializer, 'fields'):
+        serializer = serializer.fields[head]
+    elif hasattr(serializer, 'child'):
+        serializer = serializer.child
+    else:
+        raise KeyError(head)
+
+    if len(tail):
+        return get_field_for_path(serializer, tail)
+    else:
+        return serializer
+
+
 class PatchItem(DictField):
     """ just a dict with keys: path, op, value """
     def to_internal_value(self, value):
@@ -14,8 +31,17 @@ class PatchItem(DictField):
         if set(value.keys()) != set(['op', 'path', 'value']):
             raise ValidationError("Missing some of required parts: 'path', 'op', 'value'")
         if value['path'][0] != '/':
-            raise ValidationError("Invalid path")
+            raise ValidationError({'path': "Invalid path"})
         value['path'] = tuple(value['path'].split('/')[1:])
+
+        if self.parent.serializer:
+            try:
+                field = get_field_for_path(self.parent.serializer, value['path'])
+            except KeyError as e:
+                raise ValidationError({'path': "Missing elem: '%s'" % e.args[0]})
+            if field is not None:
+                value['value'] = field.to_internal_value(value['value'])
+
         return value
 
 
@@ -30,6 +56,10 @@ class Patch(ListSerializer):
     }
     """
     child = PatchItem()
+
+    def __init__(self, serializer=None, *args, **kwargs):
+        self.serializer = serializer() if serializer is not None else None
+        super().__init__(*args, **kwargs)
 
     def update_queryset(self, queryset):
         # split items to non-key-overlapping sets
