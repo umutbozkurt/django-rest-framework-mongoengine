@@ -1,7 +1,16 @@
-from mongoengine import ValidationError
+from django.http import Http404
+from mongoengine import ValidationError, DoesNotExist
 from mongoengine.queryset.base import BaseQuerySet
 from rest_framework import generics as drf_generics
 from rest_framework import mixins
+
+
+def get_object_or_404(queryset, *args, **kwargs):
+    """ replacement of rest_framework.generics and django.shrtcuts analogues """
+    try:
+        return queryset.get(*args, **kwargs)
+    except (ValueError, TypeError, DoesNotExist):
+        raise Http404()
 
 
 class GenericAPIView(drf_generics.GenericAPIView):
@@ -33,13 +42,8 @@ class GenericAPIView(drf_generics.GenericAPIView):
 
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
 
-        try:
-            obj = queryset.get(**filter_kwargs)
-        except (queryset._document.DoesNotExist, ValidationError):
-            from django.http import Http404
-            raise Http404('No %s matches the given query.' % queryset._document._class_name)
+        obj = get_object_or_404(queryset, **filter_kwargs)
 
-        # May raise a permission denied
         self.check_object_permissions(self.request, obj)
 
         return obj

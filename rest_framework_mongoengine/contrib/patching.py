@@ -18,9 +18,6 @@ class PatchItem(DictField):
         value['path'] = tuple(value['path'].split('/')[1:])
         return value
 
-    def to_representation(self, value):
-        return {value[0]: value[1]}
-
 
 class Patch(ListSerializer):
     """ RFC 6902 json-patch
