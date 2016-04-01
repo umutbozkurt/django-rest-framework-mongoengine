@@ -23,6 +23,7 @@ class DumbDocument(Document):
     intlst_fld = fields.ListField(fields.IntField())
     intdct_fld = fields.MapField(fields.IntField())
     emb = fields.EmbeddedDocumentField(DumbEmbedded)
+    emb_lst = fields.EmbeddedDocumentListField(DumbEmbedded)
 
 
 class DumbSerializer(DocumentSerializer):
@@ -168,6 +169,83 @@ class TestPatchSerializedParsing(TestCase):
         assert patch.validated_data == expected
 
 
+class TestPatchApplying(TestCase):
+    def tearDown(self):
+        DumbDocument.drop_collection()
+
+    def test_patch_obj(self):
+        objects = [
+            DumbDocument.objects.create(name="dumb1", int_fld=1, lst_fld=['a', 'b', 'c'], emb=DumbEmbedded(name="emb1")),
+            DumbDocument.objects.create(name="dumb2", int_fld=2, lst_fld=['b', 'c', 'd'], emb=DumbEmbedded(name="emb2")),
+            DumbDocument.objects.create(name="dumb3", int_fld=3, lst_fld=['d', 'e', 'f'], emb=DumbEmbedded(name="emb3"))
+        ]
+
+        patch = Patch(data=[{'path': '/int_fld', 'op': 'inc', 'value': 100},
+                            {'path': '/lst_fld', 'op': 'push', 'value': 'z'},
+                            {'path': '/dct_fld/foo', 'op': 'set', 'value': "f"},
+                            {'path': '/dct_fld/bar', 'op': 'set', 'value': "b"},
+                            {'path': '/emb/name', 'op': 'set', 'value': "Foo"}])
+
+        assert patch.is_valid(), patch.errors
+
+        obj = DumbDocument.objects.get(name="dumb2")
+        patch.update_queryset(obj)
+
+        for o in objects:
+            o.reload()
+        assert [o.int_fld for o in objects] == [1, 102, 3]
+        assert [o.lst_fld for o in objects] == [['a', 'b', 'c'], ['b', 'c', 'd', 'z'], ['d', 'e', 'f']]
+        assert [o.dct_fld for o in objects] == [{}, {'foo': 'f', 'bar': 'b'}, {}]
+        assert [o.emb.name for o in objects] == ["emb1", "Foo", "emb3"]
+
+    def test_patch_set(self):
+        objects = [
+            DumbDocument.objects.create(name="dumb1", int_fld=1, lst_fld=['a', 'b', 'c'], emb=DumbEmbedded(name="emb1")),
+            DumbDocument.objects.create(name="dumb2", int_fld=2, lst_fld=['b', 'c', 'd'], emb=DumbEmbedded(name="emb2")),
+            DumbDocument.objects.create(name="dumb3", int_fld=3, lst_fld=['d', 'e', 'f'], emb=DumbEmbedded(name="emb3"))
+        ]
+
+        patch = Patch(data=[{'path': '/int_fld', 'op': 'inc', 'value': 100},
+                            {'path': '/lst_fld', 'op': 'push', 'value': 'z'},
+                            {'path': '/emb/name', 'op': 'set', 'value': "Foo"}])
+
+        assert patch.is_valid(), patch.errors
+
+        queryset = DumbDocument.objects.all()
+        patch.update_queryset(queryset)
+
+        for o in objects:
+            o.reload()
+        assert [o.int_fld for o in objects] == [101, 102, 103]
+        assert [o.lst_fld for o in objects] == [['a', 'b', 'c', 'z'], ['b', 'c', 'd', 'z'], ['d', 'e', 'f', 'z']]
+        assert [o.emb.name for o in objects] == ["Foo", "Foo", "Foo"]
+
+    def test_patch_matched(self):
+        objects = [
+            DumbDocument.objects.create(name="dumb1", emb_lst=[DumbEmbedded(name="dumb1emb1", numb=11),
+                                                               DumbEmbedded(name="dumb1emb2", numb=12),
+                                                               DumbEmbedded(name="dumb1emb3", numb=13)]),
+            DumbDocument.objects.create(name="dumb2", emb_lst=[DumbEmbedded(name="dumb2emb1", numb=21),
+                                                               DumbEmbedded(name="dumb2emb2", numb=22),
+                                                               DumbEmbedded(name="dumb2emb3", numb=23)]),
+            DumbDocument.objects.create(name="dumb3", emb_lst=[DumbEmbedded(name="dumb3emb1", numb=31),
+                                                               DumbEmbedded(name="dumb3emb2", numb=32),
+                                                               DumbEmbedded(name="dumb3emb3", numb=33)]),
+        ]
+
+        patch = Patch(data=[{'path': "/emb_lst/S/name", 'op': 'set', 'value': "winner"}])
+        assert patch.is_valid(), patch.errors
+
+        queryset = DumbDocument.objects.filter(emb_lst__numb=22)
+        patch.update_queryset(queryset)
+        for o in objects:
+            o.reload()
+
+        for o in objects:
+            for e in o.emb_lst:
+                assert e.numb != 22 or e.name == "winner"
+
+
 class TestView(PatchModelMixin, GenericViewSet):
     queryset = DumbDocument.objects
 
@@ -175,52 +253,40 @@ class TestView(PatchModelMixin, GenericViewSet):
 class TestPatchingView(APITestCase):
     client_class = APIRequestFactory
 
-    def setUp(self):
-        self.objects = [
-            DumbDocument.objects.create(name="dumb1", int_fld=1, emb_fld=DumbEmbedded(items=['a', 'b', 'c'])),
-            DumbDocument.objects.create(name="dumb2", int_fld=2, emb_fld=DumbEmbedded(items=['b', 'c', 'd'])),
-            DumbDocument.objects.create(name="dumb3", int_fld=3, emb_fld=DumbEmbedded(items=['d', 'e', 'f']))
-        ]
-
     def tearDown(self):
         DumbDocument.drop_collection()
 
-    def test_obj_patch_plain(self):
-        patch = [{'path': '/foo', 'op': 'set', 'value': 200}]
+    def test_patch_obj(self):
+        objects = [
+            DumbDocument.objects.create(name="dumb1", lst_fld=['a', 'b', 'c']),
+            DumbDocument.objects.create(name="dumb2", lst_fld=['b', 'c', 'd']),
+            DumbDocument.objects.create(name="dumb3", lst_fld=['d', 'e', 'f'])
+        ]
+
+        patch = [{'path': '/lst_fld', 'op': 'push', 'value': 'z'}]
 
         view = TestView.as_view({'patch': 'modify_obj'})
         req = self.client.patch("", patch, format='json')
-        res = view(req, id=self.objects[1].id)
+        res = view(req, id=objects[1].id)
         assert res.status_code == 204
 
-        for o in self.objects:
+        for o in objects:
             o.reload()
-        assert [o.int_fld for o in self.objects] == [1, 200, 3]
+        assert [o.lst_fld for o in objects] == [['a', 'b', 'c'], ['b', 'c', 'd', 'z'], ['d', 'e', 'f']]
 
-    def test_obj_patch_compl(self):
-        patch = [{'path': '/emb_fld/items', 'op': 'push', 'value': 'z'},
-                 {'path': '/int_fld', 'op': 'inc', 'value': 10}]
+    def test_patch_set(self):
+        objects = [
+            DumbDocument.objects.create(name="dumb1", lst_fld=['a', 'b', 'c']),
+            DumbDocument.objects.create(name="dumb2", lst_fld=['b', 'c', 'd']),
+            DumbDocument.objects.create(name="dumb3", lst_fld=['d', 'e', 'f'])
+        ]
+        patch = [{'path': '/lst_fld', 'op': 'push', 'value': 'z'}]
 
-        view = TestView.as_view({'patch': 'modify_obj'})
+        view = TestView.as_view({'patch': 'modify_set'})
         req = self.client.patch("", patch, format='json')
-        res = view(req, id=self.objects[1].id)
+        res = view(req)
         assert res.status_code == 204
 
-        for o in self.objects:
+        for o in objects:
             o.reload()
-        assert [o.int_fld for o in self.objects] == [1, 12, 3]
-        assert [o.emb_fld.items for o in self.objects] == [['a', 'b', 'c'], ['b', 'c', 'd', 'z'], ['d', 'e', 'f']]
-
-    def test_obj_patch_same(self):
-        patch = [{'path': '/emb_fld/items', 'op': 'pull', 'value': 'a'},
-                 {'path': '/emb_fld/items', 'op': 'push', 'value': 'x'},
-                 {'path': '/emb_fld/items', 'op': 'push', 'value': 'y'}]
-
-        view = TestView.as_view({'patch': 'modify_obj'})
-        req = self.client.patch("", patch, format='json')
-        res = view(req, id=self.objects[0].id)
-        assert res.status_code == 204
-
-        for o in self.objects:
-            o.reload()
-        assert [o.emb_fld.items for o in self.objects] == [['b', 'c', 'x', 'y'], ['b', 'c', 'd'], ['d', 'e', 'f']]
+        assert [o.lst_fld for o in objects] == [['a', 'b', 'c', 'z'], ['b', 'c', 'd', 'z'], ['d', 'e', 'f', 'z']]
