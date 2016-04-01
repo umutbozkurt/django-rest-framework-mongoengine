@@ -1,11 +1,8 @@
 import re
-from collections import OrderedDict
 from rest_framework.serializers import ListSerializer, DictField
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
-
-import pdb
 
 
 def get_field_for_path(serializer, path):
@@ -40,8 +37,24 @@ class PatchItem(DictField):
                 field = get_field_for_path(self.parent.serializer, value['path'])
             except KeyError as e:
                 raise ValidationError({'path': "Missing elem: '%s'" % e.args[0]})
-            if field is not None:
-                value['value'] = field.to_internal_value(value['value'])
+
+            # import pdb; pdb.set_trace()
+
+            if value['op'] in ('set', 'inc', 'dec'):
+                if field is not None:
+                    value['value'] = field.to_internal_value(value['value'])
+            elif value['op'] in ('push', 'add_to_set'):
+                field = getattr(field, 'child')
+                if field is not None:
+                    value['value'] = field.to_internal_value(value['value'])
+            elif value['op'] in ('unset', 'pull', 'pull_all', 'min', 'max'):
+                if value['value'] is not None:
+                    raise ValidationError({'value': "Value for '%s' expected to be null" % value['op']})
+            elif value['op'] in ('pop',):
+                try:
+                    value['value'] = int(value['value'])
+                except:
+                    raise ValidationError({'value': "Integer expected for '%s'" % value['op']})
 
         return value
 
@@ -61,7 +74,7 @@ class Patch(ListSerializer):
     child = PatchItem()
 
     def __init__(self, serializer=None, *args, **kwargs):
-        self.serializer = serializer() if serializer is not None else None
+        self.serializer = serializer if serializer is not None else None
         super().__init__(*args, **kwargs)
 
     def update_queryset(self, queryset):
@@ -86,7 +99,7 @@ class PatchModelMixin():
         return self.modify_queryset(request, self.get_object())
 
     def modify_queryset(self, request, queryset):
-        patch = Patch(self.serializer_class, data=request.data)
+        patch = Patch(self.get_serializer(), data=request.data)
         patch.is_valid(raise_exception=True)
         self.perform_modify(queryset, patch)
         return Response(status=status.HTTP_204_NO_CONTENT)
