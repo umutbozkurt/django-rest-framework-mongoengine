@@ -2,6 +2,7 @@ Django Rest Framework Mongoengine
 =================================
 
 [![Build Status](https://travis-ci.org/BurkovBA/django-rest-framework-mongoengine.svg?branch=master)](https://travis-ci.org/BurkovBA/django-rest-framework-mongoengine)
+[![codecov](https://codecov.io/gh/BurkovBA/django-rest-framework-mongoengine/branch/master/graph/badge.svg)](https://codecov.io/gh/BurkovBA/django-rest-framework-mongoengine)
 
 The package provides [mongoengine](mongoengine.org) support for [django-rest-framework](https://github.com/tomchristie/django-rest-framework)
 
