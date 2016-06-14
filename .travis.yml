@@ -1,0 +1,38 @@
+language: python
+
+python:
+    - "3.5"
+
+sudo: false
+
+env:
+    - TOX_ENV=py27-lint
+    - TOX_ENV=py27-docs
+    - TOX_ENV=dj18-py27-me09
+    - TOX_ENV=dj18-py35-me09
+    - TOX_ENV=dj18-py27-me010
+    - TOX_ENV=dj18-py35-me010
+    - TOX_ENV=dj19-py27-me09
+    - TOX_ENV=dj19-py35-me09
+    - TOX_ENV=dj19-py27-me010
+    - TOX_ENV=dj19-py35-me010
+    - TOX_ENV=dj110-py27-me09
+    - TOX_ENV=dj110-py35-me09
+    - TOX_ENV=dj110-py27-me010
+    - TOX_ENV=dj110-py35-me010
+
+matrix:
+    fast_finish: true
+
+install:
+    - pip install tox "virtualenv<14" djangorestframework
+
+script:
+    - tox -e $TOX_ENV
+
+after_success:
+    - pip install codecov
+    - codecov -e TOX_ENV
+
+notifications:
+    email: false
