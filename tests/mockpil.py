@@ -1,6 +1,8 @@
 # mockup for PIL for testing purposes
-from unittest import mock
-
+try:
+    from unittest import mock  # NOQA
+except ImportError:
+    import mock  # NOQA
 
 class Image():
     format = 'jpeg'

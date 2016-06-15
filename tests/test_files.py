@@ -2,7 +2,12 @@ from __future__ import unicode_literals
 
 import os
 pwd = os.path.dirname(os.path.realpath(__file__)) + os.path.sep
-from unittest import mock
+
+try:
+    from unittest import mock  # NOQA
+except ImportError:
+    import mock  # NOQA
+
 from django.test import TestCase
 from django.core.files.uploadedfile import UploadedFile
 from mongoengine import Document, fields
