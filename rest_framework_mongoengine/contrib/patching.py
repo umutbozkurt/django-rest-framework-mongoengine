@@ -75,7 +75,7 @@ class Patch(ListSerializer):
 
     def __init__(self, serializer=None, *args, **kwargs):
         self.serializer = serializer if serializer is not None else None
-        super().__init__(*args, **kwargs)
+        super(Patch, self).__init__(*args, **kwargs)
 
     def update_queryset(self, queryset):
         # appply all items in sequence, to avoid semeobj modification at the same query
