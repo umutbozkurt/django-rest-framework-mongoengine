@@ -1,8 +1,7 @@
 from collections import OrderedDict
 
-from django.test import TestCase
-
 import pytest
+from django.test import TestCase
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework import fields as drf_fields
 from rest_framework.compat import unicode_repr

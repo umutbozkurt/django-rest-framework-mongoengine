@@ -11,11 +11,10 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
+import pytest
 from bson import ObjectId
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
-
-import pytest
 from mongoengine import Document, fields
 from rest_framework import serializers
 from rest_framework.compat import unicode_repr
