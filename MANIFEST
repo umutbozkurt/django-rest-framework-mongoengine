@@ -4,6 +4,7 @@ setup.py
 rest_framework_mongoengine/__init__.py
 rest_framework_mongoengine/fields.py
 rest_framework_mongoengine/generics.py
+rest_framework_mongoengine/patching.py
 rest_framework_mongoengine/repr.py
 rest_framework_mongoengine/routers.py
 rest_framework_mongoengine/serializers.py
