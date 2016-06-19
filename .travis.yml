@@ -9,7 +9,8 @@ sudo: false
 
 env:
     - TOX_ENV=py27-lint
-    - TOX_ENV=py27-docs
+# We don't have documentation source in the repo, so no py27-docs yet:
+#    - TOX_ENV=py27-docs
     - TOX_ENV=dj18-py27-me09
     - TOX_ENV=dj18-py35-me09
     - TOX_ENV=dj18-py27-me010
