@@ -530,10 +530,60 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
         # skip the valaidators
         return []
 
-    def to_internal_value(self, data):
-        # run nested validation and convert to document instance
-        data = super(EmbeddedDocumentSerializer, self).to_internal_value(data)
-        return self.Meta.model(**data)
+    # def to_internal_value(self, data):
+    #     # run nested validation and convert to document instance
+    #     data = super(EmbeddedDocumentSerializer, self).to_internal_value(data)
+    #     return self.Meta.model(**data)
+
+    def create(self, validated_data):
+        """ do not perform instance.save """
+        raise_errors_on_nested_writes('create', self, validated_data)
+        ModelClass = self.Meta.model
+        try:
+            instance = ModelClass(**validated_data)
+        except TypeError as exc:
+            msg = (
+                'Got a `TypeError` when calling `%s.objects.create()`. '
+                'This may be because you have a writable field on the '
+                'serializer class that is not a valid argument to '
+                '`%s.objects.create()`. You may need to make the field '
+                'read-only, or override the %s.create() method to handle '
+                'this correctly.\nOriginal exception text was: %s.' %
+                (
+                    ModelClass.__name__,
+                    ModelClass.__name__,
+                    type(self).__name__,
+                    exc
+                )
+            )
+            raise TypeError(msg)
+        except me_ValidationError as exc:
+            msg = (
+                'Got a `ValidationError` when calling `%s.objects.create()`. '
+                'This may be because request data satisfies serializer validations '
+                'but not Mongoengine`s. You may need to check consistency between '
+                '%s and %s.\nIf that is not the case, please open a ticket '
+                'regarding this issue on https://github.com/umutbozkurt/django-rest-framework-mongoengine/issues'
+                '\nOriginal exception was: %s' %
+                (
+                    ModelClass.__name__,
+                    ModelClass.__name__,
+                    type(self).__name__,
+                    exc
+                )
+            )
+            raise me_ValidationError(msg)
+
+        return instance
+
+    def update(self, instance, validated_data):
+        """ do not perform instance.save """
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        return instance
 
 
 class DynamicDocumentSerializer(DocumentSerializer):
