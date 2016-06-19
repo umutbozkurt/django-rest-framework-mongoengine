@@ -38,16 +38,14 @@ class PatchItem(DictField):
             except KeyError as e:
                 raise ValidationError({'path': "Missing elem: '%s'" % e.args[0]})
 
-            # import pdb; pdb.set_trace()
-
             if value['op'] in ('set', 'inc', 'dec'):
                 if field is not None:
                     value['value'] = field.to_internal_value(value['value'])
-            elif value['op'] in ('push', 'add_to_set'):
+            elif value['op'] in ('push', 'pull', 'add_to_set'):
                 field = getattr(field, 'child')
                 if field is not None:
                     value['value'] = field.to_internal_value(value['value'])
-            elif value['op'] in ('unset', 'pull', 'pull_all', 'min', 'max'):
+            elif value['op'] in ('unset', 'pull_all', 'min', 'max'):
                 if value['value'] is not None:
                     raise ValidationError({'value': "Value for '%s' expected to be null" % value['op']})
             elif value['op'] in ('pop',):
