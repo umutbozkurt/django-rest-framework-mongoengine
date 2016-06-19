@@ -21,8 +21,6 @@ except ImportError:
     import mock  # NOQA
 
 
-
-
 sys.modules['PIL'] = mockpil
 fields.Image = mockpil.Image
 fields.ImageOps = mockpil.ImageOps
