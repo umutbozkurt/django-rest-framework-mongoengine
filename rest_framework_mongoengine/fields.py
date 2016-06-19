@@ -311,6 +311,8 @@ class ComboReferenceField(ReferenceField):
             return super(ComboReferenceField, self).to_internal_value(value)
         if '_id' in value:
             self.fail('invalid_input')
+        if 'id' in value:
+            return super(ComboReferenceField, self).to_internal_value(value['id'])
 
         ser = self.serializer(data=value)
         ser.is_valid(raise_exception=True)
@@ -318,8 +320,16 @@ class ComboReferenceField(ReferenceField):
 
         return obj
 
+    @classmethod
+    def get_depth(cls, obj):
+        if obj.parent is None:
+            return 0
+        if hasattr(obj.parent, 'Meta'):
+            return getattr(obj.parent.Meta, 'depth', 0)
+        return cls.get_depth(obj.parent)
+
     def to_representation(self, value):
-        if self.parent is None or getattr(self.parent.Meta, 'depth', 0) == 0:
+        if self.get_depth(self) == 0:
             return super(ComboReferenceField, self).to_representation(value)
 
         assert isinstance(value, (Document, DBRef))
