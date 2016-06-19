@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-import pytest
-
 from django.test import TestCase
 from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr

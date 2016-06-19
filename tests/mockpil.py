@@ -4,7 +4,8 @@ try:
 except ImportError:
     import mock  # NOQA
 
-class Image():
+
+class Image(object):
     format = 'jpeg'
     size = (133, 100)
     info = {

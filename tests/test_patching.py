@@ -138,7 +138,7 @@ class TestPatchParsing(TestCase):
 
     def test_parsing_embedded(self):
         patch = Patch(DumbSerializer(), data=[
-            {'path': "/emb", 'op': "set", 'value': { 'name': "Foo", 'numb': "123"}}
+            {'path': "/emb", 'op': "set", 'value': {'name': "Foo", 'numb': "123"}}
         ])
         assert patch.is_valid(), patch.errors
         expected = [
@@ -200,15 +200,30 @@ class TestPatchApplying(TestCase):
 
     def test_patch_matched(self):
         objects = [
-            PatchingDumbDocument.objects.create(name="dumb1", emb_lst=[PatchingDumbEmbedded(name="dumb1emb1", numb=11),
-                                                               PatchingDumbEmbedded(name="dumb1emb2", numb=12),
-                                                               PatchingDumbEmbedded(name="dumb1emb3", numb=13)]),
-            PatchingDumbDocument.objects.create(name="dumb2", emb_lst=[PatchingDumbEmbedded(name="dumb2emb1", numb=21),
-                                                               PatchingDumbEmbedded(name="dumb2emb2", numb=22),
-                                                               PatchingDumbEmbedded(name="dumb2emb3", numb=23)]),
-            PatchingDumbDocument.objects.create(name="dumb3", emb_lst=[PatchingDumbEmbedded(name="dumb3emb1", numb=31),
-                                                               PatchingDumbEmbedded(name="dumb3emb2", numb=32),
-                                                               PatchingDumbEmbedded(name="dumb3emb3", numb=33)]),
+            PatchingDumbDocument.objects.create(
+                name="dumb1",
+                emb_lst=[
+                    PatchingDumbEmbedded(name="dumb1emb1", numb=11),
+                    PatchingDumbEmbedded(name="dumb1emb2", numb=12),
+                    PatchingDumbEmbedded(name="dumb1emb3", numb=13)
+                ]
+            ),
+            PatchingDumbDocument.objects.create(
+                name="dumb2",
+                emb_lst=[
+                    PatchingDumbEmbedded(name="dumb2emb1", numb=21),
+                    PatchingDumbEmbedded(name="dumb2emb2", numb=22),
+                    PatchingDumbEmbedded(name="dumb2emb3", numb=23)
+                ]
+            ),
+            PatchingDumbDocument.objects.create(
+                name="dumb3",
+                emb_lst=[
+                    PatchingDumbEmbedded(name="dumb3emb1", numb=31),
+                    PatchingDumbEmbedded(name="dumb3emb2", numb=32),
+                    PatchingDumbEmbedded(name="dumb3emb3", numb=33)
+                ]
+            ),
         ]
 
         patch = Patch(data=[{'path': "/emb_lst/S/name", 'op': 'set', 'value': "winner"}])

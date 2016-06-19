@@ -1,5 +1,5 @@
 from django.http import Http404
-from mongoengine import ValidationError, DoesNotExist
+from mongoengine import DoesNotExist
 from mongoengine.queryset.base import BaseQuerySet
 from rest_framework import generics as drf_generics
 from rest_framework import mixins

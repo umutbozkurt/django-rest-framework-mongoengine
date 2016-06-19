@@ -17,8 +17,6 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .utils import dedent
 
-import pytest
-
 from . import mockpil
 import sys
 sys.modules['PIL'] = mockpil
