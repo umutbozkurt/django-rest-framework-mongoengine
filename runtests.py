@@ -14,7 +14,7 @@ PYTEST_ARGS = {
 
 FLAKE8_ARGS = ['rest_framework_mongoengine', 'tests', '--ignore=E501']
 
-ISORT_ARGS = ['--recursive', '--check-only', '--verbose', 'rest_framework_mongoengine', 'tests']
+ISORT_ARGS = ['--recursive', '--diff', '--verbose', 'rest_framework_mongoengine', 'tests']
 
 sys.path.append(os.path.dirname(__file__))
 
