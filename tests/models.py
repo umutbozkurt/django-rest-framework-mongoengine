@@ -1,7 +1,7 @@
 """ all models shared in tests
 class names should be unique across whole project
 """
-from mongoengine import Document, EmbeddedDocument, DynamicDocument, fields
+from mongoengine import Document, DynamicDocument, EmbeddedDocument, fields
 
 
 class DumbDocument(Document):

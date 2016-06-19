@@ -1,6 +1,18 @@
 from __future__ import unicode_literals
 
 import os
+import sys
+
+from django.core.files.uploadedfile import UploadedFile
+from django.test import TestCase
+
+from mongoengine import Document, fields
+from rest_framework.compat import unicode_repr
+from rest_framework_mongoengine.serializers import DocumentSerializer
+
+from . import mockpil
+from .utils import dedent
+
 pwd = os.path.dirname(os.path.realpath(__file__)) + os.path.sep
 
 try:
@@ -8,17 +20,9 @@ try:
 except ImportError:
     import mock  # NOQA
 
-from django.test import TestCase
-from django.core.files.uploadedfile import UploadedFile
-from mongoengine import Document, fields
-from rest_framework.compat import unicode_repr
 
-from rest_framework_mongoengine.serializers import DocumentSerializer
 
-from .utils import dedent
 
-from . import mockpil
-import sys
 sys.modules['PIL'] = mockpil
 fields.Image = mockpil.Image
 fields.ImageOps = mockpil.ImageOps

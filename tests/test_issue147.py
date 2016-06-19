@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
 from django.test import TestCase
+
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework import fields as drf_fields
-
 from rest_framework_mongoengine.serializers import (DocumentSerializer,
                                                     EmbeddedDocumentSerializer)
 

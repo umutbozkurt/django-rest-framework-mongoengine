@@ -1,11 +1,11 @@
 from collections import OrderedDict, namedtuple
 
-import mongoengine
 from django.utils.text import capfirst
-from mongoengine import EmbeddedDocument
-from mongoengine import fields as me_fields
-from rest_framework.utils.field_mapping import needs_label
 
+import mongoengine
+from mongoengine import fields as me_fields
+from mongoengine import EmbeddedDocument
+from rest_framework.utils.field_mapping import needs_label
 from rest_framework_mongoengine.validators import UniqueValidator
 
 FieldInfo = namedtuple('FieldResult', [

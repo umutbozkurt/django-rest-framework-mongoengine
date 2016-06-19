@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
 from django.test import TestCase
+
 from rest_framework import permissions, status
 from rest_framework.test import APIRequestFactory
-
 from rest_framework_mongoengine import generics
 from rest_framework_mongoengine.serializers import DocumentSerializer
 

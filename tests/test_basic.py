@@ -14,13 +14,12 @@ from uuid import UUID
 from bson import ObjectId
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
+
+import pytest
 from mongoengine import Document, fields
 from rest_framework import serializers
 from rest_framework.compat import unicode_repr
-
 from rest_framework_mongoengine.serializers import DocumentSerializer
-
-import pytest
 
 from .utils import dedent
 

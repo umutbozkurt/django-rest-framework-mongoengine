@@ -1,8 +1,9 @@
 import re
-from rest_framework.serializers import ListSerializer, DictField
-from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+from rest_framework.serializers import DictField, ListSerializer
 
 
 def get_field_for_path(serializer, path):

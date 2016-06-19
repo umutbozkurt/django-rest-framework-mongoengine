@@ -1,6 +1,5 @@
 from rest_framework import mixins
 from rest_framework.viewsets import ViewSetMixin
-
 from rest_framework_mongoengine.generics import GenericAPIView
 
 

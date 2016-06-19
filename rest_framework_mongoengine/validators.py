@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 from rest_framework import validators
 from rest_framework.compat import unicode_to_repr
 from rest_framework.exceptions import ValidationError
-
 from rest_framework_mongoengine.repr import smart_repr
 
 

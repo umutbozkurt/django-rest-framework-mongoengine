@@ -1,11 +1,11 @@
 from collections import OrderedDict
 
 from django.test import TestCase
+
 from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import IntegerField
 from rest_framework.serializers import Serializer
-
 from rest_framework_mongoengine.fields import (ComboReferenceField,
                                                GenericReferenceField,
                                                ReferenceField)

@@ -1,18 +1,19 @@
 from collections import OrderedDict
-from django.test import TestCase
-from mongoengine import Document, EmbeddedDocument, fields
-from rest_framework.compat import unicode_repr
 
-from rest_framework.serializers import Serializer, Field
+from django.test import TestCase
+
+import pytest
+from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework import fields as drf_fields
-from rest_framework_mongoengine.fields import DocumentField, GenericEmbeddedField
+from rest_framework.compat import unicode_repr
+from rest_framework.serializers import Field, Serializer
+from rest_framework_mongoengine.fields import (DocumentField,
+                                               GenericEmbeddedField)
 from rest_framework_mongoengine.serializers import (DocumentSerializer,
                                                     EmbeddedDocumentSerializer)
 
-from .utils import dedent, FieldTest
 from .models import DumbEmbedded
-
-import pytest
+from .utils import FieldTest, dedent
 
 
 class OrderedEmbedded(EmbeddedDocument):

@@ -1,11 +1,10 @@
 from django.test import TestCase
 
 from mongoengine import Document, EmbeddedDocument, fields
-from rest_framework.test import APITestCase, APIRequestFactory
-
+from rest_framework.test import APIRequestFactory, APITestCase
+from rest_framework_mongoengine.contrib.patching import Patch, PatchModelMixin
 from rest_framework_mongoengine.serializers import DocumentSerializer
 from rest_framework_mongoengine.viewsets import GenericViewSet
-from rest_framework_mongoengine.contrib.patching import Patch, PatchModelMixin
 
 
 class PatchingDumbEmbedded(EmbeddedDocument):
