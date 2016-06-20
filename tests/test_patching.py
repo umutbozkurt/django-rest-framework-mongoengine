@@ -180,21 +180,36 @@ class TestPatchApplying(TestCase):
 
     def test_patch_matched(self):
         objects = [
-            PatchingDumbDocument.objects.create(name="dumb1", emb_lst=[DumbEmbedded(name="dumb1emb1", foo=11),
-                                                               DumbEmbedded(name="dumb1emb2", foo=12),
-                                                               DumbEmbedded(name="dumb1emb3", foo=13)]),
-            PatchingDumbDocument.objects.create(name="dumb2", emb_lst=[DumbEmbedded(name="dumb2emb1", foo=21),
-                                                               DumbEmbedded(name="dumb2emb2", foo=22),
-                                                               DumbEmbedded(name="dumb2emb3", foo=23)]),
-            PatchingDumbDocument.objects.create(name="dumb3", emb_lst=[DumbEmbedded(name="dumb3emb1", foo=31),
-                                                               DumbEmbedded(name="dumb3emb2", foo=32),
-                                                               DumbEmbedded(name="dumb3emb3", foo=33)]),
+            PatchingDumbDocument.objects.create(
+                name="dumb1",
+                emb_lst=[
+                    DumbEmbedded(name="dumb1emb1", foo=11),
+                    DumbEmbedded(name="dumb1emb2", foo=12),
+                    DumbEmbedded(name="dumb1emb3", foo=13)
+                ]
+            ),
+            PatchingDumbDocument.objects.create(
+                name="dumb2",
+                emb_lst=[
+                    DumbEmbedded(name="dumb2emb1", foo=21),
+                    DumbEmbedded(name="dumb2emb2", foo=22),
+                    DumbEmbedded(name="dumb2emb3", foo=23)
+                ]
+            ),
+            PatchingDumbDocument.objects.create(
+                name="dumb3",
+                emb_lst=[
+                    DumbEmbedded(name="dumb3emb1", foo=31),
+                    DumbEmbedded(name="dumb3emb2", foo=32),
+                    DumbEmbedded(name="dumb3emb3", foo=33)
+                ]
+            ),
         ]
 
         patch = Patch(data=[{'path': "/emb_lst/S/name", 'op': 'set', 'value': "winner"}])
         assert patch.is_valid(), patch.errors
 
-        queryset = DumbDocument.objects.filter(emb_lst__foo=22)
+        queryset = PatchingDumbDocument.objects.filter(emb_lst__foo=22)
         patch.update_queryset(queryset)
         for o in objects:
             o.reload()

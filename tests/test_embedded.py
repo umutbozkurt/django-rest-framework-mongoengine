@@ -7,15 +7,13 @@ from rest_framework import fields as drf_fields
 from rest_framework.compat import unicode_repr
 from rest_framework.serializers import Field, Serializer
 
-from rest_framework_mongoengine.fields import (
-    DocumentField, GenericEmbeddedField
-)
+from rest_framework_mongoengine.fields import DocumentField
 from rest_framework_mongoengine.serializers import (
     DocumentSerializer, EmbeddedDocumentSerializer
 )
 
 from .models import DumbEmbedded, OtherEmbedded
-from .utils import dedent, FieldTest
+from .utils import dedent
 
 
 class NestedEmbeddedDoc(EmbeddedDocument):
