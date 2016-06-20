@@ -21,8 +21,8 @@ class DumbEmbedded(EmbeddedDocument):
 
 
 class OtherEmbedded(EmbeddedDocument):
-    name = fields.StringField()
-    bar = fields.IntField()
+    name = fields.StringField(required=True)
+    bar = fields.IntField(required=True)
 
 
 class DumbDynamic(DynamicDocument):

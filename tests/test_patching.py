@@ -7,12 +7,7 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 from rest_framework_mongoengine.viewsets import GenericViewSet
 from rest_framework_mongoengine.contrib.patching import Patch, PatchModelMixin
 
-
-class DumbEmbedded(EmbeddedDocument):
-    name = fields.StringField()
-    numb = fields.IntField()
-    items = fields.ListField(fields.IntField())
-    emb = fields.EmbeddedDocumentField('self')
+from .models import DumbEmbedded
 
 
 class DumbDocument(Document):
@@ -97,16 +92,12 @@ class TestPatchParsing(TestCase):
     def test_parsing_nested_values(self):
         patch = Patch(DumbSerializer(), data=[
             {'path': "/emb/name", 'op': "set", 'value': "123"},
-            {'path': "/emb/numb", 'op': "set", 'value': "123"},
-            {'path': "/emb/emb/emb/name", 'op': "set", 'value': "123"},
-            {'path': "/emb/emb/emb/numb", 'op': "set", 'value': "123"},
+            {'path': "/emb/foo", 'op': "set", 'value': "123"},
         ])
         assert patch.is_valid(), patch.errors
         expected = [
             {'path': ("emb", "name"), 'op': "set", 'value': "123"},
-            {'path': ("emb", "numb"), 'op': "set", 'value': 123},
-            {'path': ("emb", "emb", "emb", "name"), 'op': "set", 'value': "123"},
-            {'path': ("emb", "emb", "emb", "numb"), 'op': "set", 'value': 123},
+            {'path': ("emb", "foo"), 'op': "set", 'value': 123},
         ]
         assert patch.validated_data == expected
 
@@ -133,16 +124,6 @@ class TestPatchParsing(TestCase):
         expected = [
             {'path': ("dct_fld", "item"), 'op': "set", 'value': "123"},
             {'path': ("intdct_fld", "item"), 'op': "set", 'value': 123}
-        ]
-        assert patch.validated_data == expected
-
-    def test_parsing_embedded(self):
-        patch = Patch(DumbSerializer(), data=[
-            {'path': "/emb", 'op': "set", 'value': { 'name': "Foo", 'numb': "123"}}
-        ])
-        assert patch.is_valid(), patch.errors
-        expected = [
-            {'path': ("emb",), 'op': "set", 'value': DumbEmbedded(name="Foo", numb=123)}
         ]
         assert patch.validated_data == expected
 
@@ -200,28 +181,28 @@ class TestPatchApplying(TestCase):
 
     def test_patch_matched(self):
         objects = [
-            DumbDocument.objects.create(name="dumb1", emb_lst=[DumbEmbedded(name="dumb1emb1", numb=11),
-                                                               DumbEmbedded(name="dumb1emb2", numb=12),
-                                                               DumbEmbedded(name="dumb1emb3", numb=13)]),
-            DumbDocument.objects.create(name="dumb2", emb_lst=[DumbEmbedded(name="dumb2emb1", numb=21),
-                                                               DumbEmbedded(name="dumb2emb2", numb=22),
-                                                               DumbEmbedded(name="dumb2emb3", numb=23)]),
-            DumbDocument.objects.create(name="dumb3", emb_lst=[DumbEmbedded(name="dumb3emb1", numb=31),
-                                                               DumbEmbedded(name="dumb3emb2", numb=32),
-                                                               DumbEmbedded(name="dumb3emb3", numb=33)]),
+            DumbDocument.objects.create(name="dumb1", emb_lst=[DumbEmbedded(name="dumb1emb1", foo=11),
+                                                               DumbEmbedded(name="dumb1emb2", foo=12),
+                                                               DumbEmbedded(name="dumb1emb3", foo=13)]),
+            DumbDocument.objects.create(name="dumb2", emb_lst=[DumbEmbedded(name="dumb2emb1", foo=21),
+                                                               DumbEmbedded(name="dumb2emb2", foo=22),
+                                                               DumbEmbedded(name="dumb2emb3", foo=23)]),
+            DumbDocument.objects.create(name="dumb3", emb_lst=[DumbEmbedded(name="dumb3emb1", foo=31),
+                                                               DumbEmbedded(name="dumb3emb2", foo=32),
+                                                               DumbEmbedded(name="dumb3emb3", foo=33)]),
         ]
 
         patch = Patch(data=[{'path': "/emb_lst/S/name", 'op': 'set', 'value': "winner"}])
         assert patch.is_valid(), patch.errors
 
-        queryset = DumbDocument.objects.filter(emb_lst__numb=22)
+        queryset = DumbDocument.objects.filter(emb_lst__foo=22)
         patch.update_queryset(queryset)
         for o in objects:
             o.reload()
 
         for o in objects:
             for e in o.emb_lst:
-                assert e.numb != 22 or e.name == "winner"
+                assert e.foo != 22 or e.name == "winner"
 
 
 class TestView(PatchModelMixin, GenericViewSet):

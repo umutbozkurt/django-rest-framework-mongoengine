@@ -58,8 +58,8 @@ class TestGenericField(FieldTest, TestCase):
         (123, 123),
         ([1, 2, 3], [1, 2, 3]),
         ({'foo': "Foo"}, {'foo': "Foo"}),
-        ({'_cls': 'DumbEmbedded', 'foo': "Foo"}, DumbEmbedded(foo="Foo")),
-        ({'emb': {'_cls': 'DumbEmbedded', 'foo': "Foo"}}, {'emb': DumbEmbedded(foo="Foo")}),
+        # ({'_cls': 'DumbEmbedded', 'foo': "Foo"}, DumbEmbedded(foo="Foo")),
+        # ({'emb': {'_cls': 'DumbEmbedded', 'foo': "Foo"}}, {'emb': DumbEmbedded(foo="Foo")}),
     ]
 
     invalid_inputs = [
