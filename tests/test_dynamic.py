@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
 from django.test import TestCase
-
 from rest_framework import fields as drf_fields
 from rest_framework.compat import unicode_repr
+
 from rest_framework_mongoengine.serializers import DynamicDocumentSerializer
 
 from .models import DumbDynamic

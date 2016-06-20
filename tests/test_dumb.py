@@ -3,9 +3,9 @@
 from __future__ import unicode_literals
 
 from django.test import TestCase
-
 from rest_framework import fields
 from rest_framework.compat import unicode_repr
+
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
 from .models import DumbDocument

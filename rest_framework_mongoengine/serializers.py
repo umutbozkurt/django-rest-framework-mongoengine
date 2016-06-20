@@ -7,15 +7,19 @@ from rest_framework import fields as drf_fields
 from rest_framework import serializers
 from rest_framework.compat import unicode_to_repr
 from rest_framework.utils.field_mapping import ClassLookupDict
+
 from rest_framework_mongoengine import fields as drfm_fields
-from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
-                                                   UniqueValidator)
+from rest_framework_mongoengine.validators import (
+    UniqueTogetherValidator, UniqueValidator
+)
 
 from .repr import serializer_repr
-from .utils import (COMPOUND_FIELD_TYPES, get_field_info, get_field_kwargs,
-                    get_generic_embedded_kwargs, get_nested_embedded_kwargs,
-                    get_nested_relation_kwargs, get_relation_kwargs,
-                    has_default, is_abstract_model)
+from .utils import (
+    COMPOUND_FIELD_TYPES, get_field_info, get_field_kwargs,
+    get_generic_embedded_kwargs, get_nested_embedded_kwargs,
+    get_nested_relation_kwargs, get_relation_kwargs, has_default,
+    is_abstract_model
+)
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
