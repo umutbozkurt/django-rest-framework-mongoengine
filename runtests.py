@@ -97,7 +97,7 @@ if __name__ == "__main__":
                 '--cov-report',
                 'xml',
                 '--cov',
-                'rest_framework'] + pytest_args
+                'rest_framework_mongoengine'] + pytest_args
 
         if first_arg.startswith('-'):
             # `runtests.py [flags]`
