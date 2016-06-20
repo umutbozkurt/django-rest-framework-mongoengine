@@ -23,29 +23,7 @@ from .utils import (
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
-    # *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to work automagically ***
-
-    # Give explicit errors when users attempt to pass writable nested data.
-
-    # If we don't do this explicitly they'd get a less helpful error when
-    # calling `.save()` on the serializer.
-
-    # We don't *automatically* support these sorts of nested writes because
-    # there are too many ambiguities to define a default behavior.
-
-    # Eg. Suppose we have a `UserSerializer` with a nested profile. How should
-    # we handle the case of an update, where the `profile` relationship does
-    # not exist? Any of the following might be valid:
-
-    # * Raise an application error.
-    # * Silently ignore the nested part of the update.
-    # * Automatically create a profile instance.
-
-    # Ensure we don't have a writable nested field. For example:
-    #
-    # class UserSerializer(ModelSerializer):
-    #     ...
-    #     profile = ProfileSerializer()
+    # *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to pass ***
     assert not any(
         isinstance(field, serializers.BaseSerializer) and
         not isinstance(field, EmbeddedDocumentSerializer) and
@@ -62,11 +40,6 @@ def raise_errors_on_nested_writes(method_name, serializer, validated_data):
         )
     )
 
-    # Ensure we don't have a writable dotted-source field. For example:
-    #
-    # class UserSerializer(ModelSerializer):
-    #     ...
-    #     address = serializer.CharField('profile.address')
     assert not any(
         '.' in field.source and (key in validated_data) and
         isinstance(validated_data[key], (list, dict))
@@ -165,13 +138,17 @@ class DocumentSerializer(serializers.ModelSerializer):
     " class to create nested serializers for embedded at max recursion "
     serializer_embedded_bottom = drf_fields.HiddenField
 
+    _saving_instances = True
+
     def create(self, validated_data):
         raise_errors_on_nested_writes('create', self, validated_data)
 
         ModelClass = self.Meta.model
         try:
+            # embedded docs automagically converted into instances
             instance = ModelClass(**validated_data)
-            instance.save()
+            if self._saving_instances:
+                instance.save()
         except TypeError as exc:
             msg = (
                 'Got a `TypeError` when calling `%s.objects.create()`. '
@@ -211,9 +188,14 @@ class DocumentSerializer(serializers.ModelSerializer):
         raise_errors_on_nested_writes('update', self, validated_data)
 
         for attr, value in validated_data.items():
+            # embedded docs should be instantiated
+            field = self.fields.get(attr, None)
+            if field and isinstance(field, EmbeddedDocumentSerializer):
+                value = field.to_instance_value(value)
             setattr(instance, attr, value)
 
-        instance.save()
+        if self._saving_instances:
+            instance.save()
 
         return instance
 
@@ -514,7 +496,9 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
     """ Serializer for EmbeddedDocuments.
 
     Skips id field and uniqueness validation.
+    When saving, skips calling instance.save
     """
+    _saving_instances = False
 
     def get_default_field_names(self, declared_fields, model_info):
         # skip id field
@@ -529,9 +513,8 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
         # skip the valaidators
         return []
 
-    def to_internal_value(self, data):
-        # run nested validation and convert to document instance
-        data = super(EmbeddedDocumentSerializer, self).to_internal_value(data)
+    def to_instance_value(self, data):
+        """ convert data to embeddded doc instance (w/out validation)"""
         return self.Meta.model(**data)
 
 
