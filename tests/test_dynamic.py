@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
-from collections import OrderedDict
+
 import json
+from collections import OrderedDict
 
 from django.test import TestCase
 from rest_framework import fields as drf_fields
