@@ -28,3 +28,9 @@ class OtherEmbedded(EmbeddedDocument):
 class DumbDynamic(DynamicDocument):
     name = fields.StringField()
     foo = fields.IntField()
+
+
+class EmbeddingDynamic(DynamicDocument):
+    name = fields.StringField()
+    foo = fields.IntField()
+    embedded = fields.EmbeddedDocumentField(DumbEmbedded)
