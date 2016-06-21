@@ -215,10 +215,10 @@ class TestEmbeddingDynamicIntegration(TestCase):
             'foo': 142,
             'bar': 143,
             'baz': u"Baz",
-            'embedded': OrderedDict({
+            'embedded': {
                 'name': 'Bright',
                 'foo': 3
-            })
+            }
         }
 
         serializer = EmbeddingDynamicSerializer(instance, data=new_data)
