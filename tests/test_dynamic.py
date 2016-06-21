@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+from collections import OrderedDict
+import json
 
 from django.test import TestCase
 from rest_framework import fields as drf_fields
@@ -208,16 +210,17 @@ class TestEmbeddingDynamicIntegration(TestCase):
         instance = self.create_instance()
 
         new_data = {
+            'name': "Ivan",
             'foo': 142,
             'bar': 143,
-            'baz': "Baz",
-            'embedded': {
+            'baz': u"Baz",
+            'embedded': OrderedDict({
                 'name': 'Bright',
                 'foo': 3
-            }
+            })
         }
 
-        serializer = TestSerializer(instance, data=new_data)
+        serializer = EmbeddingDynamicSerializer(instance, data=new_data)
         assert serializer.is_valid(), serializer.errors
 
         instance = serializer.save()
@@ -227,7 +230,13 @@ class TestEmbeddingDynamicIntegration(TestCase):
         assert instance.embedded.name == 'Bright'
         assert instance.embedded.foo == 3
 
-        assert serializer.data == new_data
+        # Same JSON data may be represented in different ways in python
+        # (dicts/OrderedDicts, unicode/string, different order)
+        # so let's just compare JSONs:
+        serializer_data_json = json.loads(json.dumps(sorted(serializer.data)))
+        new_data_json = json.loads(json.dumps(sorted(new_data)))
+
+        assert serializer_data_json == new_data_json
 
     def doCleanups(self):
         EmbeddingDynamic.drop_collection()
