@@ -5,8 +5,9 @@ from mongoengine import Document, fields
 from rest_framework import serializers
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
-                                                   UniqueValidator)
+from rest_framework_mongoengine.validators import (
+    UniqueTogetherValidator, UniqueValidator
+)
 
 from .utils import dedent
 

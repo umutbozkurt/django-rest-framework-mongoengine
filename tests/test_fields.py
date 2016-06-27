@@ -7,10 +7,12 @@ from bson import ObjectId
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 
-from rest_framework_mongoengine.fields import (DocumentField, GenericField, ObjectIdField)
+from rest_framework_mongoengine.fields import (
+    DocumentField, GenericField, ObjectIdField
+)
 
-from .utils import FieldTest
 from .models import DumbDocument, DumbEmbedded
+from .utils import FieldTest
 
 
 class TestObjectId(FieldTest, TestCase):

@@ -1,0 +1,41 @@
+language: python
+
+python:
+    - "3.5"
+
+services: mongodb
+
+sudo: false
+
+env:
+    - TOX_ENV=py27-lint
+# We don't have documentation source in the repo, so no py27-docs yet:
+#    - TOX_ENV=py27-docs
+    - TOX_ENV=dj18-py27-me09
+    - TOX_ENV=dj18-py35-me09
+    - TOX_ENV=dj18-py27-me010
+    - TOX_ENV=dj18-py35-me010
+    - TOX_ENV=dj19-py27-me09
+    - TOX_ENV=dj19-py35-me09
+    - TOX_ENV=dj19-py27-me010
+    - TOX_ENV=dj19-py35-me010
+# DRF is not yet compatible with Django1.10, but in future it should be:
+#    - TOX_ENV=dj110-py27-me09
+#    - TOX_ENV=dj110-py35-me09
+#    - TOX_ENV=dj110-py27-me010
+#    - TOX_ENV=dj110-py35-me010
+
+matrix:
+    fast_finish: true
+
+install:
+    - pip install tox "virtualenv<14" djangorestframework codecov
+
+script:
+    - tox -e $TOX_ENV
+
+after_success:
+    - codecov -e TOX_ENV
+
+notifications:
+    email: false

@@ -1,4 +1,4 @@
 Django == 1.*
 djangorestframework == 3.*
-mongoengine == 0.10.*
+mongoengine
 blinker == 1.*

@@ -1,6 +1,7 @@
 import pytest
 from rest_framework.exceptions import ValidationError
 
+
 def dedent(blocktext):
     return '\n'.join([line[12:] for line in blocktext.splitlines()[1:-1]])
 

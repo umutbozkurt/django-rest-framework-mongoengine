@@ -1,13 +1,18 @@
 from __future__ import unicode_literals
 
+import json
+from collections import OrderedDict
+
 from django.test import TestCase
 from rest_framework import fields as drf_fields
 from rest_framework.compat import unicode_repr
 
-from rest_framework_mongoengine.serializers import DynamicDocumentSerializer
+from rest_framework_mongoengine.serializers import (
+    DynamicDocumentSerializer, EmbeddedDocumentSerializer
+)
 
+from .models import DumbDynamic, DumbEmbedded, EmbeddingDynamic
 from .utils import dedent
-from .models import DumbDynamic
 
 
 class TestDynamicMapping(TestCase):
@@ -47,7 +52,7 @@ class TestSerializer(DynamicDocumentSerializer):
 
 
 class TestDynamicIntegration(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         DumbDynamic.drop_collection()
 
     def test_parsing(self):
@@ -67,7 +72,7 @@ class TestDynamicIntegration(TestCase):
         }
         assert serializer.validated_data == expected
 
-    def test_retrival(self):
+    def test_retrieval(self):
         instance = DumbDynamic.objects.create(foo=42, bar=43, baz="Baz")
         serializer = TestSerializer(instance)
         expected = {
@@ -124,3 +129,115 @@ class TestDynamicIntegration(TestCase):
             'baz': "Baz"
         }
         assert serializer.data == expected
+
+
+# Test that DynamicDocumentSerializer interprets EmbeddedDocumentSerializer
+# right.
+
+class DumbEmbeddedSerializer(EmbeddedDocumentSerializer):
+    class Meta:
+        model = DumbEmbedded
+
+
+class EmbeddingDynamicSerializer(DynamicDocumentSerializer):
+    embedded = DumbEmbeddedSerializer()
+
+    class Meta:
+        model = EmbeddingDynamic
+        fields = ('name', 'foo', 'embedded')
+
+
+class TestEmbeddingDynamicMapping(TestCase):
+    def test_repr(self):
+        expected = dedent("""
+            EmbeddingDynamicSerializer():
+                name = CharField(required=False)
+                foo = IntegerField(required=False)
+                embedded = DumbEmbeddedSerializer():
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
+        """)
+        assert unicode_repr(EmbeddingDynamicSerializer()) == expected
+
+
+class TestEmbeddingDynamicIntegration(TestCase):
+    data = {
+        'name': "Ivan",
+        'foo': 42,
+        'bar': 43,
+        'baz': "Baz",
+        'embedded': {
+            'name': 'Dumb',
+            'foo': 2
+        }
+    }
+
+    def create_instance(self):
+        return EmbeddingDynamic.objects.create(
+            name="Ivan",
+            foo=42,
+            bar=43,
+            baz="Baz",
+            embedded=DumbEmbedded(name='Dumb', foo=2)
+        )
+
+    def test_parsing(self):
+        serializer = EmbeddingDynamicSerializer(data=self.data)
+        assert serializer.is_valid(), serializer.errors
+
+        assert serializer.validated_data == self.data
+
+    def test_retrieval(self):
+        instance = self.create_instance()
+        serializer = EmbeddingDynamicSerializer(instance)
+
+        assert serializer.data == self.data
+
+    def test_create(self):
+        serializer = EmbeddingDynamicSerializer(data=self.data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.name == "Ivan"
+        assert instance.foo == 42
+        assert instance.bar == 43
+        assert instance.baz == "Baz"
+        assert instance.embedded.name == "Dumb"
+        assert instance.embedded.foo == 2
+
+        assert serializer.data == self.data
+
+    def test_update(self):
+        instance = self.create_instance()
+
+        new_data = {
+            'name': "Ivan",
+            'foo': 142,
+            'bar': 143,
+            'baz': u"Baz",
+            'embedded': {
+                'name': 'Bright',
+                'foo': 3
+            }
+        }
+
+        serializer = EmbeddingDynamicSerializer(instance, data=new_data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.foo == 142
+        assert instance.bar == 143
+        assert instance.baz == "Baz"
+        assert instance.embedded.name == 'Bright'
+        assert instance.embedded.foo == 3
+
+        # Same JSON data may be represented in different ways in python
+        # (dicts/OrderedDicts, unicode/string, different order)
+        # so let's just compare JSONs:
+        serializer_data_json = json.loads(json.dumps(sorted(serializer.data)))
+        new_data_json = json.loads(json.dumps(sorted(new_data)))
+
+        assert serializer_data_json == new_data_json
+
+    def doCleanups(self):
+        EmbeddingDynamic.drop_collection()
