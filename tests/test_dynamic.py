@@ -52,7 +52,7 @@ class TestSerializer(DynamicDocumentSerializer):
 
 
 class TestDynamicIntegration(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         DumbDynamic.drop_collection()
 
     def test_parsing(self):
