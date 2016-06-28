@@ -1,6 +1,8 @@
 Django Rest Framework Mongoengine
 =================================
 
+[![Join the chat at https://gitter.im/BurkovBA/django-rest-framework-mongoengine](https://badges.gitter.im/BurkovBA/django-rest-framework-mongoengine.svg)](https://gitter.im/BurkovBA/django-rest-framework-mongoengine?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://travis-ci.org/BurkovBA/django-rest-framework-mongoengine.svg?branch=master)](https://travis-ci.org/BurkovBA/django-rest-framework-mongoengine)
 [![codecov](https://codecov.io/gh/BurkovBA/django-rest-framework-mongoengine/branch/master/graph/badge.svg)](https://codecov.io/gh/BurkovBA/django-rest-framework-mongoengine)
 
