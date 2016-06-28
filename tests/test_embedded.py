@@ -375,6 +375,101 @@ class TestEmbeddingIntegration(TestCase):
         pass
 
 
+class TestNestedEmbeddingIntegration(TestCase):
+    def doCleanups(self):
+        NestedEmbeddingDoc.drop_collection()
+
+    def test_retrieve(self):
+        instance = NestedEmbeddingDoc.objects.create(
+            embedded=NestedEmbeddedDoc(
+                name='Foo',
+                embedded=DumbEmbedded(name="Bar")
+            )
+        )
+
+        serializer = NestedEmbeddingSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'embedded': OrderedDict((
+                ('name', "Foo"),
+                ('embedded', OrderedDict((
+                    ('name', "Bar"),
+                    ('foo', None)
+                )))
+            )),
+        }
+        assert serializer.data == expected
+
+    def test_create(self):
+        data = {
+            'embedded': {
+                'name': 'Foo',
+                'embedded': {'name': "emb"}
+            }
+        }
+
+        serializer = NestedEmbeddingSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert isinstance(instance.embedded, NestedEmbeddedDoc)
+        assert instance.embedded.name == "Foo"
+        assert isinstance(instance.embedded.embedded, DumbEmbedded)
+        assert instance.embedded.embedded.name == 'emb'
+        assert instance.embedded.embedded.foo is None
+
+        expected = {
+            'id': str(instance.id),
+            'embedded': OrderedDict((
+                ('name', "Foo"),
+                ('embedded', OrderedDict((('name', "emb"), ('foo', None))))
+            )),
+        }
+        assert serializer.data == expected
+
+    def test_update(self):
+        instance = NestedEmbeddingDoc.objects.create(
+            embedded=NestedEmbeddedDoc(
+                name='Foo',
+                embedded=DumbEmbedded(name="Bar")
+            )
+        )
+
+        data = {
+            'embedded': {
+                'name': 'Bar',
+                'embedded': {"foo": 321}
+            }
+        }
+
+        serializer = NestedEmbeddingSerializer(instance, data=data)
+
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert isinstance(instance.embedded, NestedEmbeddedDoc)
+        assert instance.embedded.name == "Bar"
+        assert isinstance(instance.embedded.embedded, DumbEmbedded)
+        assert instance.embedded.embedded.name is None
+        assert instance.embedded.embedded.foo == 321
+
+        expected = {
+            'id': str(instance.id),
+            'embedded': OrderedDict((
+                ('name', 'Bar'),
+                ('embedded', OrderedDict((
+                    ('name', None),
+                    ('foo', 321)
+                )))
+            )),
+        }
+        assert serializer.data == expected
+
+    @pytest.mark.skipif(True, reason="TODO")
+    def test_update_partial(self):
+        pass
+
+
 class ValidatingEmbeddedModel(EmbeddedDocument):
     text = fields.StringField(min_length=3)
 
