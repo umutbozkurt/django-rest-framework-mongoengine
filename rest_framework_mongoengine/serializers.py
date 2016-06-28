@@ -222,8 +222,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         '''Recursively traverses validated_data and creates EmbeddedDocuments
         of the appropriate subtype from them.
 
-        Returns a dict, analogous to validated_data, but with data of
-        EmbeddedSerializers converted to respective mongoengine instances.
+        Returns Mongonengine model instance.
         '''
         # me_data is an analogue of validated_data, but contains
         # mongoengine EmbeddedDocument instances for nested data structures,
@@ -251,6 +250,7 @@ class DocumentSerializer(serializers.ModelSerializer):
                 else:
                     me_data[field_name] = validated_value
 
+        # add the dynamic data to me_data
         for key, value in self.get_dynamic_data().items():
             me_data[key] = value
 
