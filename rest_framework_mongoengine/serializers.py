@@ -187,7 +187,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         '''
         For DynamicDocumentSerializer returns dict of data, not declared
         in serializer fields.
-
         Should be called after self.is_valid().
         '''
         result = {}
@@ -204,6 +203,20 @@ class DocumentSerializer(serializers.ModelSerializer):
             raise AssertionError(msg)
 
         return result
+
+    def to_internal_value(self, data):
+        """
+        Calls super() from DRF, but additionally creates initial_data and
+        _validated_data for nested EmbeddedDocumentSerializers, so that
+        recursive_create could make use of them.
+        """
+        ret = super(DocumentSerializer, self).to_internal_value(data)
+        for field in self._writable_fields:
+            if isinstance(field, EmbeddedDocumentSerializer):
+                field.initial_data = data[field.field_name]
+                field._validated_data = ret[field.field_name]
+
+        return ret
 
     def recursive_create(self, validated_data):
         '''Recursively traverses validated_data and creates EmbeddedDocuments
@@ -238,7 +251,7 @@ class DocumentSerializer(serializers.ModelSerializer):
                 else:
                     me_data[field_name] = validated_value
 
-        for key, value in self.get_dynamic_data():
+        for key, value in self.get_dynamic_data().items():
             me_data[key] = value
 
         # create, (save) and return mongoengine instance
@@ -594,10 +607,10 @@ class DynamicDocumentSerializer(DocumentSerializer):
 
         return ret
 
-    def to_internal_value(self, data):
-        ret = super(DocumentSerializer, self).to_internal_value(data)
-        [drf_fields.set_value(ret, [k], data[k]) for k in data if k not in ret]
-        return ret
+#    def to_internal_value(self, data):
+#        ret = super(DynamicDocumentSerializer, self).to_internal_value(data)
+#        [drf_fields.set_value(ret, [k], data[k]) for k in data if k not in ret]
+#        return ret
 
     def _map_dynamic_fields(self, document):
         dynamic_fields = {}
