@@ -147,7 +147,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         try:
             # recursively create EmbeddedDocuments from their validated data
             # before creating the document instance itself
-            instance = self.recursive_create(validated_data)
+            instance = self.recursive_save(validated_data)
         except TypeError as exc:
             msg = (
                 'Got a `TypeError` when calling `%s.objects.create()`. '
@@ -188,7 +188,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         Calls super() from DRF, but with an addition.
 
         Creates initial_data and _validated_data for nested
-        EmbeddedDocumentSerializers, so that recursive_create could make
+        EmbeddedDocumentSerializers, so that recursive_save could make
         use of them.
         """
         # for EmbeddedDocumentSerializers create initial data
@@ -207,7 +207,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return ret
 
-    def recursive_create(self, validated_data):
+    def recursive_save(self, validated_data, instance=None):
         '''Recursively traverses validated_data and creates EmbeddedDocuments
         of the appropriate subtype from them.
 
@@ -223,38 +223,36 @@ class DocumentSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             try:
                 field = self.fields[key]
-                # for EmbeddedDocumentSerializers, call recursive_create
+                # for EmbeddedDocumentSerializers, call recursive_save
                 if isinstance(field, EmbeddedDocumentSerializer):
-                    me_data[key] = field.recursive_create(value)
+                    me_data[key] = field.recursive_save(value)
                 # same for lists of EmbeddedDocumentSerializers
                 elif (isinstance(field, serializers.ListSerializer) and
                       isinstance(field.child, EmbeddedDocumentSerializer)):
                     me_data[key] = []
                     for datum in value:
-                        me_data[key] = field.child.recursive_create(datum)
+                        me_data[key] = field.child.recursive_save(datum)
                 else:
                     me_data[key] = value
             except KeyError:  # this is dynamic data
                 me_data[key] = value
 
-        # create, (save) and return mongoengine instance
-        instance = self.Meta.model(**me_data)
+        # create (if needed), save (if needed) and return mongoengine instance
+        if not instance:
+            instance = self.Meta.model(**me_data)
+        else:
+            for key, value in me_data.items():
+                setattr(instance, key, value)
+
         if self._saving_instances:
             instance.save()
+
         return instance
 
     def update(self, instance, validated_data):
         raise_errors_on_nested_writes('update', self, validated_data)
 
-        for attr, value in validated_data.items():
-            # embedded docs should be instantiated
-            field = self.fields.get(attr, None)
-            if field and isinstance(field, EmbeddedDocumentSerializer):
-                value = field.Meta.model(**value)
-            setattr(instance, attr, value)
-
-        if self._saving_instances:
-            instance.save()
+        instance = self.recursive_save(validated_data, instance)
 
         return instance
 
