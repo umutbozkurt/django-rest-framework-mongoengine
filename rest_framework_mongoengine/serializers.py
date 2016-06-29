@@ -226,12 +226,14 @@ class DocumentSerializer(serializers.ModelSerializer):
                 # for EmbeddedDocumentSerializers, call recursive_save
                 if isinstance(field, EmbeddedDocumentSerializer):
                     me_data[key] = field.recursive_save(value)
-                # same for lists of EmbeddedDocumentSerializers
-                elif (isinstance(field, serializers.ListSerializer) and
+                # same for lists of EmbeddedDocumentSerializers i.e.
+                # ListField(EmbeddedDocumentField) or EmbeddedDocumentListField
+                elif ((isinstance(field, serializers.ListSerializer) or
+                       isinstance(field, serializers.ListField)) and
                       isinstance(field.child, EmbeddedDocumentSerializer)):
                     me_data[key] = []
                     for datum in value:
-                        me_data[key] = field.child.recursive_save(datum)
+                        me_data[key].append(field.child.recursive_save(datum))
                 else:
                     me_data[key] = value
             except KeyError:  # this is dynamic data
