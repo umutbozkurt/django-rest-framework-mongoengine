@@ -532,8 +532,6 @@ class TestListEmbeddingIntegration(TestCase):
                 OrderedDict((('name', "Baz"), ('foo', 321)))
             ]
         }
-        import pdb
-        pdb.set_trace()
         serializer = ListEmbeddingSerializer(instance, data=data)
 
         assert serializer.is_valid(), serializer.errors
