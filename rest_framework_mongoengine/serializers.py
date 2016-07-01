@@ -112,7 +112,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.UUIDField: drf_fields.UUIDField,
         me_fields.GeoPointField: drfm_fields.GeoPointField,
         me_fields.GeoJsonBaseField: drfm_fields.GeoJSONField,
-        me_fields.BaseField: drfm_fields.DocumentField
+        me_fields.BaseField: drfm_fields.DynamicField  # DocumentField
     }
 
     # induct failure if they occasionally used somewhere

@@ -198,27 +198,27 @@ class TestCompoundValidation(TestCase):
         assert serializer.is_valid(), serializer.errors
 
 
-# Check that Compound fields work with DocumentField
+# Check that Compound fields work with DynamicField
 # So far implemented only for ListField, cause it's failing
 
-class CompoundsWithDocumentFieldDoc(Document):
+class CompoundsWithDynamicFieldDoc(Document):
     list_field = fields.ListField(fields.DynamicField(null=True))
 
 
-class CompoundsWithDocumentFieldSerializer(DocumentSerializer):
+class CompoundsWithDynamicFieldSerializer(DocumentSerializer):
     class Meta:
-        model = CompoundsWithDocumentFieldDoc
+        model = CompoundsWithDynamicFieldDoc
 
 
-class TestCompoundsWithDocumentField(TestCase):
+class TestCompoundsWithDynamicField(TestCase):
     def doCleanups(self):
-        CompoundsWithDocumentFieldDoc.drop_collection()
+        CompoundsWithDynamicFieldDoc.drop_collection()
 
     def test_parsing(self):
         input_data = {
             'list_field': [None, "1", 2, 3.0]
         }
-        serializer = CompoundsWithDocumentFieldSerializer(data=input_data)
+        serializer = CompoundsWithDynamicFieldSerializer(data=input_data)
         assert serializer.is_valid(), serializer.errors
         expected = {
             'list_field': [None, "1", 2, 3.0]
@@ -226,10 +226,10 @@ class TestCompoundsWithDocumentField(TestCase):
         assert serializer.validated_data == expected
 
     def test_retrieval(self):
-        instance = CompoundsWithDocumentFieldDoc.objects.create(
+        instance = CompoundsWithDynamicFieldDoc.objects.create(
             list_field=[None, "1", 2, 3.0]
         )
-        serializer = CompoundsWithDocumentFieldSerializer(instance)
+        serializer = CompoundsWithDynamicFieldSerializer(instance)
         expected = {
             'id': str(instance.id),
             'list_field': [None, "1", 2, 3.0]
@@ -241,7 +241,7 @@ class TestCompoundsWithDocumentField(TestCase):
             'list_field': [None, "1", 2, 3.0]
         }
 
-        serializer = CompoundsWithDocumentFieldSerializer(data=data)
+        serializer = CompoundsWithDynamicFieldSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
         instance = serializer.save()
         assert instance.list_field == [None, "1", 2, 3.0]
@@ -258,7 +258,7 @@ class TestCompoundsWithDocumentField(TestCase):
         data = {
             'list_field': ["0", 1, 2.0, None]
         }
-        serializer = CompoundsWithDocumentFieldSerializer(instance, data=data)
+        serializer = CompoundsWithDynamicFieldSerializer(instance, data=data)
         assert serializer.is_valid(), serializer.errors
         instance = serializer.save()
         assert instance.list_field == ["0", 1, 2.0, None]
