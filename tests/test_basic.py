@@ -111,7 +111,7 @@ class TestRegularFieldMappings(TestCase):
                 uuid_field = UUIDField(required=False)
                 id_field = ObjectIdField(required=False)
                 decimal_field = DecimalField(decimal_places=2, max_digits=65536, required=False)
-                custom_field = DynamicField(model_field=<tests.test_basic.CustomField: custom_field>, required=False)
+                custom_field = DocumentField(model_field=<tests.test_basic.CustomField: custom_field>, required=False)
         """)
 
         assert unicode_repr(TestSerializer()) == expected
