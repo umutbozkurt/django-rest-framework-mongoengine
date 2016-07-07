@@ -147,7 +147,7 @@ class TestUniqueTogetherValidation(TestCase):
                 id = ObjectIdField(read_only=True)
                 name = CharField(required=False)
                 code = IntegerField(allow_null=True, required=False)
-                other = CharField(allow_null=True, required=False)
+                other = CharField(allow_blank=True, allow_null=True, required=False)
                 class Meta:
                     validators = [<UniqueTogetherValidator(queryset=NullValidatingModel.objects, fields=('name', 'code'))>]
         """)

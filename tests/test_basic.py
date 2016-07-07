@@ -71,7 +71,8 @@ COLOR_CHOICES = (('red', 'Red'), ('blue', 'Blue'), ('green', 'Green'))
 
 class FieldOptionsModel(Document):
     required_field = fields.IntField(required=True)
-    null_field = fields.IntField(null=True)
+    int_null_field = fields.IntField(null=True)
+    string_null_field = fields.StringField(null=True)
     choices_field = fields.StringField(choices=COLOR_CHOICES)
     length_limit_field = fields.StringField(min_length=3, max_length=12)
     value_limit_field = fields.IntField(min_value=3, max_value=12)
@@ -169,7 +170,8 @@ class TestRegularFieldMappings(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 required_field = IntegerField(required=True)
-                null_field = IntegerField(allow_null=True, required=False)
+                int_null_field = IntegerField(allow_null=True, required=False)
+                string_null_field = CharField(allow_blank=True, allow_null=True, required=False)
                 choices_field = ChoiceField(choices=(('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')), required=False)
                 length_limit_field = CharField(max_length=12, min_length=3, required=False)
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)

@@ -150,6 +150,9 @@ def get_field_kwargs(field_name, model_field):
     if model_field.null:
         kwargs['allow_null'] = True
 
+    if model_field.null and isinstance(model_field, me_fields.StringField):
+        kwargs['allow_blank'] = True
+
     if 'default' not in kwargs:
         kwargs['required'] = model_field.required
 
