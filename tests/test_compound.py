@@ -219,26 +219,8 @@ class TestRequriedList(TestCase):
             'required_list': []
         }
         serializer = RequiredListSerializer(data=input_data)
-        assert serializer.is_valid(), serializer.errors
-        expected = {
-            'required_list': []
-        }
-        assert serializer.validated_data == expected
-
-    def test_create(self):
-        data = {
-            'required_list': []
-        }
-
-        serializer = RequiredListSerializer(data=data)
-        assert serializer.is_valid(), serializer.errors
-        instance = serializer.save()
-        assert instance.list_field == []
-        expected = {
-            'id': str(instance.id),
-            'required_list': [],
-        }
-        assert serializer.data == expected
+        serializer.is_valid()
+        assert serializer.errors['required_list'] == [u'This list may not be empty.']
 
 
 # Check that Compound fields work with DynamicField

@@ -173,7 +173,7 @@ class TestRegularFieldMappings(TestCase):
                 required_field = IntegerField(required=True)
                 int_null_field = IntegerField(allow_null=True, required=False)
                 string_null_field = CharField(allow_blank=True, allow_null=True, required=False)
-                required_list_field = ListField(child=IntegerField(required=False), required=True)
+                required_list_field = ListField(allow_empty=False, child=IntegerField(required=False), required=True)
                 choices_field = ChoiceField(choices=(('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')), required=False)
                 length_limit_field = CharField(max_length=12, min_length=3, required=False)
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)

@@ -156,6 +156,12 @@ def get_field_kwargs(field_name, model_field):
     if 'default' not in kwargs:
         kwargs['required'] = model_field.required
 
+        # handle special case: mongoengine.ListField
+        # TODO: what about mongoengine.EmbeddedDocumentListField?
+        if kwargs['required'] is True:
+            if isinstance(model_field, me_fields.ListField):
+                kwargs['allow_empty'] = False
+
     if model_field.choices:
         # If this model field contains choices, then return early.
         # Further keyword arguments are not valid.
