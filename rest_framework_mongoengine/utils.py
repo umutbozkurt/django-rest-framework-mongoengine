@@ -157,7 +157,6 @@ def get_field_kwargs(field_name, model_field):
         kwargs['required'] = model_field.required
 
         # handle special case: mongoengine.ListField
-        # TODO: what about mongoengine.EmbeddedDocumentListField?
         if kwargs['required'] is True:
             if isinstance(model_field, me_fields.ListField):
                 kwargs['allow_empty'] = False
