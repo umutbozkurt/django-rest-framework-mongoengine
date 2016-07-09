@@ -198,6 +198,49 @@ class TestCompoundValidation(TestCase):
         assert serializer.is_valid(), serializer.errors
 
 
+# Mongoengine's ListField has a specific meaning of required argument
+# Thus, we have to test that it's compatible with DRF's ListField
+
+class RequiredListDocument(Document):
+    required_list = fields.ListField(fields.StringField(), required=True)
+
+
+class RequiredListSerializer(DocumentSerializer):
+    class Meta:
+        model = RequiredListDocument
+
+
+class TestRequriedList(TestCase):
+    def doCleanups(self):
+        RequiredListDocument.drop_collection()
+
+    def test_parsing(self):
+        input_data = {
+            'required_list': []
+        }
+        serializer = RequiredListSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+        expected = {
+            'required_list': []
+        }
+        assert serializer.validated_data == expected
+
+    def test_create(self):
+        data = {
+            'required_list': []
+        }
+
+        serializer = RequiredListSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        instance = serializer.save()
+        assert instance.list_field == []
+        expected = {
+            'id': str(instance.id),
+            'required_list': [],
+        }
+        assert serializer.data == expected
+
+
 # Check that Compound fields work with DynamicField
 # So far implemented only for ListField, cause it's failing
 
