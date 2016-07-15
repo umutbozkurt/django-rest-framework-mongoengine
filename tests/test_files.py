@@ -1,21 +1,26 @@
 from __future__ import unicode_literals
 
 import os
-pwd = os.path.dirname(os.path.realpath(__file__)) + os.path.sep
-from unittest import mock
-from django.test import TestCase
+import sys
+
 from django.core.files.uploadedfile import UploadedFile
+from django.test import TestCase
 from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
+from . import mockpil
 from .utils import dedent
 
-import pytest
+pwd = os.path.dirname(os.path.realpath(__file__)) + os.path.sep
 
-from . import mockpil
-import sys
+try:
+    from unittest import mock  # NOQA
+except ImportError:
+    import mock  # NOQA
+
+
 sys.modules['PIL'] = mockpil
 fields.Image = mockpil.Image
 fields.ImageOps = mockpil.ImageOps

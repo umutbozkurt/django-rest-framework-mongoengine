@@ -5,8 +5,9 @@ from mongoengine import Document, fields
 from rest_framework import serializers
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
-                                                   UniqueValidator)
+from rest_framework_mongoengine.validators import (
+    UniqueTogetherValidator, UniqueValidator
+)
 
 from .utils import dedent
 
@@ -146,7 +147,7 @@ class TestUniqueTogetherValidation(TestCase):
                 id = ObjectIdField(read_only=True)
                 name = CharField(required=False)
                 code = IntegerField(allow_null=True, required=False)
-                other = CharField(allow_null=True, required=False)
+                other = CharField(allow_blank=True, allow_null=True, required=False)
                 class Meta:
                     validators = [<UniqueTogetherValidator(queryset=NullValidatingModel.objects, fields=('name', 'code'))>]
         """)

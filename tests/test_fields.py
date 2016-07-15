@@ -5,12 +5,15 @@ from __future__ import unicode_literals
 import pytest
 from bson import ObjectId
 from django.test import TestCase
+from mongoengine import Document, fields
 from rest_framework.exceptions import ValidationError
 
-from rest_framework_mongoengine.fields import (DocumentField, GenericField, ObjectIdField)
+from rest_framework_mongoengine.fields import (
+    DocumentField, GenericField, ObjectIdField
+)
 
-from .utils import FieldTest
 from .models import DumbDocument, DumbEmbedded
+from .utils import FieldTest
 
 
 class TestObjectId(FieldTest, TestCase):
@@ -47,6 +50,25 @@ class TestDocumentField(TestCase):
 
     def test_output(self):
         instance = DumbDocument.objects.create(foo=123)
+        assert self.field.to_representation(instance) == 123
+
+
+class DocumentWithDynamicField(Document):
+    dynamic = fields.DynamicField(null=True)
+
+
+class TestDocumentFieldWithDynamicField(TestCase):
+    field = DocumentField(model_field=DocumentWithDynamicField.dynamic)
+
+    def doCleanups(self):
+        DocumentWithDynamicField.drop_collection()
+
+    def test_inputs(self):
+        assert self.field.to_internal_value(123) == 123
+        assert self.field.to_internal_value(None) is None
+
+    def test_output(self):
+        instance = DocumentWithDynamicField.objects.create(dynamic=123)
         assert self.field.to_representation(instance) == 123
 
 

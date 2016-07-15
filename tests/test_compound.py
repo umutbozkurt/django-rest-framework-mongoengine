@@ -196,3 +196,99 @@ class TestCompoundValidation(TestCase):
     def test_validation_passing(self):
         serializer = ValidatingSerializer(data={'int_list_field': [3, 4, 5]})
         assert serializer.is_valid(), serializer.errors
+
+
+# Mongoengine's ListField has a specific meaning of required argument
+# Thus, we have to test that it's compatible with DRF's ListField
+
+class RequiredListDocument(Document):
+    required_list = fields.ListField(fields.StringField(), required=True)
+
+
+class RequiredListSerializer(DocumentSerializer):
+    class Meta:
+        model = RequiredListDocument
+
+
+class TestRequriedList(TestCase):
+    def doCleanups(self):
+        RequiredListDocument.drop_collection()
+
+    def test_parsing(self):
+        input_data = {
+            'required_list': []
+        }
+        serializer = RequiredListSerializer(data=input_data)
+        serializer.is_valid()
+        assert serializer.errors['required_list'] == [u'This list may not be empty.']
+
+
+# Check that Compound fields work with DynamicField
+# So far implemented only for ListField, cause it's failing
+
+class CompoundsWithDynamicFieldDoc(Document):
+    list_field = fields.ListField(fields.DynamicField(null=True))
+
+
+class CompoundsWithDynamicFieldSerializer(DocumentSerializer):
+    class Meta:
+        model = CompoundsWithDynamicFieldDoc
+
+
+class TestCompoundsWithDynamicField(TestCase):
+    def doCleanups(self):
+        CompoundsWithDynamicFieldDoc.drop_collection()
+
+    def test_parsing(self):
+        input_data = {
+            'list_field': [None, "1", 2, 3.0]
+        }
+        serializer = CompoundsWithDynamicFieldSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+        expected = {
+            'list_field': [None, "1", 2, 3.0]
+        }
+        assert serializer.validated_data == expected
+
+    def test_retrieval(self):
+        instance = CompoundsWithDynamicFieldDoc.objects.create(
+            list_field=[None, "1", 2, 3.0]
+        )
+        serializer = CompoundsWithDynamicFieldSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'list_field': [None, "1", 2, 3.0]
+        }
+        assert serializer.data == expected
+
+    def test_create(self):
+        data = {
+            'list_field': [None, "1", 2, 3.0]
+        }
+
+        serializer = CompoundsWithDynamicFieldSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        instance = serializer.save()
+        assert instance.list_field == [None, "1", 2, 3.0]
+        expected = {
+            'id': str(instance.id),
+            'list_field': [None, "1", 2, 3.0],
+        }
+        assert serializer.data == expected
+
+    def test_update(self):
+        instance = BasicCompoundDoc.objects.create(
+            list_field=[None, "1", 2, 3.0]
+        )
+        data = {
+            'list_field': ["0", 1, 2.0, None]
+        }
+        serializer = CompoundsWithDynamicFieldSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+        instance = serializer.save()
+        assert instance.list_field == ["0", 1, 2.0, None]
+        expected = {
+            'id': str(instance.id),
+            'list_field': ["0", 1, 2.0, None]
+        }
+        assert serializer.data == expected

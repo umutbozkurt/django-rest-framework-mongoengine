@@ -8,25 +8,25 @@ from rest_framework import serializers
 from rest_framework.compat import unicode_to_repr
 from rest_framework.utils.field_mapping import ClassLookupDict
 
-from rest_framework_mongoengine.validators import (UniqueTogetherValidator,
-                                                   UniqueValidator)
-
 from rest_framework_mongoengine import fields as drfm_fields
+from rest_framework_mongoengine.validators import (
+    UniqueTogetherValidator, UniqueValidator
+)
 
 from .repr import serializer_repr
-from .utils import (COMPOUND_FIELD_TYPES, get_field_info,
-                    has_default, is_abstract_model,
-                    get_field_kwargs,
-                    get_relation_kwargs,
-                    get_nested_relation_kwargs,
-                    get_generic_embedded_kwargs,
-                    get_nested_embedded_kwargs)
+from .utils import (
+    COMPOUND_FIELD_TYPES, get_field_info, get_field_kwargs,
+    get_generic_embedded_kwargs, get_nested_embedded_kwargs,
+    get_nested_relation_kwargs, get_relation_kwargs, has_default,
+    is_abstract_model
+)
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
     # *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to pass ***
     assert not any(
-        isinstance(field, serializers.BaseSerializer) and not isinstance(field, EmbeddedDocumentSerializer) and
+        isinstance(field, serializers.BaseSerializer) and
+        not isinstance(field, EmbeddedDocumentSerializer) and
         (key in validated_data)
         for key, field in serializer.fields.items()
     ), (
@@ -41,7 +41,8 @@ def raise_errors_on_nested_writes(method_name, serializer, validated_data):
     )
 
     assert not any(
-        '.' in field.source and (key in validated_data) and isinstance(validated_data[key], (list, dict))
+        '.' in field.source and (key in validated_data) and
+        isinstance(validated_data[key], (list, dict))
         for key, field in serializer.fields.items()
     ), (
         'The `.{method_name}()` method does not support writable dotted-source '
@@ -111,6 +112,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.UUIDField: drf_fields.UUIDField,
         me_fields.GeoPointField: drfm_fields.GeoPointField,
         me_fields.GeoJsonBaseField: drfm_fields.GeoJSONField,
+        me_fields.DynamicField: drfm_fields.DynamicField,
         me_fields.BaseField: drfm_fields.DocumentField
     }
 
@@ -144,10 +146,9 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         ModelClass = self.Meta.model
         try:
-            # embedded docs automagically converted into instances
-            instance = ModelClass(**validated_data)
-            if self._saving_instances:
-                instance.save()
+            # recursively create EmbeddedDocuments from their validated data
+            # before creating the document instance itself
+            instance = self.recursive_save(validated_data)
         except TypeError as exc:
             msg = (
                 'Got a `TypeError` when calling `%s.objects.create()`. '
@@ -183,18 +184,78 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def update(self, instance, validated_data):
-        raise_errors_on_nested_writes('update', self, validated_data)
+    def to_internal_value(self, data):
+        """
+        Calls super() from DRF, but with an addition.
 
-        for attr, value in validated_data.items():
-            # embedded docs should be instantiated
-            field = self.fields.get(attr, None)
-            if field and isinstance(field, EmbeddedDocumentSerializer):
-                value = field.to_instance_value(value)
-            setattr(instance, attr, value)
+        Creates initial_data and _validated_data for nested
+        EmbeddedDocumentSerializers, so that recursive_save could make
+        use of them.
+        """
+        # for EmbeddedDocumentSerializers create initial data
+        # so that _get_dynamic_data could use them
+        for field in self._writable_fields:
+            if isinstance(field, EmbeddedDocumentSerializer):
+                field.initial_data = data[field.field_name]
+
+        ret = super(DocumentSerializer, self).to_internal_value(data)
+
+        # for EmbeddedDcoumentSerializers create _validated_data
+        # so that create()/update() could use them
+        for field in self._writable_fields:
+            if isinstance(field, EmbeddedDocumentSerializer):
+                field._validated_data = ret[field.field_name]
+
+        return ret
+
+    def recursive_save(self, validated_data, instance=None):
+        '''Recursively traverses validated_data and creates EmbeddedDocuments
+        of the appropriate subtype from them.
+
+        Returns Mongonengine model instance.
+        '''
+        # me_data is an analogue of validated_data, but contains
+        # mongoengine EmbeddedDocument instances for nested data structures,
+        # instead of OrderedDicts, for example:
+        # validated_data = {'id:, "1", 'embed': OrderedDict({'a': 'b'})}
+        # me_data = {'id': "1", 'embed': <EmbeddedDocument>}
+        me_data = dict()
+
+        for key, value in validated_data.items():
+            try:
+                field = self.fields[key]
+                # for EmbeddedDocumentSerializers, call recursive_save
+                if isinstance(field, EmbeddedDocumentSerializer):
+                    me_data[key] = field.recursive_save(value)
+                # same for lists of EmbeddedDocumentSerializers i.e.
+                # ListField(EmbeddedDocumentField) or EmbeddedDocumentListField
+                elif ((isinstance(field, serializers.ListSerializer) or
+                       isinstance(field, serializers.ListField)) and
+                      isinstance(field.child, EmbeddedDocumentSerializer)):
+                    me_data[key] = []
+                    for datum in value:
+                        me_data[key].append(field.child.recursive_save(datum))
+                else:
+                    me_data[key] = value
+            except KeyError:  # this is dynamic data
+                me_data[key] = value
+
+        # create (if needed), save (if needed) and return mongoengine instance
+        if not instance:
+            instance = self.Meta.model(**me_data)
+        else:
+            for key, value in me_data.items():
+                setattr(instance, key, value)
 
         if self._saving_instances:
             instance.save()
+
+        return instance
+
+    def update(self, instance, validated_data):
+        raise_errors_on_nested_writes('update', self, validated_data)
+
+        instance = self.recursive_save(validated_data, instance)
 
         return instance
 
@@ -512,27 +573,50 @@ class EmbeddedDocumentSerializer(DocumentSerializer):
         # skip the valaidators
         return []
 
-    def to_instance_value(self, data):
-        """ convert data to embeddded doc instance (w/out validation)"""
-        return self.Meta.model(**data)
-
 
 class DynamicDocumentSerializer(DocumentSerializer):
     """ Serializer for DynamicDocuments.
 
     Maps all undefined fields to :class:`fields.DynamicField`.
     """
+    def to_internal_value(self, data):
+        '''
+        Updates _validated_data with dynamic data, i.e. data,
+        not listed in fields.
+        '''
+        ret = super(DynamicDocumentSerializer, self).to_internal_value(data)
+        dynamic_data = self._get_dynamic_data(ret)
+        ret.update(dynamic_data)
+        return ret
+
+    def _get_dynamic_data(self, validated_data):
+        '''
+        Returns dict of data, not declared in serializer fields.
+        Should be called after self.is_valid().
+        '''
+        result = {}
+
+        for key in self.initial_data:
+            if key not in validated_data:
+                try:
+                    field = self.fields[key]
+                    # no exception? this is either SkipField or error
+                    if not isinstance(field, drf_fields.SkipField):
+                        msg = (
+                            'Field %s is missing from validated data,'
+                            'but is not a SkipField!'
+                        ) % key
+                        raise AssertionError(msg)
+                except KeyError:  # ok, this is dynamic data
+                    result[key] = self.initial_data[key]
+        return result
+
     def to_representation(self, instance):
         ret = super(DynamicDocumentSerializer, self).to_representation(instance)
 
         for field_name, field in self._map_dynamic_fields(instance).items():
             ret[field_name] = field.to_representation(field.get_attribute(instance))
 
-        return ret
-
-    def to_internal_value(self, data):
-        ret = super(DocumentSerializer, self).to_internal_value(data)
-        [drf_fields.set_value(ret, [k], data[k]) for k in data if k not in ret]
         return ret
 
     def _map_dynamic_fields(self, document):

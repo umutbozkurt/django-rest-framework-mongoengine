@@ -1,16 +1,15 @@
 from django.test import TestCase
+from mongoengine import Document, fields
+from rest_framework.test import APIRequestFactory, APITestCase
 
-from mongoengine import Document, EmbeddedDocument, fields
-from rest_framework.test import APITestCase, APIRequestFactory
-
+from rest_framework_mongoengine.contrib.patching import Patch, PatchModelMixin
 from rest_framework_mongoengine.serializers import DocumentSerializer
 from rest_framework_mongoengine.viewsets import GenericViewSet
-from rest_framework_mongoengine.contrib.patching import Patch, PatchModelMixin
 
 from .models import DumbEmbedded
 
 
-class DumbDocument(Document):
+class PatchingDumbDocument(Document):
     name = fields.StringField()
     int_fld = fields.IntField()
     lst_fld = fields.ListField()
@@ -23,7 +22,7 @@ class DumbDocument(Document):
 
 class DumbSerializer(DocumentSerializer):
     class Meta:
-        model = DumbDocument
+        model = PatchingDumbDocument
 
 
 class TestPatchParsing(TestCase):
@@ -130,13 +129,13 @@ class TestPatchParsing(TestCase):
 
 class TestPatchApplying(TestCase):
     def tearDown(self):
-        DumbDocument.drop_collection()
+        PatchingDumbDocument.drop_collection()
 
     def test_patch_obj(self):
         objects = [
-            DumbDocument.objects.create(name="dumb1", int_fld=1, lst_fld=['a', 'b', 'c'], emb=DumbEmbedded(name="emb1")),
-            DumbDocument.objects.create(name="dumb2", int_fld=2, lst_fld=['b', 'c', 'd'], emb=DumbEmbedded(name="emb2")),
-            DumbDocument.objects.create(name="dumb3", int_fld=3, lst_fld=['d', 'e', 'f'], emb=DumbEmbedded(name="emb3"))
+            PatchingDumbDocument.objects.create(name="dumb1", int_fld=1, lst_fld=['a', 'b', 'c'], emb=DumbEmbedded(name="emb1")),
+            PatchingDumbDocument.objects.create(name="dumb2", int_fld=2, lst_fld=['b', 'c', 'd'], emb=DumbEmbedded(name="emb2")),
+            PatchingDumbDocument.objects.create(name="dumb3", int_fld=3, lst_fld=['d', 'e', 'f'], emb=DumbEmbedded(name="emb3"))
         ]
 
         patch = Patch(data=[{'path': '/int_fld', 'op': 'inc', 'value': 100},
@@ -147,7 +146,7 @@ class TestPatchApplying(TestCase):
 
         assert patch.is_valid(), patch.errors
 
-        obj = DumbDocument.objects.get(name="dumb2")
+        obj = PatchingDumbDocument.objects.get(name="dumb2")
         patch.update_queryset(obj)
 
         for o in objects:
@@ -159,9 +158,9 @@ class TestPatchApplying(TestCase):
 
     def test_patch_set(self):
         objects = [
-            DumbDocument.objects.create(name="dumb1", int_fld=1, lst_fld=['a', 'b', 'c'], emb=DumbEmbedded(name="emb1")),
-            DumbDocument.objects.create(name="dumb2", int_fld=2, lst_fld=['b', 'c', 'd'], emb=DumbEmbedded(name="emb2")),
-            DumbDocument.objects.create(name="dumb3", int_fld=3, lst_fld=['d', 'e', 'f'], emb=DumbEmbedded(name="emb3"))
+            PatchingDumbDocument.objects.create(name="dumb1", int_fld=1, lst_fld=['a', 'b', 'c'], emb=DumbEmbedded(name="emb1")),
+            PatchingDumbDocument.objects.create(name="dumb2", int_fld=2, lst_fld=['b', 'c', 'd'], emb=DumbEmbedded(name="emb2")),
+            PatchingDumbDocument.objects.create(name="dumb3", int_fld=3, lst_fld=['d', 'e', 'f'], emb=DumbEmbedded(name="emb3"))
         ]
 
         patch = Patch(data=[{'path': '/int_fld', 'op': 'inc', 'value': 100},
@@ -170,7 +169,7 @@ class TestPatchApplying(TestCase):
 
         assert patch.is_valid(), patch.errors
 
-        queryset = DumbDocument.objects.all()
+        queryset = PatchingDumbDocument.objects.all()
         patch.update_queryset(queryset)
 
         for o in objects:
@@ -181,21 +180,36 @@ class TestPatchApplying(TestCase):
 
     def test_patch_matched(self):
         objects = [
-            DumbDocument.objects.create(name="dumb1", emb_lst=[DumbEmbedded(name="dumb1emb1", foo=11),
-                                                               DumbEmbedded(name="dumb1emb2", foo=12),
-                                                               DumbEmbedded(name="dumb1emb3", foo=13)]),
-            DumbDocument.objects.create(name="dumb2", emb_lst=[DumbEmbedded(name="dumb2emb1", foo=21),
-                                                               DumbEmbedded(name="dumb2emb2", foo=22),
-                                                               DumbEmbedded(name="dumb2emb3", foo=23)]),
-            DumbDocument.objects.create(name="dumb3", emb_lst=[DumbEmbedded(name="dumb3emb1", foo=31),
-                                                               DumbEmbedded(name="dumb3emb2", foo=32),
-                                                               DumbEmbedded(name="dumb3emb3", foo=33)]),
+            PatchingDumbDocument.objects.create(
+                name="dumb1",
+                emb_lst=[
+                    DumbEmbedded(name="dumb1emb1", foo=11),
+                    DumbEmbedded(name="dumb1emb2", foo=12),
+                    DumbEmbedded(name="dumb1emb3", foo=13)
+                ]
+            ),
+            PatchingDumbDocument.objects.create(
+                name="dumb2",
+                emb_lst=[
+                    DumbEmbedded(name="dumb2emb1", foo=21),
+                    DumbEmbedded(name="dumb2emb2", foo=22),
+                    DumbEmbedded(name="dumb2emb3", foo=23)
+                ]
+            ),
+            PatchingDumbDocument.objects.create(
+                name="dumb3",
+                emb_lst=[
+                    DumbEmbedded(name="dumb3emb1", foo=31),
+                    DumbEmbedded(name="dumb3emb2", foo=32),
+                    DumbEmbedded(name="dumb3emb3", foo=33)
+                ]
+            ),
         ]
 
         patch = Patch(data=[{'path': "/emb_lst/S/name", 'op': 'set', 'value': "winner"}])
         assert patch.is_valid(), patch.errors
 
-        queryset = DumbDocument.objects.filter(emb_lst__foo=22)
+        queryset = PatchingDumbDocument.objects.filter(emb_lst__foo=22)
         patch.update_queryset(queryset)
         for o in objects:
             o.reload()
@@ -207,20 +221,20 @@ class TestPatchApplying(TestCase):
 
 class TestView(PatchModelMixin, GenericViewSet):
     serializer_class = DumbSerializer
-    queryset = DumbDocument.objects
+    queryset = PatchingDumbDocument.objects
 
 
 class TestPatchingView(APITestCase):
     client_class = APIRequestFactory
 
     def tearDown(self):
-        DumbDocument.drop_collection()
+        PatchingDumbDocument.drop_collection()
 
     def test_patch_obj(self):
         objects = [
-            DumbDocument.objects.create(name="dumb1", lst_fld=['a', 'b', 'c']),
-            DumbDocument.objects.create(name="dumb2", lst_fld=['b', 'c', 'd']),
-            DumbDocument.objects.create(name="dumb3", lst_fld=['d', 'e', 'f'])
+            PatchingDumbDocument.objects.create(name="dumb1", lst_fld=['a', 'b', 'c']),
+            PatchingDumbDocument.objects.create(name="dumb2", lst_fld=['b', 'c', 'd']),
+            PatchingDumbDocument.objects.create(name="dumb3", lst_fld=['d', 'e', 'f'])
         ]
 
         patch = [{'path': '/lst_fld', 'op': 'push', 'value': 'z'}]
@@ -236,9 +250,9 @@ class TestPatchingView(APITestCase):
 
     def test_patch_set(self):
         objects = [
-            DumbDocument.objects.create(name="dumb1", lst_fld=['a', 'b', 'c']),
-            DumbDocument.objects.create(name="dumb2", lst_fld=['b', 'c', 'd']),
-            DumbDocument.objects.create(name="dumb3", lst_fld=['d', 'e', 'f'])
+            PatchingDumbDocument.objects.create(name="dumb1", lst_fld=['a', 'b', 'c']),
+            PatchingDumbDocument.objects.create(name="dumb2", lst_fld=['b', 'c', 'd']),
+            PatchingDumbDocument.objects.create(name="dumb3", lst_fld=['d', 'e', 'f'])
         ]
         patch = [{'path': '/lst_fld', 'op': 'push', 'value': 'z'}]
 

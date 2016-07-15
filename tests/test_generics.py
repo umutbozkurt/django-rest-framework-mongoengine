@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from django.test import TestCase
-from mongoengine import Document, fields
 from rest_framework import permissions, status
 from rest_framework.test import APIRequestFactory
 
