@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from rest_framework import validators
+from rest_framework.fields import SkipField
 from rest_framework.compat import unicode_to_repr
 from rest_framework.exceptions import ValidationError
 
@@ -39,7 +40,10 @@ class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherVali
     Used by :class:`DocumentSerializer` for fields, present in unique indexes.
     """
     def __call__(self, attrs):
-        self.enforce_required_fields(attrs)
+        try:
+            self.enforce_required_fields(attrs)
+        except SkipField:
+            return
         queryset = self.queryset
         queryset = self.filter_queryset(attrs, queryset)
         queryset = self.exclude_current_instance(queryset)
@@ -57,3 +61,17 @@ class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherVali
             smart_repr(self.queryset),
             smart_repr(self.fields)
         ))
+
+
+class OptionalUniqueTogetherValidator(UniqueTogetherValidator):
+    """
+    This validator passes validation if all of validation fields are missing. (for use with partial data)
+    """
+    def enforce_required_fields(self, attrs):
+        try:
+            super(OptionalUniqueTogetherValidator, self).enforce_required_fields(attrs)
+        except ValidationError as e:
+            if set(e.detail.keys()) == set(self.fields):
+                raise SkipField()
+            else:
+                raise
