@@ -195,7 +195,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         # for EmbeddedDocumentSerializers create initial data
         # so that _get_dynamic_data could use them
         for field in self._writable_fields:
-            if isinstance(field, EmbeddedDocumentSerializer):
+            if isinstance(field, EmbeddedDocumentSerializer) and field.field_name in data:
                 field.initial_data = data[field.field_name]
 
         ret = super(DocumentSerializer, self).to_internal_value(data)
@@ -203,7 +203,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         # for EmbeddedDcoumentSerializers create _validated_data
         # so that create()/update() could use them
         for field in self._writable_fields:
-            if isinstance(field, EmbeddedDocumentSerializer):
+            if isinstance(field, EmbeddedDocumentSerializer) and field.field_name in ret:
                 field._validated_data = ret[field.field_name]
 
         return ret
