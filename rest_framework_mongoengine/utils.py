@@ -156,9 +156,9 @@ def get_field_kwargs(field_name, model_field):
     if 'default' not in kwargs:
         kwargs['required'] = model_field.required
 
-        # handle special case: mongoengine.ListField
+        # handle special cases - compound fields: mongoengine.ListField/DictField
         if kwargs['required'] is True:
-            if isinstance(model_field, me_fields.ListField):
+            if isinstance(model_field, me_fields.ListField) or isinstance(model_field, me_fields.DictField):
                 kwargs['allow_empty'] = False
 
     if model_field.choices:
