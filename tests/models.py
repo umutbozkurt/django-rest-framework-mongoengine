@@ -19,6 +19,9 @@ class DumbEmbedded(EmbeddedDocument):
     name = fields.StringField()
     foo = fields.IntField()
 
+    def __str__(self):
+        return "<DumbEmbedded %s %s>" % (self.name, self.foo)
+
 
 class OtherEmbedded(EmbeddedDocument):
     name = fields.StringField(required=True)
