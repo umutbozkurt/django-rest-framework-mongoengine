@@ -601,6 +601,8 @@ class DynamicDocumentSerializer(DocumentSerializer):
                 try:
                     field = self.fields[key]
                     # no exception? this is either SkipField or error
+                    # in particular, this might be a read-only field
+                    # that was mistakingly given a value
                     if not isinstance(field, drf_fields.SkipField):
                         msg = (
                             'Field %s is missing from validated data,'
