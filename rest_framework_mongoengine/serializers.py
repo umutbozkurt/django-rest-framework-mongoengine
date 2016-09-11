@@ -420,7 +420,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         if isinstance(model_field, me_fields.ListField):
             field_class = drf_fields.ListField
         elif isinstance(model_field, me_fields.DictField):
-            field_class = drf_fields.DictField
+            field_class = drfm_fields.DictField
         else:
             return self.build_unknown_field(field_name, model_field.owner_document)
 
