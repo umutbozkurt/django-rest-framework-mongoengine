@@ -41,6 +41,7 @@ class RegularModel(Document):
     A model class for testing regular flat fields.
     """
     str_field = fields.StringField()
+    str_regex_field = fields.StringField(regex="^valid_regex")
     url_field = fields.URLField()
     email_field = fields.EmailField()
     int_field = fields.IntField()
@@ -102,6 +103,7 @@ class TestRegularFieldMappings(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 str_field = CharField(required=False)
+                str_regex_field = RegexField(regex=<_sre.SRE_Pattern object>, required=False)
                 url_field = URLField(required=False)
                 email_field = EmailField(required=False)
                 int_field = IntegerField(required=False)
@@ -148,6 +150,7 @@ class TestRegularFieldMappings(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 str_field = CharField(required=False)
+                str_regex_field = RegexField(regex=<_sre.SRE_Pattern object>, required=False)
                 url_field = URLField(required=False)
                 email_field = EmailField(required=False)
                 int_field = IntegerField(required=False)
@@ -355,6 +358,24 @@ class TestRegularFieldMappings(TestCase):
         assert implicit.data == explicit.data
 
 
+class TestRegexStringValidation(TestCase):
+    valid = "valid_regex_str"
+    invalid = "invalid_regex_str"
+
+    def test_validation(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RegularModel
+
+        data = {'str_regex_field': "valid_regex_str"}
+        serializer = TestSerializer(data=data)
+        assert serializer.is_valid()
+
+        data = {'str_regex_field': "invalid_regex_str"}
+        serializer = TestSerializer(data=data)
+        assert not serializer.is_valid()
+
+
 class TestIntegration(TestCase):
     maxDiff = 0
 
@@ -368,6 +389,7 @@ class TestIntegration(TestCase):
 
         input_data = {
             'str_field': "str",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe.qw/",
             'email_field': "qwe@qwe.qw",
             'int_field': "42",
@@ -385,6 +407,7 @@ class TestIntegration(TestCase):
         assert serializer.is_valid(), serializer.errors
         expected = {
             'str_field': "str",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe.qw/",
             'email_field': "qwe@qwe.qw",
             'int_field': 42,
@@ -403,6 +426,7 @@ class TestIntegration(TestCase):
     def test_retrival(self):
         instance = RegularModel.objects.create(
             str_field="str",
+            str_regex_field="valid_regex_str",
             url_field="http://qwe.qw/",
             email_field="qwe@qwe.qw",
             int_field=42,
@@ -425,6 +449,7 @@ class TestIntegration(TestCase):
         expected = {
             'id': str(instance.id),
             'str_field': "str",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe.qw/",
             'email_field': "qwe@qwe.qw",
             'int_field': 42,
@@ -449,6 +474,7 @@ class TestIntegration(TestCase):
         data = {
             'str_field': "str",
             'url_field': "http://qwe.qw/",
+            'str_regex_field': "valid_regex_str",
             'email_field': "qwe@qwe.qw",
             'int_field': 42,
             'long_field': 9223372036854775807,
@@ -483,6 +509,7 @@ class TestIntegration(TestCase):
         expected = {
             'id': str(instance.id),
             'str_field': "str",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe.qw/",
             'email_field': "qwe@qwe.qw",
             'int_field': 42,
@@ -502,6 +529,7 @@ class TestIntegration(TestCase):
     def test_update(self):
         instance = RegularModel.objects.create(
             str_field="str",
+            str_regex_field="valid_regex_str",
             url_field="http://qwe.qw/",
             email_field="qwe@qwe.qw",
             int_field=42,
@@ -522,6 +550,7 @@ class TestIntegration(TestCase):
 
         data = {
             'str_field': "str1",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe1.qw/",
             'email_field': "qwe1@qwe.qw",
             'int_field': 41,
@@ -557,6 +586,7 @@ class TestIntegration(TestCase):
         expected = {
             'id': str(instance.id),
             'str_field': "str1",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe1.qw/",
             'email_field': "qwe1@qwe.qw",
             'int_field': 41,
