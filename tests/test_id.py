@@ -63,8 +63,8 @@ class IncorrectSerializerTestCase(TestCase):
         assert serializer.is_valid()
         #with self.assertRaises(me_ValidationError):
         #    serializer.save()
-        print "serializer.fields = %s" % serializer.fields
-        print "serializer.validated_data = %s" % serializer.validated_data
+        #print "serializer.fields = %s" % serializer.fields
+        #print "serializer.validated_data = %s" % serializer.validated_data
         serializer.save()
 
     def test_readable(self):

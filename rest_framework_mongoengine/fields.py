@@ -503,13 +503,12 @@ class GeoJSONField(MongoValidatingField, serializers.Field):
 class DictField(serializers.DictField):
     default_error_messages = {
         'not_a_dict': _('Expected a dictionary of items but got type "{input_type}".'),
-        'empty': _('This list may not be empty.')
+        'empty': _('This dict may not be empty.')
     }
 
     def __init__(self, *args, **kwargs):
         self.allow_empty = kwargs.pop('allow_empty', True)
-        super(serializers.DictField, self).__init__(args, kwargs)
-
+        super(DictField, self).__init__(*args, **kwargs)
 
     def to_internal_value(self, data):
         """

@@ -92,6 +92,7 @@ class TestIntegration(TestCase):
             'int_dict_field': {'a': 1, 'b': 2, 'c': 3},
             'int_map_field': {'a': 1, 'b': 2, 'c': 3}
         }
+
         serializer = TestSerializer(data=input_data)
         assert serializer.is_valid(), serializer.errors
         expected = {
