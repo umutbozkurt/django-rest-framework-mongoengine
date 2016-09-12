@@ -224,9 +224,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             try:
                 field = self.fields[key]
+
                 # for EmbeddedDocumentSerializers, call recursive_save
                 if isinstance(field, EmbeddedDocumentSerializer):
                     me_data[key] = field.recursive_save(value)
+
                 # same for lists of EmbeddedDocumentSerializers i.e.
                 # ListField(EmbeddedDocumentField) or EmbeddedDocumentListField
                 elif ((isinstance(field, serializers.ListSerializer) or
@@ -235,6 +237,15 @@ class DocumentSerializer(serializers.ModelSerializer):
                     me_data[key] = []
                     for datum in value:
                         me_data[key].append(field.child.recursive_save(datum))
+
+                # same for dicts of EmbeddedDocumentSerializers (or, speaking
+                # in Mongoengine terms, MapField(EmbeddedDocument(Embed))
+                elif (isinstance(field, drfm_fields.DictField) and
+                      hasattr(field, "child") and
+                      isinstance(field.child, EmbeddedDocumentSerializer)):
+                    me_data[key] = {}
+                    for datum_key, datum_value in value.items():
+                        me_data[key][datum_key] = field.child.recursive_save(datum_value)
                 else:
                     me_data[key] = value
             except KeyError:  # this is dynamic data
