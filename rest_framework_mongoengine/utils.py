@@ -167,6 +167,10 @@ def get_field_kwargs(field_name, model_field):
         kwargs['choices'] = model_field.choices
         return kwargs
 
+    if isinstance(model_field, me_fields.StringField):
+        if model_field.regex:
+            kwargs['regex'] = model_field.regex
+
     max_length = getattr(model_field, 'max_length', None)
     if max_length is not None and isinstance(model_field, me_fields.StringField):
         kwargs['max_length'] = max_length

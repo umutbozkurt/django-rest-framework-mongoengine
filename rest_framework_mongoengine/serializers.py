@@ -399,6 +399,9 @@ class DocumentSerializer(serializers.ModelSerializer):
                 if key not in valid_kwargs:
                     field_kwargs.pop(key)
 
+        if 'regex' in field_kwargs:
+            field_class = drf_fields.RegexField
+
         if not issubclass(field_class, drfm_fields.DocumentField):
             # `model_field` is only valid for the fallback case of
             # `ModelField`, which is used when no other typed field
