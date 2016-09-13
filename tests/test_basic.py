@@ -12,6 +12,7 @@ from decimal import Decimal
 from uuid import UUID
 
 import pytest
+import six
 from bson import ObjectId
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
@@ -99,11 +100,17 @@ class TestRegularFieldMappings(TestCase):
             class Meta:
                 model = RegularModel
 
+        # in pythons 2 and 3 regex reprs are different
+        if six.PY2:
+            regex_repr = "<_sre.SRE_Pattern object>"
+        else:
+            regex_repr = "re.compile('^valid_regex')"
+
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 str_field = CharField(required=False)
-                str_regex_field = RegexField(regex=<_sre.SRE_Pattern object>, required=False)
+                str_regex_field = RegexField(regex=%s, required=False)
                 url_field = URLField(required=False)
                 email_field = EmailField(required=False)
                 int_field = IntegerField(required=False)
@@ -117,7 +124,7 @@ class TestRegularFieldMappings(TestCase):
                 id_field = ObjectIdField(required=False)
                 decimal_field = DecimalField(decimal_places=2, max_digits=65536, required=False)
                 custom_field = DocumentField(model_field=<tests.test_basic.CustomField: custom_field>, required=False)
-        """)
+        """ % regex_repr)
 
         assert unicode_repr(TestSerializer()) == expected
 
@@ -146,11 +153,18 @@ class TestRegularFieldMappings(TestCase):
             class Meta:
                 model = RegularModel
                 exclude = ('decimal_field', 'custom_field')
+
+        # in pythons 2 and 3 regex reprs are different
+        if six.PY2:
+            regex_repr = "<_sre.SRE_Pattern object>"
+        else:
+            regex_repr = "re.compile('^valid_regex')"
+
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 str_field = CharField(required=False)
-                str_regex_field = RegexField(regex=<_sre.SRE_Pattern object>, required=False)
+                str_regex_field = RegexField(regex=%s, required=False)
                 url_field = URLField(required=False)
                 email_field = EmailField(required=False)
                 int_field = IntegerField(required=False)
@@ -162,7 +176,7 @@ class TestRegularFieldMappings(TestCase):
                 complexdate_field = DateTimeField(required=False)
                 uuid_field = UUIDField(required=False)
                 id_field = ObjectIdField(required=False)
-        """)
+        """ % regex_repr)
 
         assert unicode_repr(TestSerializer()) == expected
 
