@@ -12,6 +12,7 @@ from decimal import Decimal
 from uuid import UUID
 
 import pytest
+import six
 from bson import ObjectId
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
@@ -41,6 +42,7 @@ class RegularModel(Document):
     A model class for testing regular flat fields.
     """
     str_field = fields.StringField()
+    str_regex_field = fields.StringField(regex="^valid_regex")
     url_field = fields.URLField()
     email_field = fields.EmailField()
     int_field = fields.IntField()
@@ -74,6 +76,7 @@ class FieldOptionsModel(Document):
     int_null_field = fields.IntField(null=True)
     string_null_field = fields.StringField(null=True)
     required_list_field = fields.ListField(fields.IntField(), required=True)
+    required_dict_field = fields.DictField(required=True)
     choices_field = fields.StringField(choices=COLOR_CHOICES)
     length_limit_field = fields.StringField(min_length=3, max_length=12)
     value_limit_field = fields.IntField(min_value=3, max_value=12)
@@ -97,10 +100,17 @@ class TestRegularFieldMappings(TestCase):
             class Meta:
                 model = RegularModel
 
+        # in pythons 2 and 3 regex reprs are different
+        if six.PY2:
+            regex_repr = "<_sre.SRE_Pattern object>"
+        else:
+            regex_repr = "re.compile('^valid_regex')"
+
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 str_field = CharField(required=False)
+                str_regex_field = RegexField(regex=%s, required=False)
                 url_field = URLField(required=False)
                 email_field = EmailField(required=False)
                 int_field = IntegerField(required=False)
@@ -114,7 +124,7 @@ class TestRegularFieldMappings(TestCase):
                 id_field = ObjectIdField(required=False)
                 decimal_field = DecimalField(decimal_places=2, max_digits=65536, required=False)
                 custom_field = DocumentField(model_field=<tests.test_basic.CustomField: custom_field>, required=False)
-        """)
+        """ % regex_repr)
 
         assert unicode_repr(TestSerializer()) == expected
 
@@ -143,10 +153,18 @@ class TestRegularFieldMappings(TestCase):
             class Meta:
                 model = RegularModel
                 exclude = ('decimal_field', 'custom_field')
+
+        # in pythons 2 and 3 regex reprs are different
+        if six.PY2:
+            regex_repr = "<_sre.SRE_Pattern object>"
+        else:
+            regex_repr = "re.compile('^valid_regex')"
+
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
                 str_field = CharField(required=False)
+                str_regex_field = RegexField(regex=%s, required=False)
                 url_field = URLField(required=False)
                 email_field = EmailField(required=False)
                 int_field = IntegerField(required=False)
@@ -158,7 +176,7 @@ class TestRegularFieldMappings(TestCase):
                 complexdate_field = DateTimeField(required=False)
                 uuid_field = UUIDField(required=False)
                 id_field = ObjectIdField(required=False)
-        """)
+        """ % regex_repr)
 
         assert unicode_repr(TestSerializer()) == expected
 
@@ -174,6 +192,7 @@ class TestRegularFieldMappings(TestCase):
                 int_null_field = IntegerField(allow_null=True, required=False)
                 string_null_field = CharField(allow_blank=True, allow_null=True, required=False)
                 required_list_field = ListField(allow_empty=False, child=IntegerField(required=False), required=True)
+                required_dict_field = DictField(allow_empty=False, required=True)
                 choices_field = ChoiceField(choices=(('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')), required=False)
                 length_limit_field = CharField(max_length=12, min_length=3, required=False)
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)
@@ -353,6 +372,24 @@ class TestRegularFieldMappings(TestCase):
         assert implicit.data == explicit.data
 
 
+class TestRegexStringValidation(TestCase):
+    valid = "valid_regex_str"
+    invalid = "invalid_regex_str"
+
+    def test_validation(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = RegularModel
+
+        data = {'str_regex_field': "valid_regex_str"}
+        serializer = TestSerializer(data=data)
+        assert serializer.is_valid()
+
+        data = {'str_regex_field': "invalid_regex_str"}
+        serializer = TestSerializer(data=data)
+        assert not serializer.is_valid()
+
+
 class TestIntegration(TestCase):
     maxDiff = 0
 
@@ -366,6 +403,7 @@ class TestIntegration(TestCase):
 
         input_data = {
             'str_field': "str",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe.qw/",
             'email_field': "qwe@qwe.qw",
             'int_field': "42",
@@ -383,6 +421,7 @@ class TestIntegration(TestCase):
         assert serializer.is_valid(), serializer.errors
         expected = {
             'str_field': "str",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe.qw/",
             'email_field': "qwe@qwe.qw",
             'int_field': 42,
@@ -401,6 +440,7 @@ class TestIntegration(TestCase):
     def test_retrival(self):
         instance = RegularModel.objects.create(
             str_field="str",
+            str_regex_field="valid_regex_str",
             url_field="http://qwe.qw/",
             email_field="qwe@qwe.qw",
             int_field=42,
@@ -423,6 +463,7 @@ class TestIntegration(TestCase):
         expected = {
             'id': str(instance.id),
             'str_field': "str",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe.qw/",
             'email_field': "qwe@qwe.qw",
             'int_field': 42,
@@ -447,6 +488,7 @@ class TestIntegration(TestCase):
         data = {
             'str_field': "str",
             'url_field': "http://qwe.qw/",
+            'str_regex_field': "valid_regex_str",
             'email_field': "qwe@qwe.qw",
             'int_field': 42,
             'long_field': 9223372036854775807,
@@ -481,6 +523,7 @@ class TestIntegration(TestCase):
         expected = {
             'id': str(instance.id),
             'str_field': "str",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe.qw/",
             'email_field': "qwe@qwe.qw",
             'int_field': 42,
@@ -500,6 +543,7 @@ class TestIntegration(TestCase):
     def test_update(self):
         instance = RegularModel.objects.create(
             str_field="str",
+            str_regex_field="valid_regex_str",
             url_field="http://qwe.qw/",
             email_field="qwe@qwe.qw",
             int_field=42,
@@ -520,6 +564,7 @@ class TestIntegration(TestCase):
 
         data = {
             'str_field': "str1",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe1.qw/",
             'email_field': "qwe1@qwe.qw",
             'int_field': 41,
@@ -555,6 +600,7 @@ class TestIntegration(TestCase):
         expected = {
             'id': str(instance.id),
             'str_field': "str1",
+            'str_regex_field': "valid_regex_str",
             'url_field': "http://qwe1.qw/",
             'email_field': "qwe1@qwe.qw",
             'int_field': 41,

@@ -7,6 +7,7 @@ from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
+from .models import DumbEmbedded
 from .utils import dedent
 
 
@@ -91,6 +92,7 @@ class TestIntegration(TestCase):
             'int_dict_field': {'a': 1, 'b': 2, 'c': 3},
             'int_map_field': {'a': 1, 'b': 2, 'c': 3}
         }
+
         serializer = TestSerializer(data=input_data)
         assert serializer.is_valid(), serializer.errors
         expected = {
@@ -290,5 +292,71 @@ class TestCompoundsWithDynamicField(TestCase):
         expected = {
             'id': str(instance.id),
             'list_field': ["0", 1, 2.0, None]
+        }
+        assert serializer.data == expected
+
+
+class MapEmbeddedDoc(Document):
+    embedded_map_field = fields.MapField(fields.EmbeddedDocumentField(DumbEmbedded))
+
+
+class MapEmbeddedFieldSerializer(DocumentSerializer):
+    class Meta:
+        model = MapEmbeddedDoc
+
+
+class TestMapFieldWithEmbeddedDocument(TestCase):
+    def doCleanups(self):
+        MapEmbeddedDoc.drop_collection()
+
+    def test_parsing(self):
+        input_data = {
+            "embedded_map_field": {"a": {"name": "spam", "foo": 1}, "b": {"name": "ham", "foo": 2}},
+        }
+        serializer = MapEmbeddedFieldSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+        expected = {
+            "embedded_map_field": {"a": {"name": "spam", "foo": 1}, "b": {"name": "ham", "foo": 2}},
+        }
+        assert serializer.validated_data == expected
+
+    def test_retrieval(self):
+        instance = MapEmbeddedDoc.objects.create(
+            embedded_map_field={"a": DumbEmbedded(name="spam", foo=1), "b": DumbEmbedded(name="ham", foo=2)},
+        )
+        serializer = MapEmbeddedFieldSerializer(instance)
+        expected = {
+            "id": str(instance.id),
+            "embedded_map_field": {"a": {"name": "spam", "foo": 1}, "b": {"name": "ham", "foo": 2}},
+        }
+        assert serializer.data == expected
+
+    def test_create(self):
+        data = {
+            "embedded_map_field": {"a": {"name": "spam", "foo": 1}, "b": {"name": "ham", "foo": 2}},
+        }
+
+        serializer = MapEmbeddedFieldSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        instance = serializer.save()
+        expected = {
+            "id": str(instance.id),
+            "embedded_map_field": {"a": {"name": "spam", "foo": 1}, "b": {"name": "ham", "foo": 2}},
+        }
+        assert serializer.data == expected
+
+    def test_update(self):
+        instance = MapEmbeddedDoc.objects.create(
+            embedded_map_field={"a": DumbEmbedded(name="spam", foo=1), "b": DumbEmbedded(name="ham", foo=2)},
+        )
+        data = {
+            "embedded_map_field": {"a": {"name": "spam", "foo": 3}, "b": {"name": "ham", "foo": 4}},
+        }
+        serializer = MapEmbeddedFieldSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+        instance = serializer.save()
+        expected = {
+            "id": str(instance.id),
+            "embedded_map_field": {"a": {"name": "spam", "foo": 3}, "b": {"name": "ham", "foo": 4}},
         }
         assert serializer.data == expected

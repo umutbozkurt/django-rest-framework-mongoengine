@@ -14,7 +14,8 @@ from mongoengine.errors import DoesNotExist, NotRegistered
 from mongoengine.queryset import QuerySet, QuerySetManager
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import empty
+from rest_framework.fields import empty, html
+from rest_framework.settings import api_settings
 
 
 class ObjectIdField(serializers.Field):
@@ -497,6 +498,36 @@ class GeoJSONField(MongoValidatingField, serializers.Field):
             val = value
         # return value
         return {'type': self.mongo_field._type, 'coordinates': val}
+
+
+class DictField(serializers.DictField):
+    default_error_messages = {
+        'not_a_dict': _('Expected a dictionary of items but got type "{input_type}".'),
+        'empty': _('This dict may not be empty.')
+    }
+
+    def __init__(self, *args, **kwargs):
+        self.allow_empty = kwargs.pop('allow_empty', True)
+        super(DictField, self).__init__(*args, **kwargs)
+
+    def to_internal_value(self, data):
+        """
+        Dicts of native values <- Dicts of primitive datatypes.
+        """
+
+        if html.is_html_input(data):
+            data = html.parse_html_dict(data)
+        if not isinstance(data, dict):
+            self.fail('not_a_dict', input_type=type(data).__name__)
+        if not self.allow_empty and len(data.keys()) == 0:
+            message = self.error_messages['empty']
+            raise ValidationError({
+                api_settings.NON_FIELD_ERRORS_KEY: [message]
+            })
+        return {
+            six.text_type(key): self.child.run_validation(value)
+            for key, value in data.items()
+        }
 
 
 class FileField(serializers.FileField):

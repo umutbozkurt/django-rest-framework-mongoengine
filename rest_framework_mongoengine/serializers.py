@@ -224,9 +224,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             try:
                 field = self.fields[key]
+
                 # for EmbeddedDocumentSerializers, call recursive_save
                 if isinstance(field, EmbeddedDocumentSerializer):
                     me_data[key] = field.recursive_save(value)
+
                 # same for lists of EmbeddedDocumentSerializers i.e.
                 # ListField(EmbeddedDocumentField) or EmbeddedDocumentListField
                 elif ((isinstance(field, serializers.ListSerializer) or
@@ -235,6 +237,15 @@ class DocumentSerializer(serializers.ModelSerializer):
                     me_data[key] = []
                     for datum in value:
                         me_data[key].append(field.child.recursive_save(datum))
+
+                # same for dicts of EmbeddedDocumentSerializers (or, speaking
+                # in Mongoengine terms, MapField(EmbeddedDocument(Embed))
+                elif (isinstance(field, drfm_fields.DictField) and
+                      hasattr(field, "child") and
+                      isinstance(field.child, EmbeddedDocumentSerializer)):
+                    me_data[key] = {}
+                    for datum_key, datum_value in value.items():
+                        me_data[key][datum_key] = field.child.recursive_save(datum_value)
                 else:
                     me_data[key] = value
             except KeyError:  # this is dynamic data
@@ -399,6 +410,9 @@ class DocumentSerializer(serializers.ModelSerializer):
                 if key not in valid_kwargs:
                     field_kwargs.pop(key)
 
+        if 'regex' in field_kwargs:
+            field_class = drf_fields.RegexField
+
         if not issubclass(field_class, drfm_fields.DocumentField):
             # `model_field` is only valid for the fallback case of
             # `ModelField`, which is used when no other typed field
@@ -420,7 +434,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         if isinstance(model_field, me_fields.ListField):
             field_class = drf_fields.ListField
         elif isinstance(model_field, me_fields.DictField):
-            field_class = drf_fields.DictField
+            field_class = drfm_fields.DictField
         else:
             return self.build_unknown_field(field_name, model_field.owner_document)
 
@@ -601,6 +615,8 @@ class DynamicDocumentSerializer(DocumentSerializer):
                 try:
                     field = self.fields[key]
                     # no exception? this is either SkipField or error
+                    # in particular, this might be a read-only field
+                    # that was mistakingly given a value
                     if not isinstance(field, drf_fields.SkipField):
                         msg = (
                             'Field %s is missing from validated data,'
