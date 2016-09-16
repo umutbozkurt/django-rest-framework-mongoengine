@@ -35,7 +35,7 @@ class TestObjectId(FieldTest, TestCase):
 
 class TestDocumentField(TestCase):
 
-    def tearDown(self):
+    def doCleanups(self):
         DumbDocument.drop_collection()
 
     field = DocumentField(model_field=DumbDocument.foo)

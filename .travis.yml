@@ -19,11 +19,10 @@ env:
     - TOX_ENV=dj19-py35-me09
     - TOX_ENV=dj19-py27-me010
     - TOX_ENV=dj19-py35-me010
-# DRF is not yet compatible with Django1.10, but in future it should be:
-#    - TOX_ENV=dj110-py27-me09
-#    - TOX_ENV=dj110-py35-me09
-#    - TOX_ENV=dj110-py27-me010
-#    - TOX_ENV=dj110-py35-me010
+    - TOX_ENV=dj110-py27-me09
+    - TOX_ENV=dj110-py35-me09
+    - TOX_ENV=dj110-py27-me010
+    - TOX_ENV=dj110-py35-me010
 
 matrix:
     fast_finish: true

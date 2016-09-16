@@ -393,7 +393,7 @@ class TestRegexStringValidation(TestCase):
 class TestIntegration(TestCase):
     maxDiff = 0
 
-    def tearDown(self):
+    def doCleanups(self):
         RegularModel.drop_collection()
 
     def test_parsing(self):
@@ -437,7 +437,7 @@ class TestIntegration(TestCase):
         }
         assert serializer.validated_data == expected
 
-    def test_retrival(self):
+    def test_retrieval(self):
         instance = RegularModel.objects.create(
             str_field="str",
             str_regex_field="valid_regex_str",

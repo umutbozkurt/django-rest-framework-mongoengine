@@ -81,7 +81,7 @@ class TestSerializer(DocumentSerializer):
 
 
 class TestIntegration(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         BasicCompoundDoc.drop_collection()
 
     def test_parsing(self):
@@ -104,7 +104,7 @@ class TestIntegration(TestCase):
         }
         assert serializer.validated_data == expected
 
-    def test_retrival(self):
+    def test_retrieval(self):
         instance = BasicCompoundDoc.objects.create(
             list_field=["1", 2, 3.0],
             int_list_field=[1, 2, 3],

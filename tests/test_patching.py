@@ -128,7 +128,7 @@ class TestPatchParsing(TestCase):
 
 
 class TestPatchApplying(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         PatchingDumbDocument.drop_collection()
 
     def test_patch_obj(self):
@@ -227,7 +227,7 @@ class TestView(PatchModelMixin, GenericViewSet):
 class TestPatchingView(APITestCase):
     client_class = APIRequestFactory
 
-    def tearDown(self):
+    def doCleanups(self):
         PatchingDumbDocument.drop_collection()
 
     def test_patch_obj(self):

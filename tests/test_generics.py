@@ -47,7 +47,7 @@ class TestBasicViews(TestCase):
             for obj in self.objects.all()
         ]
 
-    def tearDown(self):
+    def doCleaups(self):
         DumbDocument.drop_collection()
 
     def test_list(self):

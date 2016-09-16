@@ -42,7 +42,7 @@ class TestUniqueValidation(TestCase):
     def setUp(self):
         self.instance = NonValidatingModel.objects.create(name='existing')
 
-    def tearDown(self):
+    def doCleanups(self):
         NonValidatingModel.drop_collection()
 
     def test_repr(self):
@@ -124,7 +124,7 @@ class TestUniqueTogetherValidation(TestCase):
             code=1
         )
 
-    def tearDown(self):
+    def doCleanups(self):
         NonValidatingModel.drop_collection()
         NullValidatingModel.drop_collection()
 
@@ -245,7 +245,7 @@ class UniqueTogetherModel(Document):
 
 
 class TestUniqueTogetherSerializer(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         NonValidatingModel.drop_collection()
         NullValidatingModel.drop_collection()
 
