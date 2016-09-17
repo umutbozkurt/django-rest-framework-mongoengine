@@ -6,7 +6,7 @@ Django Rest Framework Mongoengine
 [![Join the chat at https://gitter.im/BurkovBA/django-rest-framework-mongoengine](https://badges.gitter.im/BurkovBA/django-rest-framework-mongoengine.svg)](https://gitter.im/BurkovBA/django-rest-framework-mongoengine?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
-The package provides [mongoengine](mongoengine.org) support for [django-rest-framework](https://github.com/tomchristie/django-rest-framework)
+The package provides [mongoengine](http://mongoengine.org/) support for [django-rest-framework](https://github.com/tomchristie/django-rest-framework)
 
 ## Documentation
 
