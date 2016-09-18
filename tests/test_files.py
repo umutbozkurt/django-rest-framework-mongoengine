@@ -63,7 +63,7 @@ class TestFilesIntegration(TestCase):
         self.files = [open(pwd + "cat1.jpg", "rb"), open(pwd + "cat2.jpg", "rb")]
         self.uploads = [UploadedFile(f, f.name, "image/jpeg", os.path.getsize(f.name)) for f in self.files]
 
-    def tearDown(self):
+    def doCleanups(self):
         FileDoc.drop_collection()
         FileDoc._get_db().drop_collection('files')
         for f in self.files:

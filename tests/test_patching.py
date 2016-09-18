@@ -66,7 +66,7 @@ class TestPatchParsing(TestCase):
             {'path': "/emb/name/bla", 'op': "set", 'value': None},
         ])
         assert not patch.is_valid()
-        assert patch.errors == [{}, {'path': "Missing elem: 'bla'"}, {'path': "Missing elem: 'bla'"}, {'path': "Missing elem: 'bla'"}]
+        assert patch.errors == [[u'Not a valid string.'], {'path': "Missing elem: 'bla'"}, {'path': "Missing elem: 'bla'"}, {'path': "Missing elem: 'bla'"}]
 
     def test_parsing_values(self):
         patch = Patch(DumbSerializer(), data=[
@@ -128,7 +128,7 @@ class TestPatchParsing(TestCase):
 
 
 class TestPatchApplying(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         PatchingDumbDocument.drop_collection()
 
     def test_patch_obj(self):
@@ -227,7 +227,7 @@ class TestView(PatchModelMixin, GenericViewSet):
 class TestPatchingView(APITestCase):
     client_class = APIRequestFactory
 
-    def tearDown(self):
+    def doCleanups(self):
         PatchingDumbDocument.drop_collection()
 
     def test_patch_obj(self):

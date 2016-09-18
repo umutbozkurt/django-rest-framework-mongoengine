@@ -61,7 +61,7 @@ class TestIntegration(TestCase):
 
     Test if all operations performed correctly
     """
-    def tearDown(self):
+    def doCleanups(self):
         DumbDocument.drop_collection()
 
     def test_parsing(self):

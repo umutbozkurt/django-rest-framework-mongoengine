@@ -314,7 +314,7 @@ class TestEmbeddedIntegration(TestCase):
 
 
 class TestEmbeddingIntegration(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         EmbeddingDoc.drop_collection()
 
     def test_retrieve(self):

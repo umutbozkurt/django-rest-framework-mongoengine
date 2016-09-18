@@ -68,7 +68,7 @@ class RecursiveReferencingDoc(Document):
 
 
 class TestReferenceField(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         ReferencedDoc.drop_collection()
         IntReferencedDoc.drop_collection()
         OtherReferencedDoc.drop_collection()
@@ -128,7 +128,7 @@ class TestReferenceField(TestCase):
 
 
 class TestGenericReferenceField(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         ReferencedDoc.drop_collection()
         IntReferencedDoc.drop_collection()
         OtherReferencedDoc.drop_collection()
@@ -178,7 +178,7 @@ class TestGenericReferenceField(TestCase):
 
 
 class TestComboReferenceField(TestCase):
-    def tearDown(self):
+    def doCleanups(self):
         ReferencedDoc.drop_collection()
 
     def test_input_ref(self):
@@ -348,7 +348,7 @@ class TestRelationalFieldDisplayValue(TestCase):
         ]
         self.ids = list(map(lambda e: str(e.id), self.objects))
 
-    def tearDown(self):
+    def doCleanups(self):
         DisplayableReferencedModel.drop_collection()
 
     def test_default_display_value(self):
@@ -386,11 +386,11 @@ class TestReferenceIntegration(TestCase):
             name='Foo'
         )
 
-    def tearDown(self):
+    def doCleanups(self):
         ReferencedDoc.drop_collection()
         ReferencingDoc.drop_collection()
 
-    def test_retrival(self):
+    def test_retrieval(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
@@ -405,7 +405,7 @@ class TestReferenceIntegration(TestCase):
         }
         assert serializer.data == expected
 
-    def test_retrival_deep(self):
+    def test_retrieval_deep(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
@@ -474,11 +474,11 @@ class TestGenericReferenceIntegration(TestCase):
     def setUp(self):
         self.target = ReferencedDoc.objects.create(name='Foo')
 
-    def tearDown(self):
+    def doCleanups(self):
         ReferencedDoc.drop_collection()
         GenericReferencingDoc.drop_collection()
 
-    def test_retrival(self):
+    def test_retrieval(self):
         instance = GenericReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
@@ -493,7 +493,7 @@ class TestGenericReferenceIntegration(TestCase):
         }
         assert serializer.data == expected
 
-    def test_retrival_deep(self):
+    def test_retrieval_deep(self):
         instance = GenericReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
@@ -583,11 +583,11 @@ class TestComboReferenceIntegration(TestCase):
     def setUp(self):
         self.target = ReferencedDoc.objects.create(name='Foo')
 
-    def tearDown(self):
+    def doCleanups(self):
         ReferencedDoc.drop_collection()
         ReferencingDoc.drop_collection()
 
-    def test_retrival(self):
+    def test_retrieval(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
         serializer = ComboReferencingSerializer(instance)
         expected = {
@@ -596,7 +596,7 @@ class TestComboReferenceIntegration(TestCase):
         }
         assert serializer.data == expected
 
-    def test_retrival_deep(self):
+    def test_retrieval_deep(self):
         instance = ReferencingDoc.objects.create(ref=self.target)
 
         class TestSerializer(DocumentSerializer):
