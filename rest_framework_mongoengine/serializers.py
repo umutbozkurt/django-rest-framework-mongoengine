@@ -220,6 +220,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         # validated_data = {'id:, "1", 'embed': OrderedDict({'a': 'b'})}
         # me_data = {'id': "1", 'embed': <EmbeddedDocument>}
         me_data = dict()
+        
+        if not validated_data:
+            return None
 
         for key, value in validated_data.items():
             try:
