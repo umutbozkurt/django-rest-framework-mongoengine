@@ -186,6 +186,10 @@ def get_field_kwargs(field_name, model_field):
     min_value = getattr(model_field, 'min_value', None)
     if min_value is not None and isinstance(model_field, NUMERIC_FIELD_TYPES):
         kwargs['min_value'] = min_value
+    
+    kwargs['permission'] = getattr(model_field, 'permission', 0)
+    kwargs['read_permission'] = getattr(model_field, 'read_permission', 0)
+    kwargs['write_permission'] = getattr(model_field, 'write_permission', 0)
 
     return kwargs
 

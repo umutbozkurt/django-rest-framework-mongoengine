@@ -407,7 +407,7 @@ class DocumentSerializer(serializers.ModelSerializer):
                 'required', 'default', 'initial', 'source',
                 'label', 'help_text', 'style',
                 'error_messages', 'validators', 'allow_null', 'allow_blank',
-                'choices'
+                'choices', 'permission', 'read_permission', 'write_permission'
             ))
             for key in list(field_kwargs.keys()):
                 if key not in valid_kwargs:
