@@ -287,6 +287,10 @@ class DocumentSerializer(serializers.ModelSerializer):
                 serializer_class=self.__class__.__name__
             )
         )
+        model = self.get_model()
+        return self.get_fields_from_model(model)
+
+    def get_fields_from_model(self, model):
         depth = getattr(self.Meta, 'depth', 0)
         depth_embedding = getattr(self.Meta, 'depth_embedding', 5)
 
@@ -295,8 +299,6 @@ class DocumentSerializer(serializers.ModelSerializer):
             assert depth <= 10, "'depth' may not be greater than 10."
 
         declared_fields = copy.deepcopy(self._declared_fields)
-        model = self.get_model()
-
         if model is None:
             return {}
 
