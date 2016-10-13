@@ -24,6 +24,8 @@ from .utils import (
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
     # *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to pass ***
+    # Commenting this out since we are now handling nested saves in Rippling.
+    '''
     assert not any(
         isinstance(field, serializers.BaseSerializer) and
         not isinstance(field, EmbeddedDocumentSerializer) and
@@ -54,7 +56,7 @@ def raise_errors_on_nested_writes(method_name, serializer, validated_data):
             class_name=serializer.__class__.__name__
         )
     )
-
+    '''
 
 class DocumentSerializer(serializers.ModelSerializer):
     """ Serializer for Documents.
