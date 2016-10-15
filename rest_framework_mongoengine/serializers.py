@@ -314,6 +314,15 @@ class DocumentSerializer(serializers.ModelSerializer):
         field_names = self.get_field_names(declared_fields, self.field_info)
         # Determine any extra field arguments and hidden fields that
         # should be included
+        
+        '''
+        HACK!!! Include property names on models automatically
+        '''
+        property_names = [name for name in dir(model) if isinstance(getattr(model, name, None), property)]
+        for property_name in property_names:
+            if property_name not in ['_qs', 'pk', '_object_key']:
+                field_names.append(property_name)
+
         extra_kwargs = self.get_extra_kwargs()
         extra_kwargs, hidden_fields = self.get_uniqueness_extra_kwargs(field_names, extra_kwargs)
 
