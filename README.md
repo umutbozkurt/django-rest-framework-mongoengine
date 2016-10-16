@@ -92,5 +92,6 @@ Documentation available [here](https://github.com/umutbozkurt/django-rest-framew
 ## Maintainers
 
 @qwiglydee
+@BurkovBA
 
 Feel free to mail me if you consider being a maintainer.
