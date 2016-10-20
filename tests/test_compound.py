@@ -225,6 +225,29 @@ class TestRequriedList(TestCase):
         assert serializer.errors['required_list'] == [u'This list may not be empty.']
 
 
+# Check that ListField is allowed to be empty, if required=False
+
+class NonRequiredListDocument(Document):
+    non_required_list = fields.ListField(fields.StringField(), required=False)
+
+
+class NonRequiredListSerializer(DocumentSerializer):
+    class Meta:
+        model = NonRequiredListDocument
+
+
+class TestNonRequiredList(TestCase):
+    def doCleanups(self):
+        NonRequiredListDocument.drop_collection()
+
+    def test_parsing(self):
+        input_data = {
+            'non_required_list': []
+        }
+        serializer = NonRequiredListSerializer(data=input_data)
+        assert serializer.is_valid()
+
+
 # Check that Compound fields work with DynamicField
 # So far implemented only for ListField, cause it's failing
 
