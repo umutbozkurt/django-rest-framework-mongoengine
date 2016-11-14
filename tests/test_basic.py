@@ -100,6 +100,7 @@ class TestRegularFieldMappings(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         # in pythons 2 and 3 regex reprs are different
         if six.PY2:
@@ -185,6 +186,7 @@ class TestRegularFieldMappings(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = FieldOptionsModel
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -319,6 +321,7 @@ class TestRegularFieldMappings(TestCase):
 
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         class ChildSerializer(TestSerializer):
             missing = serializers.ReadOnlyField()
@@ -339,6 +342,7 @@ class TestRegularFieldMappings(TestCase):
 
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         class ChildSerializer(TestSerializer):
             missing = serializers.ReadOnlyField()
@@ -355,6 +359,7 @@ class TestRegularFieldMappings(TestCase):
 
             class Meta:
                 model = ComplexChoicesModel
+                fields = '__all__'
 
         TestSerializer().fields
 
@@ -362,6 +367,7 @@ class TestRegularFieldMappings(TestCase):
         class ImplicitFieldsSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         class ExplicitFieldsSerializer(DocumentSerializer):
             class Meta:
@@ -382,6 +388,7 @@ class TestRegexStringValidation(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         data = {'str_regex_field': "valid_regex_str"}
         serializer = TestSerializer(data=data)
@@ -402,6 +409,7 @@ class TestIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         input_data = {
             'str_field': "str",
@@ -460,6 +468,7 @@ class TestIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         serializer = TestSerializer(instance)
         expected = {
@@ -486,6 +495,7 @@ class TestIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         data = {
             'str_field': "str",
@@ -563,6 +573,7 @@ class TestIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
+                fields = '__all__'
 
         data = {
             'str_field': "str1",

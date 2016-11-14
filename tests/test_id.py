@@ -33,13 +33,13 @@ class CustomIdSerializer(DocumentSerializer):
 
     class Meta:
         model = CustomIdModel
-
+        fields = '__all__'
 
 class IncorrectSerializer(DocumentSerializer):
     '''This serializer doesn't override id field, thus it is incorrect.'''
     class Meta:
         model = CustomIdModel
-
+        fields = '__all__'
 
 class IncorrectSerializerTestCase(TestCase):
     data = {

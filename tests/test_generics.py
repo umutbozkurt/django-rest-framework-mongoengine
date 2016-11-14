@@ -13,6 +13,7 @@ from .models import DumbDocument
 class DumbSerializer(DocumentSerializer):
     class Meta:
         model = DumbDocument
+        fields = '__all__'
 
 
 class ListView(generics.ListAPIView):

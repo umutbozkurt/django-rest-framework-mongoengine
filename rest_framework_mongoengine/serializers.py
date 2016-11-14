@@ -464,6 +464,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         class NestedSerializer(subclass):
             class Meta:
                 model = relation_info.related_model
+                fields = '__all__'
                 depth = nested_depth - 1
 
         field_class = NestedSerializer
@@ -481,6 +482,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         class EmbeddedSerializer(subclass):
             class Meta:
                 model = relation_info.related_model
+                fields = '__all__'
                 depth_embedding = embedded_depth - 1
 
         field_class = EmbeddedSerializer

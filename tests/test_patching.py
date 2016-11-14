@@ -23,6 +23,7 @@ class PatchingDumbDocument(Document):
 class DumbSerializer(DocumentSerializer):
     class Meta:
         model = PatchingDumbDocument
+        fields = '__all__'
 
 
 class TestPatchParsing(TestCase):

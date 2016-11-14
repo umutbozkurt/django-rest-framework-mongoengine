@@ -36,6 +36,7 @@ class TestCompundFieldMappings(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = BasicCompoundDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -52,6 +53,7 @@ class TestCompundFieldMappings(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = OptionsCompoundDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -64,6 +66,7 @@ class TestCompundFieldMappings(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = NestedCompoundDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -78,6 +81,7 @@ class TestCompundFieldMappings(TestCase):
 class TestSerializer(DocumentSerializer):
     class Meta:
         model = BasicCompoundDoc
+        fields = '__all__'
 
 
 class TestIntegration(TestCase):
@@ -187,6 +191,7 @@ class TestIntegration(TestCase):
 class ValidatingSerializer(DocumentSerializer):
     class Meta:
         model = OptionsCompoundDoc
+        fields = '__all__'
 
 
 class TestCompoundValidation(TestCase):
@@ -210,6 +215,7 @@ class RequiredListDocument(Document):
 class RequiredListSerializer(DocumentSerializer):
     class Meta:
         model = RequiredListDocument
+        fields = '__all__'
 
 
 class TestRequriedList(TestCase):
@@ -234,6 +240,7 @@ class NonRequiredListDocument(Document):
 class NonRequiredListSerializer(DocumentSerializer):
     class Meta:
         model = NonRequiredListDocument
+        fields = '__all__'
 
 
 class TestNonRequiredList(TestCase):
@@ -258,6 +265,7 @@ class CompoundsWithDynamicFieldDoc(Document):
 class CompoundsWithDynamicFieldSerializer(DocumentSerializer):
     class Meta:
         model = CompoundsWithDynamicFieldDoc
+        fields = '__all__'
 
 
 class TestCompoundsWithDynamicField(TestCase):
@@ -326,6 +334,7 @@ class MapEmbeddedDoc(Document):
 class MapEmbeddedFieldSerializer(DocumentSerializer):
     class Meta:
         model = MapEmbeddedDoc
+        fields = '__all__'
 
 
 class TestMapFieldWithEmbeddedDocument(TestCase):

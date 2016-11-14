@@ -39,6 +39,7 @@ class TestMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = DumbDocument
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -54,6 +55,7 @@ class TestMapping(TestCase):
 class TestSerializer(DocumentSerializer):
     class Meta:
         model = DumbDocument
+        fields = '__all__'
 
 
 class TestIntegration(TestCase):

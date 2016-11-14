@@ -34,6 +34,7 @@ class NullValidatingModel(Document):
 class UniqueValidatorSerializer(DocumentSerializer):
     class Meta:
         model = NonValidatingModel
+        fields = '__all__'
 
     name = serializers.CharField(validators=[UniqueValidator(queryset=NonValidatingModel.objects)])
 
@@ -83,6 +84,7 @@ class TestUniqueSerializer(TestCase):
         class UniqueSerializer(DocumentSerializer):
             class Meta:
                 model = UniqueValidatingModel
+                fields = '__all__'
 
         serializer = UniqueSerializer()
 
@@ -100,12 +102,14 @@ class TestUniqueSerializer(TestCase):
 class UniqueTogetherValidatorSerializer(DocumentSerializer):
     class Meta:
         model = NonValidatingModel
+        fields = '__all__'
         validators = [UniqueTogetherValidator(queryset=NonValidatingModel.objects, fields=('name', 'code'))]
 
 
 class NullUniqueTogetherValidatorSerializer(DocumentSerializer):
     class Meta:
         model = NullValidatingModel
+        fields = '__all__'
         validators = [UniqueTogetherValidator(queryset=NullValidatingModel.objects, fields=('name', 'code'))]
 
 
@@ -215,6 +219,7 @@ class TestUniqueTogetherValidation(TestCase):
         class UniqueTogetherSerializer(DocumentSerializer):
             class Meta:
                 model = NullValidatingModel
+                fields = '__all__'
         data = {'name': 'existing', 'code': None, 'other': "xxx"}
         serializer = NullUniqueTogetherValidatorSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
@@ -253,6 +258,7 @@ class TestUniqueTogetherSerializer(TestCase):
         class UniqueTogetherSerializer(DocumentSerializer):
             class Meta:
                 model = UniqueTogetherModel
+                fields = '__all__'
 
         serializer = UniqueTogetherSerializer()
 

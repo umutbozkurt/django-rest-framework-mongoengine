@@ -11,6 +11,7 @@ from .models import DumbDocument
 class ValidationMethodSerializer(DocumentSerializer):
     class Meta:
         model = DumbDocument
+        fields = '__all__'
 
     def validate_name(self, value):
         if len(value) < 3:
@@ -21,6 +22,7 @@ class ValidationMethodSerializer(DocumentSerializer):
 class RenamedValidationMethodSerializer(DocumentSerializer):
     class Meta:
         model = DumbDocument
+        fields = '__all__'
 
     renamed = serializers.CharField(source='name', required=False)
 
@@ -39,6 +41,7 @@ def custom_field_validator(value):
 class FieldValidatorSerializer(DocumentSerializer):
     class Meta:
         model = DumbDocument
+        fields = '__all__'
 
     name = serializers.CharField(validators=[custom_field_validator])
 
@@ -51,6 +54,7 @@ def custom_model_validator(data):
 class ModelValidatorSerializer(DocumentSerializer):
     class Meta:
         model = DumbDocument
+        fields = '__all__'
         validators = [custom_model_validator]
 
 

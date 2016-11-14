@@ -33,6 +33,7 @@ class FileDoc(Document):
 class TestSerializer(DocumentSerializer):
     class Meta:
         model = FileDoc
+        fields = '__all__'
 
 
 class TestFilesMapping(TestCase):
@@ -44,6 +45,7 @@ class TestFilesMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = FileDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():

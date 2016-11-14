@@ -55,6 +55,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(EmbeddedDocumentSerializer):
             class Meta:
                 model = DumbEmbedded
+                fields = '__all__'
         expected = dedent("""
             TestSerializer():
                 name = CharField(required=False)
@@ -66,6 +67,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = NestedEmbeddingDoc
+                fields = '__all__'
                 depth = 1
         expected = dedent("""
             TestSerializer():
@@ -82,6 +84,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = NestedEmbeddingDoc
+                fields = '__all__'
                 depth = 0
         expected = dedent("""
             TestSerializer():
@@ -98,6 +101,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = NestedEmbeddingDoc
+                fields = '__all__'
                 depth_embedding = 1
         expected = dedent("""
             TestSerializer():
@@ -112,6 +116,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RecursiveEmbeddingDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -136,6 +141,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RecursiveEmbeddingDoc
+                fields = '__all__'
                 depth_embedding = 2
         expected = dedent("""
             TestSerializer():
@@ -154,6 +160,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = NestedEmbeddingDoc
+                fields = '__all__'
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
@@ -169,6 +176,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ListEmbeddingDoc
+                fields = '__all__'
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
@@ -182,6 +190,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RequiredEmbeddingDoc
+                fields = '__all__'
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
@@ -195,6 +204,7 @@ class TestEmbeddingMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GenericEmbeddingDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -213,6 +223,7 @@ class TestEmbeddingMapping(TestCase):
 
             class Meta:
                 model = GenericEmbeddingDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -230,6 +241,7 @@ class TestEmbeddingMapping(TestCase):
 
             class Meta:
                 model = NestedEmbeddingDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -248,6 +260,7 @@ class TestEmbeddingMapping(TestCase):
 
             class Meta:
                 model = NestedEmbeddingDoc
+                fields = '__all__'
                 depth_embedding = 0
 
         expected = dedent("""
@@ -261,11 +274,13 @@ class TestEmbeddingMapping(TestCase):
 class EmbeddingSerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingDoc
+        fields = '__all__'
 
 
 class NestedEmbeddingSerializer(DocumentSerializer):
     class Meta:
         model = NestedEmbeddingDoc
+        fields = '__all__'
 
 
 class TestEmbeddedIntegration(TestCase):
@@ -275,6 +290,7 @@ class TestEmbeddedIntegration(TestCase):
         class TestSerializer(EmbeddedDocumentSerializer):
             class Meta:
                 model = OtherEmbedded
+                fields = '__all__'
 
         instance = OtherEmbedded(name="qwe", bar=123)
         serializer = TestSerializer(instance)
@@ -286,6 +302,7 @@ class TestEmbeddedIntegration(TestCase):
         class TestSerializer(EmbeddedDocumentSerializer):
             class Meta:
                 model = OtherEmbedded
+                fields = '__all__'
 
         data = {'name': "qwe", 'bar': 123}
 
@@ -302,6 +319,7 @@ class TestEmbeddedIntegration(TestCase):
         class TestSerializer(EmbeddedDocumentSerializer):
             class Meta:
                 model = OtherEmbedded
+                fields = '__all__'
         instance = OtherEmbedded(name="qwe", bar=123)
         data = {'bar': 234}
 
@@ -473,6 +491,7 @@ class TestNestedEmbeddingIntegration(TestCase):
 class ListEmbeddingSerializer(DocumentSerializer):
     class Meta:
         model = ListEmbeddingDoc
+        fields = '__all__'
 
 
 class TestListEmbeddingIntegration(TestCase):
@@ -565,6 +584,7 @@ class ValidatingEmbeddingModel(Document):
 class ValidatingSerializer(DocumentSerializer):
     class Meta:
         model = ValidatingEmbeddingModel
+        fields = '__all__'
         depth = 1
 
 
@@ -575,6 +595,7 @@ class ValidatingListEmbeddingModel(Document):
 class ValidatingListSerializer(DocumentSerializer):
     class Meta:
         model = ValidatingListEmbeddingModel
+        fields = '__all__'
         depth = 1
 
 

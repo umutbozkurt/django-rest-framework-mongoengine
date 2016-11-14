@@ -2,3 +2,6 @@ Django == 1.*
 djangorestframework == 3.*
 mongoengine
 blinker == 1.*
+pytest == 3.*
+six == 1.*
+mock == 2.*
