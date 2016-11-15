@@ -19,6 +19,7 @@ class TestDynamicMapping(TestCase):
         class TestSerializer(DynamicDocumentSerializer):
             class Meta:
                 model = DumbDynamic
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -34,6 +35,7 @@ class TestDynamicMapping(TestCase):
 
             class Meta:
                 model = DumbDynamic
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():
@@ -48,6 +50,7 @@ class TestDynamicMapping(TestCase):
 class TestSerializer(DynamicDocumentSerializer):
     class Meta:
         model = DumbDynamic
+        fields = '__all__'
 
 
 class TestDynamicIntegration(TestCase):
@@ -136,6 +139,7 @@ class TestDynamicIntegration(TestCase):
 class DumbEmbeddedSerializer(EmbeddedDocumentSerializer):
     class Meta:
         model = DumbEmbedded
+        fields = '__all__'
 
 
 class EmbeddingDynamicSerializer(DynamicDocumentSerializer):

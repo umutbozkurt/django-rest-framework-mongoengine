@@ -57,6 +57,7 @@ class GenericReferencingDoc(Document):
 class ReferencedSerializer(DocumentSerializer):
     class Meta:
         model = ReferencedDoc
+        fields = '__all__'
 
 
 class ListReferencingModel(Document):
@@ -211,6 +212,7 @@ class TestReferenceMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RefFieldsDoc
+                fields = '__all__'
 
         # order is broken
         expected = dedent("""
@@ -228,6 +230,7 @@ class TestReferenceMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
                 depth = 0
 
         expected = dedent("""
@@ -241,6 +244,7 @@ class TestReferenceMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
                 depth = 1
 
         expected = dedent("""
@@ -256,6 +260,7 @@ class TestReferenceMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RecursiveReferencingDoc
+                fields = '__all__'
                 depth = 3
 
         expected = dedent("""
@@ -281,6 +286,7 @@ class TestReferenceMapping(TestCase):
 
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
                 depth = 0
 
         expected = dedent("""
@@ -299,6 +305,7 @@ class TestReferenceMapping(TestCase):
 
             class Meta:
                 model = GenericReferencingDoc
+                fields = '__all__'
                 depth = 0
 
         expected = dedent("""
@@ -317,6 +324,7 @@ class TestReferenceMapping(TestCase):
 
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
                 depth = 1
 
         expected = dedent("""
@@ -355,6 +363,7 @@ class TestRelationalFieldDisplayValue(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = DisplayableReferencingModel
+                fields = '__all__'
 
         serializer = TestSerializer()
         expected = OrderedDict([(self.ids[0], 'Red Color'),
@@ -372,6 +381,7 @@ class TestRelationalFieldDisplayValue(TestCase):
 
             class Meta:
                 model = DisplayableReferencingModel
+                fields = '__all__'
 
         serializer = TestSerializer()
         expected = OrderedDict([(self.ids[0], 'My Red Color'),
@@ -396,6 +406,7 @@ class TestReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
                 depth = 0
 
         serializer = TestSerializer(instance)
@@ -411,6 +422,7 @@ class TestReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
                 depth = 1
 
         serializer = TestSerializer(instance)
@@ -424,6 +436,7 @@ class TestReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
 
         new_target = ReferencedDoc.objects.create(name="Bar")
         data = {'ref': new_target.id}
@@ -446,6 +459,7 @@ class TestReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
 
         new_target = ReferencedDoc.objects.create(
             name="Bar"
@@ -484,6 +498,7 @@ class TestGenericReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GenericReferencingDoc
+                fields = '__all__'
                 depth = 0
 
         serializer = TestSerializer(instance)
@@ -499,6 +514,7 @@ class TestGenericReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GenericReferencingDoc
+                fields = '__all__'
                 depth = 1
 
         serializer = TestSerializer(instance)
@@ -512,6 +528,7 @@ class TestGenericReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GenericReferencingDoc
+                fields = '__all__'
 
         new_target = ReferencedDoc.objects.create(
             name="Bar"
@@ -538,6 +555,7 @@ class TestGenericReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GenericReferencingDoc
+                fields = '__all__'
 
         new_target = OtherReferencedDoc.objects.create(name="Bar")
         data = {
@@ -563,6 +581,7 @@ class TestGenericReferenceIntegration(TestCase):
 class ComboReferencingSerializer(DocumentSerializer):
     class Meta:
         model = ReferencingDoc
+        fields = '__all__'
     ref = ComboReferenceField(serializer=ReferencedSerializer)
 
     def save_subdocs(self, validated_data):
@@ -602,6 +621,7 @@ class TestComboReferenceIntegration(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = ReferencingDoc
+                fields = '__all__'
                 depth = 1
             ref = ComboReferenceField(serializer=ReferencedSerializer)
 

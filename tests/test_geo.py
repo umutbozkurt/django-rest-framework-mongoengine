@@ -155,6 +155,7 @@ class TestGeoMapping(TestCase):
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = GeoDoc
+                fields = '__all__'
 
         expected = dedent("""
             TestSerializer():

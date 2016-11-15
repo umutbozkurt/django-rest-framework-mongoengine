@@ -20,23 +20,27 @@ class EmbeddingThing(Document):
 class EmbeddedThingSerializer(EmbeddedDocumentSerializer):
     class Meta:
         model = EmbeddedThing
+        fields = '__all__'
 
 
 class ExplicitSerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingThing
+        fields = '__all__'
     embedded = drf_fields.ListField(child=EmbeddedThingSerializer())
 
 
 class ExplicitManySerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingThing
+        fields = '__all__'
     embedded = EmbeddedThingSerializer(many=True)
 
 
 class ImplicitSerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingThing
+        fields = '__all__'
         depth = 1
 
 
