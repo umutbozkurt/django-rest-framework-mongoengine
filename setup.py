@@ -1,10 +1,38 @@
-from distutils.core import setup
+import os
+from setuptools import setup
+
+
+
+def get_packages(package):
+    """
+    Return root package and all sub-packages.
+    """
+    return [dirpath
+            for dirpath, dirnames, filenames in os.walk(package)
+            if os.path.exists(os.path.join(dirpath, '__init__.py'))]
+
+
+def get_package_data(package):
+    """
+    Return all files under the root package, that are not in a
+    package themselves.
+    """
+    walk = [(dirpath.replace(package + os.sep, '', 1), filenames)
+            for dirpath, dirnames, filenames in os.walk(package)
+            if not os.path.exists(os.path.join(dirpath, '__init__.py'))]
+
+    filepaths = []
+    for base, filenames in walk:
+        filepaths.extend([os.path.join(base, filename)
+                          for filename in filenames])
+    return {package: filepaths}
 
 setup(
     name='django-rest-framework-mongoengine',
-    version='3.3.0',
+    version='3.3.1',
     description='MongoEngine support for Django Rest Framework.',
-    packages=['rest_framework_mongoengine',],
+    packages=get_packages('rest_framework_mongoengine'),
+    package_data=get_package_data('rest_framework_mongoengine'),
     license='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/LICENSE',
     long_description='see https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/README.md',
     url='https://github.com/umutbozkurt/django-rest-framework-mongoengine',
