@@ -15,14 +15,20 @@ env:
     - TOX_ENV=dj18-py35-me09
     - TOX_ENV=dj18-py27-me010
     - TOX_ENV=dj18-py35-me010
+    - TOX_ENV=dj18-py27-me011
+    - TOX_ENV=dj18-py35-me011
     - TOX_ENV=dj19-py27-me09
     - TOX_ENV=dj19-py35-me09
     - TOX_ENV=dj19-py27-me010
     - TOX_ENV=dj19-py35-me010
+    - TOX_ENV=dj19-py27-me011
+    - TOX_ENV=dj19-py35-me011
     - TOX_ENV=dj110-py27-me09
     - TOX_ENV=dj110-py35-me09
     - TOX_ENV=dj110-py27-me010
     - TOX_ENV=dj110-py35-me010
+    - TOX_ENV=dj110-py27-me011
+    - TOX_ENV=dj110-py35-me011
 
 matrix:
     fast_finish: true
