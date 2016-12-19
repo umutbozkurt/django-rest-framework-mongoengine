@@ -19,8 +19,9 @@ The features and differences of this package are described in [API documentation
 
 * Django == 1.*
 * djangorestframework == 3.*
-* mongoengine == 0.10.* | 0.9.*
+* mongoengine == 0.11.* | 0.10.* | 0.9.*
 * blinker == 1.* (for mongoengine referencefields to work)
+* With mongoengine 0.11: pymongo == 3.*
 * With mongoengine 0.10: pymongo == 3.*
 * With mongoengine 0.9: pymongo == 2.*
 
@@ -38,7 +39,7 @@ The features and differences of this package are described in [API documentation
 
 ### do not use git clone!
 
-It may contain non-working code. Before using it, run tests to ensure the code is working.  
+It may contain non-working code. Before using it, run tests to ensure the code is working.
 
 ## Usage
 
