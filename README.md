@@ -61,7 +61,7 @@ Use corresponding classes from this package in place of original DRF stuff. Refe
 ## Testing
 
 If you discover something does not work on the DRFM side, the best way to ensure that and report an issue - is to write a test case, with minimal code that fails. 
-You may use [this template](https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/tests/test_0dumb.py) to create your case.
+You may use [this template](https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/tests/test_dumb.py) to create your case.
 
 If you have something (Django, DRF, mongoengine) at a version, not mentioned in release notes, you better run all the tests in your environment to ensure the DRFM is compatible with that version.
 
