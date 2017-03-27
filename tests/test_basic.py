@@ -363,22 +363,6 @@ class TestRegularFieldMappings(TestCase):
 
         TestSerializer().fields
 
-    def test_fields_and_exclude_behavior(self):
-        class ImplicitFieldsSerializer(DocumentSerializer):
-            class Meta:
-                model = RegularModel
-                fields = '__all__'
-
-        class ExplicitFieldsSerializer(DocumentSerializer):
-            class Meta:
-                model = RegularModel
-                fields = '__all__'
-
-        implicit = ImplicitFieldsSerializer()
-        explicit = ExplicitFieldsSerializer()
-
-        assert implicit.data == explicit.data
-
 
 class TestRegexStringValidation(TestCase):
     valid = "valid_regex_str"
