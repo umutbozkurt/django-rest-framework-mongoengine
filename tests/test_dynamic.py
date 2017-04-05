@@ -7,11 +7,64 @@ from rest_framework import fields as drf_fields
 from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import (
-    DynamicDocumentSerializer, EmbeddedDocumentSerializer
+    DocumentSerializer, DynamicDocumentSerializer, EmbeddedDocumentSerializer
 )
 
-from .models import DumbDynamic, DumbEmbedded, EmbeddingDynamic
+from .models import DumbDocument, DumbDynamic, DumbEmbedded, EmbeddingDynamic
 from .utils import dedent
+
+
+class DumbDocumentSerializer(DocumentSerializer):
+    class Meta:
+        model = DumbDocument
+        fields = '__all__'
+
+
+class TestDynamicDataIntegration(TestCase):
+    """
+    Tests that if we pass dynamic data to a DocumentSerializer, they won't
+    make it into corresponding Document.
+    """
+    def doCleanups(self):
+        DumbDocument.drop_collection()
+
+    def test_create(self):
+        data = {'name': r'Joe', 'foo': 1, 'unexpected': r'data'}
+
+        serializer = DumbDocumentSerializer(data=data)
+        assert serializer.is_valid(raise_exception=True)
+
+        instance = serializer.save()
+        assert instance.name == r'Joe'
+        assert instance.foo == 1
+        assert not hasattr(instance, 'unexpected')
+
+        expected = {
+            'id': str(instance.id),
+            'name': r'Joe',
+            'foo': 1
+        }
+        assert serializer.data == expected
+
+    def test_update(self):
+        instance = DumbDocument.objects.create(name=u'Joe', foo=1)
+
+        data = {'name': r'Jack', 'foo': 2, 'unexpected': r'data'}
+
+        serializer = DumbDocumentSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.name == r'Jack'
+        assert instance.foo == 2
+        assert not hasattr(instance, 'unexpected')
+
+        expected = {
+            'id': str(instance.id),
+            'name': r'Jack',
+            'foo': 2
+        }
+        assert serializer.data == expected
 
 
 class TestDynamicMapping(TestCase):

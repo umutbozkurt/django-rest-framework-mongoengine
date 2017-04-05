@@ -184,39 +184,25 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def to_internal_value(self, data):
-        """
-        Calls super() from DRF, but with an addition.
+    def update(self, instance, validated_data):
+        raise_errors_on_nested_writes('update', self, validated_data)
 
-        Creates initial_data and _validated_data for nested
-        EmbeddedDocumentSerializers, so that recursive_save could make
-        use of them.
-        """
-        # for EmbeddedDocumentSerializers create initial data
-        # so that _get_dynamic_data could use them
-        for field in self._writable_fields:
-            if isinstance(field, EmbeddedDocumentSerializer) and field.field_name in data:
-                field.initial_data = data[field.field_name]
+        instance = self.recursive_save(validated_data, instance)
 
-        ret = super(DocumentSerializer, self).to_internal_value(data)
-
-        # for EmbeddedDcoumentSerializers create _validated_data
-        # so that create()/update() could use them
-        for field in self._writable_fields:
-            if isinstance(field, EmbeddedDocumentSerializer) and field.field_name in ret:
-                field._validated_data = ret[field.field_name]
-
-        return ret
+        return instance
 
     def recursive_save(self, validated_data, instance=None):
-        '''Recursively traverses validated_data and creates EmbeddedDocuments
+        """
+        Recursively traverses validated_data and creates EmbeddedDocuments
         of the appropriate subtype from them.
 
         Returns Mongonengine model instance.
-        '''
+        """
         # me_data is an analogue of validated_data, but contains
-        # mongoengine EmbeddedDocument instances for nested data structures,
-        # instead of OrderedDicts, for example:
+        # mongoengine EmbeddedDocument instances for nested data structures
+        # instead of OrderedDicts.
+        #
+        # For example:
         # validated_data = {'id:, "1", 'embed': OrderedDict({'a': 'b'})}
         # me_data = {'id': "1", 'embed': <EmbeddedDocument>}
         me_data = dict()
@@ -246,8 +232,11 @@ class DocumentSerializer(serializers.ModelSerializer):
                     me_data[key] = {}
                     for datum_key, datum_value in value.items():
                         me_data[key][datum_key] = field.child.recursive_save(datum_value)
+
+                # for regular fields just set value
                 else:
                     me_data[key] = value
+
             except KeyError:  # this is dynamic data
                 me_data[key] = value
 
@@ -263,12 +252,32 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def update(self, instance, validated_data):
-        raise_errors_on_nested_writes('update', self, validated_data)
+    def to_internal_value(self, data):
+        """
+        Calls super() from DRF, but with an addition.
 
-        instance = self.recursive_save(validated_data, instance)
+        Creates initial_data and _validated_data for nested
+        EmbeddedDocumentSerializers, so that recursive_save could make
+        use of them.
 
-        return instance
+        If meets any arbitrary data, not expected by fields,
+        just silently drops them from validated_data.
+        """
+        # for EmbeddedDocumentSerializers create initial data
+        # so that _get_dynamic_data could use them
+        for field in self._writable_fields:
+            if isinstance(field, EmbeddedDocumentSerializer) and field.field_name in data:
+                field.initial_data = data[field.field_name]
+
+        ret = super(DocumentSerializer, self).to_internal_value(data)
+
+        # for EmbeddedDocumentSerializers create _validated_data
+        # so that create()/update() could use them
+        for field in self._writable_fields:
+            if isinstance(field, EmbeddedDocumentSerializer) and field.field_name in ret:
+                field._validated_data = ret[field.field_name]
+
+        return ret
 
     def get_model(self):
         return self.Meta.model
