@@ -210,7 +210,7 @@ def get_relation_kwargs(field_name, relation_info):
         if model_field.null:
             kwargs['allow_null'] = True
         if getattr(model_field, 'unique', False):
-            validator = UniqueValidator(queryset=model_field.model.objects)
+            validator = UniqueValidator(queryset=related_model.objects)
             kwargs['validators'] = [validator]
 
     return kwargs
