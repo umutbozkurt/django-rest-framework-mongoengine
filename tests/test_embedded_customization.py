@@ -25,21 +25,42 @@ from .utils import dedent
 
 class ChildDocument(EmbeddedDocument):
     name = fields.StringField()
+    age = fields.IntField()
 
 
 class ParentDocument(Document):
+    foo = fields.StringField()
     embedded = fields.EmbeddedDocumentField(ChildDocument)
     embedded_list = fields.EmbeddedDocumentListField(ChildDocument)
     embedded_map = fields.MapField(fields.EmbeddedDocumentField(ChildDocument))
 
 
-class TestEmbeddedCustomizations(TestCase):
+class TestEmbeddedCustomizationMapping(TestCase):
+    def test_fields(self):
+        """
+        Ensure `fields` is passed to embedded documents.
+        """
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                fields = ('embedded', 'embedded_list', 'embedded_map', 'embedded.name', 'embedded_list.name', 'embedded_map.name')
+
+        # TODO: what if parent field is not included, but child field is?
 
     def test_exclude(self):
         """
         Ensure `exclude` is passed to embedded documents.
         """
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                fields = ('__all__')
+                exclude = ('foo', 'embedded.age', 'embedded_list.age', 'embedded_map.age')
+
+        expected = dedent("""
+            ParentSerializer():
+
+        """)
 
     def test_read_only(self):
         """
@@ -64,3 +85,14 @@ class TestEmbeddedCustomizations(TestCase):
                 str_field = CharField(default='extra')
         """)
         assert unicode_repr(TestSerializer()) == expected
+
+
+class TestEmbeddedCustomizationIntegration(TestCase):
+    def test_exclude(self):
+        pass
+
+    def test_read_only(self):
+        pass
+
+    def test_extra_field_kwargs(self):
+        pass
