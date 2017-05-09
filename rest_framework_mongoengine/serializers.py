@@ -1,5 +1,6 @@
 import copy
 from collections import OrderedDict
+import warnings
 
 from mongoengine import fields as me_fields
 from mongoengine.errors import ValidationError as me_ValidationError
@@ -21,6 +22,8 @@ from .utils import (
     is_abstract_model
 )
 
+
+ALL_FIELDS = '__all__'
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
     # *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to pass ***
@@ -347,9 +350,88 @@ class DocumentSerializer(serializers.ModelSerializer):
         return fields
 
     def get_field_names(self, declared_fields, model_info):
-        field_names = super(DocumentSerializer, self).get_field_names(declared_fields, model_info)
+        """
+        Returns the list of all field names that should be created when
+        instantiating this serializer class. This is based on the default
+        set of fields, but also takes into account the `Meta.fields` or
+        `Meta.exclude` options if they have been specified.
+        """
+        fields = getattr(self.Meta, 'fields', None)
+        exclude = getattr(self.Meta, 'exclude', None)
+
+        if fields and fields != ALL_FIELDS and not isinstance(fields, (list, tuple)):
+            raise TypeError(
+                'The `fields` option must be a list or tuple or "__all__". '
+                'Got %s.' % type(fields).__name__
+            )
+
+        if exclude and not isinstance(exclude, (list, tuple)):
+            raise TypeError(
+                'The `exclude` option must be a list or tuple. Got %s.' %
+                type(exclude).__name__
+            )
+
+        assert not (fields and exclude), (
+            "Cannot set both 'fields' and 'exclude' options on "
+            "serializer {serializer_class}.".format(
+                serializer_class=self.__class__.__name__
+            )
+        )
+
+        if fields is None and exclude is None:
+            warnings.warn(
+                "Creating a ModelSerializer without either the 'fields' "
+                "attribute or the 'exclude' attribute is deprecated "
+                "since 3.3.0. Add an explicit fields = '__all__' to the "
+                "{serializer_class} serializer.".format(
+                    serializer_class=self.__class__.__name__
+                ),
+                DeprecationWarning
+            )
+
+        if fields == ALL_FIELDS:
+            fields = None
+
+        if fields is not None:
+            # Ensure that all declared fields have also been included in the
+            # `Meta.fields` option.
+
+            # Do not require any fields that are declared a parent class,
+            # in order to allow serializer subclasses to only include
+            # a subset of fields.
+            required_field_names = set(declared_fields)
+            for cls in self.__class__.__bases__:
+                required_field_names -= set(getattr(cls, '_declared_fields', []))
+
+            for field_name in required_field_names:
+                assert field_name in fields, (
+                    "The field '{field_name}' was declared on serializer "
+                    "{serializer_class}, but has not been included in the "
+                    "'fields' option.".format(
+                        field_name=field_name,
+                        serializer_class=self.__class__.__name__
+                    )
+                )
+            return fields
+
+        # Use the default set of field names if `Meta.fields` is not specified.
+        fields = self.get_default_field_names(declared_fields, info)
+
+        if exclude is not None:
+            # If `Meta.exclude` is included, then remove those fields.
+            for field_name in exclude:
+                assert field_name in fields, (
+                    "The field '{field_name}' was included on serializer "
+                    "{serializer_class} in the 'exclude' option, but does "
+                    "not match any model field.".format(
+                        field_name=field_name,
+                        serializer_class=self.__class__.__name__
+                    )
+                )
+                fields.remove(field_name)
+
         # filter out child fields
-        return [fn for fn in field_names if '.child' not in fn]
+        return [fn for fn in fields if '.child' not in fn]
 
     def get_default_field_names(self, declared_fields, model_info):
         return (
