@@ -45,7 +45,21 @@ class TestEmbeddedCustomizationMapping(TestCase):
                 model = ParentDocument
                 fields = ('embedded', 'embedded_list', 'embedded_map', 'embedded.name', 'embedded_list.name', 'embedded_map.name')
 
+        expected = dedent("""
+            ParentSerializer():
+                foo = CharField()
+                embedded = EmbeddedSerializer(required=False):
+                    name = CharField(required=False)
+                    age = IntegerField(required=False)
+                embedded_list = ListSerializer(EmbeddedSerializer(required=False)):
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
+                embedded_map = DictField(EmbeddedSerializer(required=False)):
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
+        """)
         # TODO: what if parent field is not included, but child field is?
+        assert unicode_repr(ParentSerializer()) == expected
 
     def test_exclude(self):
         """
@@ -59,35 +73,75 @@ class TestEmbeddedCustomizationMapping(TestCase):
 
         expected = dedent("""
             ParentSerializer():
-
+                foo = CharField()
+                embedded = EmbeddedSerializer(required=False):
+                    name = CharField(required=False)
+                    age = IntegerField(required=False)
+                embedded_list = ListSerializer(EmbeddedSerializer(required=False)):
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
+                embedded_map = DictField(EmbeddedSerializer(required=False)):
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
         """)
+
+        assert unicode_repr(ParentSerializer()) == expected
 
     def test_read_only(self):
         """
         Ensure `read_only` are passed to embedded documents.
         """
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                fields = ('__all__')
+                read_only = ('foo', 'embedded.name', 'embedded_list.name', 'embedded_map.name')
+
+        expected = dedent("""
+            ParentSerializer():
+                foo = CharField()
+                embedded = EmbeddedSerializer(required=False):
+                    name = CharField(required=False)
+                    age = IntegerField(required=False)
+                embedded_list = ListSerializer(EmbeddedSerializer(required=False)):
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
+                embedded_map = DictField(EmbeddedSerializer(required=False)):
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
+        """)
+
+        assert unicode_repr(ParentSerializer()) == expected
+
 
     def test_extra_field_kwargs(self):
         """
         Ensure `extra_kwargs` are passed to embedded documents.
         """
-
-        class TestSerializer(DocumentSerializer):
+        class ParentSerializer(DocumentSerializer):
             class Meta:
                 model = ParentDocument
-                fields = ('id', 'str_field')
-                extra_kwargs = {'str_field': {'default': 'extra'}}
+                fields = ('__all__')
+                extra_kwargs = {
+                    'foo': {'default': 'bar'},
+                    'embedded.name': {'default': 'Johnny'},
+                    'embedded_list.name': {'default': 'B.'},
+                    'embedded_map.name': {'default': 'Good'}
+                }
 
         expected = dedent("""
-            TestSerializer():
-                id = ObjectIdField(read_only=True)
+            ParentSerializer():
+                foo = StringField(default='bar')
                 str_field = CharField(default='extra')
         """)
-        assert unicode_repr(TestSerializer()) == expected
+
+        assert unicode_repr(DocumentSerializer()) == expected
 
 
 class TestEmbeddedCustomizationIntegration(TestCase):
+    def test_fields(self):
+        pass
+
     def test_exclude(self):
         pass
 
