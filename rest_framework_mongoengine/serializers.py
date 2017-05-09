@@ -687,20 +687,20 @@ class DynamicDocumentSerializer(DocumentSerializer):
     Maps all undefined fields to :class:`fields.DynamicField`.
     """
     def to_internal_value(self, data):
-        '''
+        """
         Updates _validated_data with dynamic data, i.e. data,
         not listed in fields.
-        '''
+        """
         ret = super(DynamicDocumentSerializer, self).to_internal_value(data)
         dynamic_data = self._get_dynamic_data(ret)
         ret.update(dynamic_data)
         return ret
 
     def _get_dynamic_data(self, validated_data):
-        '''
+        """
         Returns dict of data, not declared in serializer fields.
         Should be called after self.is_valid().
-        '''
+        """
         result = {}
 
         for key in self.initial_data:
