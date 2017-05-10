@@ -431,7 +431,7 @@ class DocumentSerializer(serializers.ModelSerializer):
                 fields.remove(field_name)
 
         # filter out child fields
-        return [fn for fn in fields if '.child' not in fn]
+        return [field_name for field_name in fields if '.child' not in field_name]
 
     def get_default_field_names(self, declared_fields, model_info):
         return (
