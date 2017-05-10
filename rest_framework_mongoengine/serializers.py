@@ -349,7 +349,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return fields
 
-    def get_field_names(self, declared_fields, model_info):
+    def get_field_names(self, declared_fields, info):
         """
         Returns the list of all field names that should be created when
         instantiating this serializer class. This is based on the default
