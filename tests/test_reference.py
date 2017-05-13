@@ -17,6 +17,8 @@ from .utils import dedent
 class ReferencedDoc(Document):
     name = fields.StringField()
 
+class ReferencedDocWithUniqueField(Document):
+    name = fields.StringField(unique=True)
 
 class IntReferencedDoc(Document):
     id = fields.IntField(primary_key=True)
@@ -49,6 +51,8 @@ class RefFieldsDoc(Document):
 class ReferencingDoc(Document):
     ref = fields.ReferenceField(ReferencedDoc)
 
+class ReferencingDocWithUniqueField(Document):
+    ref = fields.ReferenceField(ReferencedDocWithUniqueField, unique=True)
 
 class GenericReferencingDoc(Document):
     ref = fields.GenericReferenceField()
@@ -462,6 +466,100 @@ class TestReferenceIntegration(TestCase):
                 fields = '__all__'
 
         new_target = ReferencedDoc.objects.create(
+            name="Bar"
+        )
+        data = {
+            'ref': new_target.id
+        }
+
+        # Serializer should validate okay.
+        serializer = TestSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        # Creating the instance, relationship attributes should be set.
+        instance = serializer.save()
+        assert instance.ref.id == new_target.id
+
+        # Representation should be correct.
+        expected = {
+            'id': str(instance.id),
+            'ref': str(new_target.id)
+        }
+        assert serializer.data == expected
+
+
+class TestUniqueReferenceIntegration(TestCase):
+    def setUp(self):
+        self.target = ReferencedDocWithUniqueField.objects.create(
+            name='Foo'
+        )
+
+    def doCleanups(self):
+        ReferencedDocWithUniqueField.drop_collection()
+        ReferencingDocWithUniqueField.drop_collection()
+
+    def test_retrieval(self):
+        instance = ReferencingDocWithUniqueField.objects.create(ref=self.target)
+
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingDocWithUniqueField
+                fields = '__all__'
+                depth = 0
+
+        serializer = TestSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'ref': str(self.target.id),
+        }
+        assert serializer.data == expected
+
+    def test_retrieval_deep(self):
+        instance = ReferencingDocWithUniqueField.objects.create(ref=self.target)
+
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingDocWithUniqueField
+                fields = '__all__'
+                depth = 1
+
+        serializer = TestSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'ref': {'id': str(self.target.id), 'name': "Foo"}
+        }
+        assert serializer.data == expected
+
+    def test_create(self):
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingDocWithUniqueField
+                fields = '__all__'
+
+        new_target = ReferencedDocWithUniqueField.objects.create(name="Bar")
+        data = {'ref': new_target.id}
+
+        serializer = TestSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.ref.id == new_target.id
+
+        expected = {
+            'id': str(instance.id),
+            'ref': str(new_target.id)
+        }
+        assert serializer.data == expected
+
+    def test_update(self):
+        instance = ReferencingDocWithUniqueField.objects.create(ref=self.target)
+
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingDocWithUniqueField
+                fields = '__all__'
+
+        new_target = ReferencedDocWithUniqueField.objects.create(
             name="Bar"
         )
         data = {
