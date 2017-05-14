@@ -24,6 +24,8 @@ from .utils import (
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
     # *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to pass ***
+    # Commenting this out since we are now handling nested saves in Rippling.
+    '''
     assert not any(
         isinstance(field, serializers.BaseSerializer) and
         not isinstance(field, EmbeddedDocumentSerializer) and
@@ -54,7 +56,7 @@ def raise_errors_on_nested_writes(method_name, serializer, validated_data):
             class_name=serializer.__class__.__name__
         )
     )
-
+    '''
 
 class DocumentSerializer(serializers.ModelSerializer):
     """ Serializer for Documents.
@@ -206,6 +208,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         # validated_data = {'id:, "1", 'embed': OrderedDict({'a': 'b'})}
         # me_data = {'id': "1", 'embed': <EmbeddedDocument>}
         me_data = dict()
+        
+        if not validated_data:
+            return None
 
         for key, value in validated_data.items():
             try:
@@ -293,6 +298,10 @@ class DocumentSerializer(serializers.ModelSerializer):
                 serializer_class=self.__class__.__name__
             )
         )
+        model = self.get_model()
+        return self.get_fields_from_model(model)
+
+    def get_fields_from_model(self, model):
         depth = getattr(self.Meta, 'depth', 0)
         depth_embedding = getattr(self.Meta, 'depth_embedding', 5)
 
@@ -301,8 +310,6 @@ class DocumentSerializer(serializers.ModelSerializer):
             assert depth <= 10, "'depth' may not be greater than 10."
 
         declared_fields = copy.deepcopy(self._declared_fields)
-        model = self.get_model()
-
         if model is None:
             return {}
 
@@ -316,6 +323,15 @@ class DocumentSerializer(serializers.ModelSerializer):
         field_names = self.get_field_names(declared_fields, self.field_info)
         # Determine any extra field arguments and hidden fields that
         # should be included
+        
+        '''
+        HACK!!! Include property names on models automatically
+        '''
+        property_names = [name for name in dir(model) if isinstance(getattr(model, name, None), property)]
+        for property_name in property_names:
+            if property_name not in ['_qs', 'pk', '_object_key']:
+                field_names.append(property_name)
+
         extra_kwargs = self.get_extra_kwargs()
         extra_kwargs, hidden_fields = self.get_uniqueness_extra_kwargs(field_names, extra_kwargs)
 
@@ -413,7 +429,7 @@ class DocumentSerializer(serializers.ModelSerializer):
                 'required', 'default', 'initial', 'source',
                 'label', 'help_text', 'style',
                 'error_messages', 'validators', 'allow_null', 'allow_blank',
-                'choices'
+                'choices', 'permission', 'read_permission', 'write_permission'
             ))
             for key in list(field_kwargs.keys()):
                 if key not in valid_kwargs:
