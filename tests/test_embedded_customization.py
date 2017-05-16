@@ -28,11 +28,16 @@ class ChildDocument(EmbeddedDocument):
     age = fields.IntField()
 
 
+class ReferencedDocument(Document):
+    foo = fields.StringField()
+
+
 class ParentDocument(Document):
     foo = fields.StringField()
     embedded = fields.EmbeddedDocumentField(ChildDocument)
     embedded_list = fields.EmbeddedDocumentListField(ChildDocument)
     embedded_map = fields.MapField(fields.EmbeddedDocumentField(ChildDocument))
+    nested_reference = fields.ReferenceField(RererencedDocument)
 
 
 class TestEmbeddedCustomizationMapping(TestCase):
@@ -57,6 +62,9 @@ class TestEmbeddedCustomizationMapping(TestCase):
                 embedded_map = DictField(EmbeddedSerializer(required=False)):
                     name = CharField(required=False)
                     foo = IntegerField(required=False)
+                nested_reference = NestedSerializer(read_only=True):
+                    id = ObjectIdField(read_only=True)
+                    foo = CharField(required=False)
         """)
         # TODO: what if parent field is not included, but child field is?
         assert unicode_repr(ParentSerializer()) == expected
@@ -83,6 +91,9 @@ class TestEmbeddedCustomizationMapping(TestCase):
                 embedded_map = DictField(EmbeddedSerializer(required=False)):
                     name = CharField(required=False)
                     foo = IntegerField(required=False)
+                nested_reference = NestedSerializer(read_only=True):
+                    id = ObjectIdField(read_only=True)
+                    foo = CharField(required=False)
         """)
 
         assert unicode_repr(ParentSerializer()) == expected
@@ -109,6 +120,9 @@ class TestEmbeddedCustomizationMapping(TestCase):
                 embedded_map = DictField(EmbeddedSerializer(required=False)):
                     name = CharField(required=False)
                     foo = IntegerField(required=False)
+                nested_reference = NestedSerializer(read_only=True):
+                    id = ObjectIdField(read_only=True)
+                    foo = CharField(required=False)
         """)
 
         assert unicode_repr(ParentSerializer()) == expected

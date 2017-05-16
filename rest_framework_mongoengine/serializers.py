@@ -329,6 +329,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             # If the field is explicitly declared on the class then use that.
             if field_name in declared_fields:
                 fields[field_name] = declared_fields[field_name]
+                # We assume that in this case no extra_kwargs etc. should be considered
+                # No nested validators or validate_*() methods need to be applied
                 continue
 
             # Determine the serializer field class and keyword arguments.
