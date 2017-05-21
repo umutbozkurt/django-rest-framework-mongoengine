@@ -37,7 +37,7 @@ class ParentDocument(Document):
     embedded = fields.EmbeddedDocumentField(ChildDocument)
     embedded_list = fields.EmbeddedDocumentListField(ChildDocument)
     embedded_map = fields.MapField(fields.EmbeddedDocumentField(ChildDocument))
-    nested_reference = fields.ReferenceField(RererencedDocument)
+    nested_reference = fields.ReferenceField(ReferencedDocument)
 
 
 class TestEmbeddedCustomizationMapping(TestCase):

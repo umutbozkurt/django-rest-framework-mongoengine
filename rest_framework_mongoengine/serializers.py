@@ -479,6 +479,48 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return self.build_unknown_field(field_name, model_class)
 
+    def get_customization_for_nested_field(self, field_name):
+        """ Support of nested fields customization for:
+         * EmbeddedDocumentField
+         * NestedReference
+         * Compound fields with EmbeddedDocument as a child:
+            * ListField(EmbeddedDocument)/EmbeddedDocumentListField
+            * MapField(EmbeddedDocument)
+
+        Extracts fields, exclude, extra_kwargs and validate_*()
+        attributes from parent serializer.
+        """
+
+        # This method is supposed to be called after self.get_fields(),
+        # thus it assumes that fields and exclude are mutually exclusive
+        # and at least one of them is set.
+        #
+        # Also, all the sanity checks are left up to nested field's
+        # get_fields() method, so if something is wrong with customization
+        # nested get_fields() will report this.
+
+        fields = getattr(self.Meta, 'fields', None)
+        exclude = getattr(self.Meta, 'exclude', None)
+
+        # TODO: deal with compound fields
+        # TODO: deal with NestedReference fields
+
+        if fields:
+            if fields == ALL_FIELDS:
+                embedded_fields = ALL_FIELDS
+            else:
+                embedded_fields = [field.split('.', 1)[1] for field in fields if field.startswith(field_name + '.')]
+            embedded_exclude = None
+        else:
+            # leave all the sanity checks up to get_fields() method of embedded serializer
+            embedded_fields = None
+            embedded_exclude = [field.split('.', 1)[1] for field in exclude if field.startswith(field_name + '.')]
+
+        embedded_extra_kwargs = [field.split('.', 1)[1] for field in self.extra_kwargs if field.startswith(field_name + '.')]
+        embedded_validate_methods = {attr: getattr(self, attr) for attr in dir(self) if attr.startswith('validate_%s__' % field_name)}
+
+        return embedded_fields, embedded_exclude, embedded_extra_kwargs, embedded_validate_methods
+
     def build_standard_field(self, field_name, model_field):
         field_mapping = ClassLookupDict(self.serializer_field_mapping)
 
