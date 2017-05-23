@@ -488,7 +488,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             * MapField(EmbeddedDocument)
 
         Extracts fields, exclude, extra_kwargs and validate_*()
-        attributes from parent serializer.
+        attributes from parent serializer, related to attributes of field_name.
         """
 
         # This method is supposed to be called after self.get_fields(),
@@ -505,21 +505,27 @@ class DocumentSerializer(serializers.ModelSerializer):
         # TODO: deal with compound fields
         # TODO: deal with NestedReference fields
 
+        # get nested_fields or nested_exclude (supposed to be mutually exclusive, assign the other one to None)
         if fields:
             if fields == ALL_FIELDS:
-                embedded_fields = ALL_FIELDS
+                nested_fields = ALL_FIELDS
             else:
-                embedded_fields = [field.split('.', 1)[1] for field in fields if field.startswith(field_name + '.')]
-            embedded_exclude = None
+                nested_fields = [field.split('.', 1)[1] for field in fields if field.startswith(field_name + '.')]
+            nested_exclude = None
         else:
-            # leave all the sanity checks up to get_fields() method of embedded serializer
-            embedded_fields = None
-            embedded_exclude = [field.split('.', 1)[1] for field in exclude if field.startswith(field_name + '.')]
+            # leave all the sanity checks up to get_fields() method of nested field's serializer
+            nested_fields = None
+            nested_exclude = [field.split('.', 1)[1] for field in exclude if field.startswith(field_name + '.')]
 
-        embedded_extra_kwargs = [field.split('.', 1)[1] for field in self.extra_kwargs if field.startswith(field_name + '.')]
-        embedded_validate_methods = {attr: getattr(self, attr) for attr in dir(self) if attr.startswith('validate_%s__' % field_name)}
+        # get nested_extra_kwargs
+        nested_extra_kwargs = [field.split('.', 1)[1] for field in self.extra_kwargs if field.startswith(field_name + '.')]
 
-        return embedded_fields, embedded_exclude, embedded_extra_kwargs, embedded_validate_methods
+        # get nested_validate_methods dict {name: function}, rename e.g. 'validate_author__age()' -> v'alidate_age()'
+        # so that we can add them to nested serializer's definition under this new name
+        nested_validate_methods = {attr: getattr(self, attr) for attr in dir(self) if attr.startswith('validate_%s__' % field_name)}
+        nested_validate_methods = {'validate_' + attr.split('__', 1)[1]: value  for attr, value in nested_validate_methods }
+
+        return nested_fields, nested_exclude, nested_extra_kwargs, nested_validate_methods
 
     def build_standard_field(self, field_name, model_field):
         field_mapping = ClassLookupDict(self.serializer_field_mapping)
