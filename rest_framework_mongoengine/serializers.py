@@ -1,5 +1,5 @@
 import copy
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 import warnings
 
 from mongoengine import fields as me_fields
@@ -7,6 +7,7 @@ from mongoengine.errors import ValidationError as me_ValidationError
 from rest_framework import fields as drf_fields
 from rest_framework import serializers
 from rest_framework.compat import unicode_to_repr
+from rest_framework.serializers import ALL_FIELDS
 from rest_framework.utils.field_mapping import ClassLookupDict
 
 from rest_framework_mongoengine import fields as drfm_fields
@@ -23,7 +24,14 @@ from .utils import (
 )
 
 
-ALL_FIELDS = '__all__'
+# This object is used for customization of nested field attributes in DocumentSerializer
+Customization = namedtuple("Customization", [
+    'fields',
+    'exclude',
+    'extra_kwargs',
+    'validate_methods'
+])
+
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
     # *** inherited from DRF 3, altered for EmbeddedDocumentSerializer to pass ***
@@ -444,41 +452,6 @@ class DocumentSerializer(serializers.ModelSerializer):
             list(model_info.embedded.keys())
         )
 
-    def build_field(self, field_name, info, model_class, nested_depth, embedded_depth):
-        if field_name in info.fields_and_pk:
-            model_field = info.fields_and_pk[field_name]
-            if isinstance(model_field, COMPOUND_FIELD_TYPES):
-                child_name = field_name + '.child'
-                if child_name in info.fields or child_name in info.embedded or child_name in info.references:
-                    child_class, child_kwargs = self.build_field(child_name, info, model_class, nested_depth, embedded_depth)
-                    child_field = child_class(**child_kwargs)
-                else:
-                    child_field = None
-                return self.build_compound_field(field_name, model_field, child_field)
-            else:
-                return self.build_standard_field(field_name, model_field)
-
-        if field_name in info.references:
-            relation_info = info.references[field_name]
-            if nested_depth and relation_info.related_model:
-                return self.build_nested_reference_field(field_name, relation_info, nested_depth)
-            else:
-                return self.build_reference_field(field_name, relation_info, nested_depth)
-
-        if field_name in info.embedded:
-            relation_info = info.embedded[field_name]
-            if not relation_info.related_model:
-                return self.build_generic_embedded_field(field_name, relation_info, embedded_depth)
-            if embedded_depth:
-                return self.build_nested_embedded_field(field_name, relation_info, embedded_depth)
-            else:
-                return self.build_bottom_embedded_field(field_name, relation_info, embedded_depth)
-
-        if hasattr(model_class, field_name):
-            return self.build_property_field(field_name, model_class)
-
-        return self.build_unknown_field(field_name, model_class)
-
     def get_customization_for_nested_field(self, field_name):
         """ Support of nested fields customization for:
          * EmbeddedDocumentField
@@ -520,12 +493,48 @@ class DocumentSerializer(serializers.ModelSerializer):
         # get nested_extra_kwargs
         nested_extra_kwargs = [field.split('.', 1)[1] for field in self.extra_kwargs if field.startswith(field_name + '.')]
 
-        # get nested_validate_methods dict {name: function}, rename e.g. 'validate_author__age()' -> v'alidate_age()'
+        # get nested_validate_methods dict {name: function}, rename e.g. 'validate_author__age()' -> 'validate_age()'
         # so that we can add them to nested serializer's definition under this new name
+        # validate_methods are normally checked in rest_framework.Serializer.to_internal_value()
         nested_validate_methods = {attr: getattr(self, attr) for attr in dir(self) if attr.startswith('validate_%s__' % field_name)}
         nested_validate_methods = {'validate_' + attr.split('__', 1)[1]: value  for attr, value in nested_validate_methods }
 
-        return nested_fields, nested_exclude, nested_extra_kwargs, nested_validate_methods
+        return Customization(nested_fields, nested_exclude, nested_extra_kwargs, nested_validate_methods)
+
+    def build_field(self, field_name, info, model_class, nested_depth, embedded_depth):
+        if field_name in info.fields_and_pk:
+            model_field = info.fields_and_pk[field_name]
+            if isinstance(model_field, COMPOUND_FIELD_TYPES):
+                child_name = field_name + '.child'
+                if child_name in info.fields or child_name in info.embedded or child_name in info.references:
+                    child_class, child_kwargs = self.build_field(child_name, info, model_class, nested_depth, embedded_depth)
+                    child_field = child_class(**child_kwargs)
+                else:
+                    child_field = None
+                return self.build_compound_field(field_name, model_field, child_field)
+            else:
+                return self.build_standard_field(field_name, model_field)
+
+        if field_name in info.references:
+            relation_info = info.references[field_name]
+            if nested_depth and relation_info.related_model:
+                return self.build_nested_reference_field(field_name, relation_info, nested_depth)
+            else:
+                return self.build_reference_field(field_name, relation_info, nested_depth)
+
+        if field_name in info.embedded:
+            relation_info = info.embedded[field_name]
+            if not relation_info.related_model:
+                return self.build_generic_embedded_field(field_name, relation_info, embedded_depth)
+            if embedded_depth:
+                return self.build_nested_embedded_field(field_name, relation_info, embedded_depth)
+            else:
+                return self.build_bottom_embedded_field(field_name, relation_info, embedded_depth)
+
+        if hasattr(model_class, field_name):
+            return self.build_property_field(field_name, model_class)
+
+        return self.build_unknown_field(field_name, model_class)
 
     def build_standard_field(self, field_name, model_field):
         field_mapping = ClassLookupDict(self.serializer_field_mapping)
