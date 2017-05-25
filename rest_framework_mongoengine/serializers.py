@@ -477,6 +477,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         # TODO: deal with compound fields
         # TODO: deal with NestedReference fields
+        # TODO: validators
 
         # get nested_fields or nested_exclude (supposed to be mutually exclusive, assign the other one to None)
         if fields:
@@ -490,8 +491,10 @@ class DocumentSerializer(serializers.ModelSerializer):
             nested_fields = None
             nested_exclude = [field.split('.', 1)[1] for field in exclude if field.startswith(field_name + '.')]
 
-        # get nested_extra_kwargs
-        nested_extra_kwargs = [field.split('.', 1)[1] for field in self.extra_kwargs if field.startswith(field_name + '.')]
+        # get nested_extra_kwargs (including read-only fields)
+        # TODO: uniqueness extra kwargs
+        extra_kwargs = self.get_extra_kwargs()
+        nested_extra_kwargs = {key.split('.', 1)[1]: value for key, value in extra_kwargs.items() if key.startswith(field_name + '.')}
 
         # get nested_validate_methods dict {name: function}, rename e.g. 'validate_author__age()' -> 'validate_age()'
         # so that we can add them to nested serializer's definition under this new name
