@@ -504,6 +504,29 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return Customization(nested_fields, nested_exclude, nested_extra_kwargs, nested_validate_methods)
 
+    def apply_customization(self, serializer, customization):
+        """
+        Applies fields customization to a nested or embedded DocumentSerializer.
+        """
+        # apply fields or exclude
+        if customization.fields is not None:
+            if len(customization.fields) == 0:
+                # customization fields are empty, set Meta.fields to '__all__'
+                serializer.Meta.fields = ALL_FIELDS
+            else:
+                serializer.Meta.fields = customization.fields
+        if customization.exclude is not None:
+            serializer.Meta.exclude = customization.exclude
+
+        # apply extra_kwargs
+        if customization.extra_kwargs is not None:
+            serializer.Meta.extra_kwargs = customization.extra_kwargs
+
+        # apply validate_methods
+        for method_name, method in customization.validate_methods:
+            setattr(serializer, method_name, method)
+
+
     def build_field(self, field_name, info, model_class, nested_depth, embedded_depth):
         if field_name in info.fields_and_pk:
             model_field = info.fields_and_pk[field_name]
@@ -617,19 +640,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         class NestedSerializer(subclass):
             class Meta:
                 model = relation_info.related_model
-                fields = '__all__'
                 depth = nested_depth - 1
 
         # Apply customization to nested fields
-        nested_customization = self.get_customization_for_nested_field(field_name)
-
-        if nested_customization.fields is not None:
-            NestedSerializer.Meta.fields = nested_customization.fields  # TODO: what if fields already set
-        if nested_customization.exclude is not None:
-            NestedSerializer.Meta.exclude = nested_customization.exclude
-        NestedSerializer.Meta.extra_kwargs = nested_customization.extra_kwargs
-        for method_name, method in nested_customization.validate_methods:
-            setattr(NestedSerializer, method_name, method)
+        customization = self.get_customization_for_nested_field(field_name)
+        self.apply_customization(NestedSerializer, customization)
 
         field_class = NestedSerializer
         field_kwargs = get_nested_relation_kwargs(field_name, relation_info)
@@ -646,19 +661,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         class EmbeddedSerializer(subclass):
             class Meta:
                 model = relation_info.related_model
-                fields = '__all__'
                 depth_embedding = embedded_depth - 1
 
         # Apply customization to nested fields
-        nested_customization = self.get_customization_for_nested_field(field_name)
-
-        if nested_customization.fields is not None:
-            EmbeddedSerializer.Meta.fields = nested_customization.fields  # TODO: what if fields already set
-        if nested_customization.exclude is not None:
-            EmbeddedSerializer.Meta.exclude = nested_customization.exclude
-        EmbeddedSerializer.Meta.extra_kwargs = nested_customization.extra_kwargs
-        for method_name, method in nested_customization.validate_methods:
-            setattr(EmbeddedSerializer, method_name, method)
+        customization = self.get_customization_for_nested_field(field_name)
+        self.apply_customization(EmbeddedSerializer, customization)
 
         field_class = EmbeddedSerializer
         field_kwargs = get_nested_embedded_kwargs(field_name, relation_info)
