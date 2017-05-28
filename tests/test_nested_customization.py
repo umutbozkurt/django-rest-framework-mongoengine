@@ -76,7 +76,6 @@ class TestEmbeddedCustomizationMapping(TestCase):
         class ParentSerializer(DocumentSerializer):
             class Meta:
                 model = ParentDocument
-                fields = ('__all__')
                 exclude = ('foo', 'embedded.age', 'embedded_list.age', 'embedded_map.age')
 
         expected = dedent("""
@@ -84,13 +83,12 @@ class TestEmbeddedCustomizationMapping(TestCase):
                 foo = CharField()
                 embedded = EmbeddedSerializer(required=False):
                     name = CharField(required=False)
-                    age = IntegerField(required=False)
                 embedded_list = ListSerializer(EmbeddedSerializer(required=False)):
                     name = CharField(required=False)
-                    foo = IntegerField(required=False)
+                    age = IntegerField(required=False)
                 embedded_map = DictField(EmbeddedSerializer(required=False)):
                     name = CharField(required=False)
-                    foo = IntegerField(required=False)
+                    age = IntegerField(required=False)
                 nested_reference = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     foo = CharField(required=False)
@@ -110,11 +108,12 @@ class TestEmbeddedCustomizationMapping(TestCase):
 
         expected = dedent("""
             ParentSerializer():
-                foo = CharField()
+                id = ObjectIdField(read_only=True)
+                foo = CharField(required=False)
                 embedded = EmbeddedSerializer(required=False):
                     name = CharField(required=False)
                     age = IntegerField(required=False)
-                embedded_list = ListSerializer(EmbeddedSerializer(required=False)):
+                embedded_list = EmbeddedSerializer(many=True, required=False):
                     name = CharField(required=False)
                     foo = IntegerField(required=False)
                 embedded_map = DictField(EmbeddedSerializer(required=False)):
