@@ -400,48 +400,48 @@ class DocumentSerializer(serializers.ModelSerializer):
             )
 
         if fields == ALL_FIELDS:
-            fields = None
+            fields = self.get_default_field_names(declared_fields, info)
+        else:
+            if fields is not None:
+                # Ensure that all declared fields have also been included in the
+                # `Meta.fields` option.
 
-        if fields is not None:
-            # Ensure that all declared fields have also been included in the
-            # `Meta.fields` option.
+                # Do not require any fields that are declared a parent class,
+                # in order to allow serializer subclasses to only include
+                # a subset of fields.
+                required_field_names = set(declared_fields)
+                for cls in self.__class__.__bases__:
+                    required_field_names -= set(getattr(cls, '_declared_fields', []))
 
-            # Do not require any fields that are declared a parent class,
-            # in order to allow serializer subclasses to only include
-            # a subset of fields.
-            required_field_names = set(declared_fields)
-            for cls in self.__class__.__bases__:
-                required_field_names -= set(getattr(cls, '_declared_fields', []))
-
-            for field_name in required_field_names:
-                assert field_name in fields, (
-                    "The field '{field_name}' was declared on serializer "
-                    "{serializer_class}, but has not been included in the "
-                    "'fields' option.".format(
-                        field_name=field_name,
-                        serializer_class=self.__class__.__name__
+                for field_name in required_field_names:
+                    assert field_name in fields, (
+                        "The field '{field_name}' was declared on serializer "
+                        "{serializer_class}, but has not been included in the "
+                        "'fields' option.".format(
+                            field_name=field_name,
+                            serializer_class=self.__class__.__name__
+                        )
                     )
-                )
-            return fields
+            else:
+                # Use the default set of field names if `Meta.fields` is not specified.
+                fields = self.get_default_field_names(declared_fields, info)
 
-        # Use the default set of field names if `Meta.fields` is not specified.
-        fields = self.get_default_field_names(declared_fields, info)
-
-        if exclude is not None:
-            # If `Meta.exclude` is included, then remove those fields.
-            for field_name in exclude:
-                assert field_name in fields, (
-                    "The field '{field_name}' was included on serializer "
-                    "{serializer_class} in the 'exclude' option, but does "
-                    "not match any model field.".format(
-                        field_name=field_name,
-                        serializer_class=self.__class__.__name__
-                    )
-                )
-                fields.remove(field_name)
+                if exclude is not None:
+                    # If `Meta.exclude` is included, then remove those fields.
+                    for field_name in exclude:
+                        if '.' not in field_name:  # ignore customization of nested fields - they'll be handled separately
+                            assert field_name in fields, (
+                                "The field '{field_name}' was included on serializer "
+                                "{serializer_class} in the 'exclude' option, but does "
+                                "not match any model field.".format(
+                                    field_name=field_name,
+                                    serializer_class=self.__class__.__name__
+                                )
+                            )
+                            fields.remove(field_name)
 
         # filter out child fields
-        return [field_name for field_name in fields if '.child' not in field_name]
+        return [field_name for field_name in fields if '.' not in field_name]
 
     def get_default_field_names(self, declared_fields, model_info):
         return (

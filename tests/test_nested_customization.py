@@ -80,7 +80,7 @@ class TestEmbeddedCustomizationMapping(TestCase):
 
         expected = dedent("""
             ParentSerializer():
-                foo = CharField()
+                id = ObjectIdField(read_only=True)
                 embedded = EmbeddedSerializer(required=False):
                     name = CharField(required=False)
                 embedded_list = ListSerializer(EmbeddedSerializer(required=False)):
@@ -148,7 +148,7 @@ class TestEmbeddedCustomizationMapping(TestCase):
                 str_field = CharField(default='extra')
         """)
 
-        assert unicode_repr(DocumentSerializer()) == expected
+        assert unicode_repr(ParentSerializer()) == expected
 
 
 class TestEmbeddedCustomizationIntegration(TestCase):
