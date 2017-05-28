@@ -1,6 +1,6 @@
 import copy
-from collections import OrderedDict, namedtuple
 import warnings
+from collections import OrderedDict, namedtuple
 
 from mongoengine import fields as me_fields
 from mongoengine.errors import ValidationError as me_ValidationError
@@ -500,7 +500,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         # so that we can add them to nested serializer's definition under this new name
         # validate_methods are normally checked in rest_framework.Serializer.to_internal_value()
         nested_validate_methods = {attr: getattr(self, attr) for attr in dir(self) if attr.startswith('validate_%s__' % field_name)}
-        nested_validate_methods = {'validate_' + attr.split('__', 1)[1]: value  for attr, value in nested_validate_methods }
+        nested_validate_methods = {'validate_' + attr.split('__', 1)[1]: value for attr, value in nested_validate_methods}
 
         return Customization(nested_fields, nested_exclude, nested_extra_kwargs, nested_validate_methods)
 
@@ -525,7 +525,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         # apply validate_methods
         for method_name, method in customization.validate_methods:
             setattr(serializer, method_name, method)
-
 
     def build_field(self, field_name, info, model_class, nested_depth, embedded_depth):
         if field_name in info.fields_and_pk:
