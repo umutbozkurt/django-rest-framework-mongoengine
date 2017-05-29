@@ -365,6 +365,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         instantiating this serializer class. This is based on the default
         set of fields, but also takes into account the `Meta.fields` or
         `Meta.exclude` options if they have been specified.
+
+        It includes only direct children of serializer, not its grandchildren.
         """
         fields = getattr(self.Meta, 'fields', None)
         exclude = getattr(self.Meta, 'exclude', None)
@@ -476,7 +478,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         exclude = getattr(self.Meta, 'exclude', None)
 
         # TODO: deal with compound fields
-        # TODO: deal with NestedReference fields
         # TODO: validators
 
         # get nested_fields or nested_exclude (supposed to be mutually exclusive, assign the other one to None)
@@ -484,23 +485,23 @@ class DocumentSerializer(serializers.ModelSerializer):
             if fields == ALL_FIELDS:
                 nested_fields = ALL_FIELDS
             else:
-                nested_fields = [field.split('.', 1)[1] for field in fields if field.startswith(field_name + '.')]
+                nested_fields = [field[len(field_name + '.'):] for field in fields if field.startswith(field_name + '.')]
             nested_exclude = None
         else:
             # leave all the sanity checks up to get_fields() method of nested field's serializer
             nested_fields = None
-            nested_exclude = [field.split('.', 1)[1] for field in exclude if field.startswith(field_name + '.')]
+            nested_exclude = [field[len(field_name + '.'):] for field in exclude if field.startswith(field_name + '.')]
 
         # get nested_extra_kwargs (including read-only fields)
         # TODO: uniqueness extra kwargs
         extra_kwargs = self.get_extra_kwargs()
-        nested_extra_kwargs = {key.split('.', 1)[1]: value for key, value in extra_kwargs.items() if key.startswith(field_name + '.')}
+        nested_extra_kwargs = {key[len(field_name + '.'):]: value for key, value in extra_kwargs.items() if key.startswith(field_name + '.')}
 
         # get nested_validate_methods dict {name: function}, rename e.g. 'validate_author__age()' -> 'validate_age()'
         # so that we can add them to nested serializer's definition under this new name
         # validate_methods are normally checked in rest_framework.Serializer.to_internal_value()
-        nested_validate_methods = {attr: getattr(self, attr) for attr in dir(self) if attr.startswith('validate_%s__' % field_name)}
-        nested_validate_methods = {'validate_' + attr.split('__', 1)[1]: value for attr, value in nested_validate_methods}
+        nested_validate_methods = {attr: getattr(self, attr) for attr in dir(self) if attr.startswith('validate_%s__' % field_name.replace('.', '__'))}
+        nested_validate_methods = {'validate_' + attr[len('validate_%s__' % field_name.replace('.', '__')):]: value for attr, value in nested_validate_methods}
 
         return Customization(nested_fields, nested_exclude, nested_extra_kwargs, nested_validate_methods)
 

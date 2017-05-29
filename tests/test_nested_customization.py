@@ -35,7 +35,7 @@ class ParentDocument(Document):
     nested_reference = fields.ReferenceField(ReferencedDocument)
 
 
-class CompoundParentDocument(DocumentSerializer):
+class CompoundParentDocument(Document):
     foo = fields.StringField()
     embedded_list = fields.EmbeddedDocumentListField(ChildDocument)
     embedded_map = fields.MapField(fields.EmbeddedDocumentField(ChildDocument))
@@ -43,9 +43,7 @@ class CompoundParentDocument(DocumentSerializer):
 
 class TestEmbeddedCustomizationMapping(TestCase):
     def test_fields(self):
-        """
-        Ensure `fields` is passed to embedded documents.
-        """
+        """Ensure `fields` is passed to embedded documents."""
         class ParentSerializer(DocumentSerializer):
             class Meta:
                 model = ParentDocument
@@ -63,9 +61,7 @@ class TestEmbeddedCustomizationMapping(TestCase):
         assert unicode_repr(ParentSerializer()) == expected
 
     def test_exclude(self):
-        """
-        Ensure `exclude` is passed to embedded documents.
-        """
+        """Ensure `exclude` is passed to embedded documents."""
         class ParentSerializer(DocumentSerializer):
             class Meta:
                 model = ParentDocument
@@ -86,9 +82,7 @@ class TestEmbeddedCustomizationMapping(TestCase):
         assert unicode_repr(ParentSerializer()) == expected
 
     def test_read_only(self):
-        """
-        Ensure `read_only` are passed to embedded documents.
-        """
+        """Ensure `read_only` are passed to embedded documents."""
         class ParentSerializer(DocumentSerializer):
             class Meta:
                 model = ParentDocument
@@ -112,9 +106,7 @@ class TestEmbeddedCustomizationMapping(TestCase):
         assert unicode_repr(ParentSerializer()) == expected
 
     def test_extra_field_kwargs(self):
-        """
-        Ensure `extra_kwargs` are passed to embedded documents.
-        """
+        """Ensure `extra_kwargs` are passed to embedded documents."""
         class ParentSerializer(DocumentSerializer):
             class Meta:
                 model = ParentDocument
@@ -139,6 +131,73 @@ class TestEmbeddedCustomizationMapping(TestCase):
         """)
 
         assert unicode_repr(ParentSerializer()) == expected
+
+
+class TestCompoundCustomizationMapping(TestCase):
+    def test_fields(self):
+        """Ensure `fields` is passed to embedded documents."""
+        class CompoundParentSerializer(DocumentSerializer):
+            class Meta:
+                model = CompoundParentDocument
+                fields = ('embedded_list', 'embedded_list.child.name', 'embedded_map', 'embedded_map.child.age')
+                depth = 1
+
+        expected = dedent("""
+            CompoundParentSerializer():
+                embedded_list = EmbeddedSerializer(many=True, required=False):
+                    name = CharField(required=False)
+                embedded_map = EmbeddedSerializer(many=True, required=False):
+                    age = IntegerField(required=False)
+        """)
+
+        assert unicode_repr(CompoundParentSerializer()) == expected
+
+    def test_exclude(self):
+        """Ensure `exclude` is passed to embedded documents."""
+        class CompoundParentSerializer(DocumentSerializer):
+            class Meta:
+                model = CompoundParentDocument
+                exclude = ('id', 'foo', 'embedded_list.child.age', 'embedded_map.child.name')
+
+        expected = dedent("""
+            CompoundParentSerializer():
+                embedded_list = EmbeddedSerializer(many=True, required=False):
+                    name = CharField(required=False)
+                embedded_map = EmbeddedSerializer(many=True, required=False):
+                    age = IntegerField(required=False)
+        """)
+
+        assert unicode_repr(CompoundParentSerializer()) == expected
+
+    def test_read_only(self):
+        """Ensure `read_only` are passed to embedded documents."""
+        class CompoundParentSerializer(DocumentSerializer):
+            class Meta:
+                model = CompoundParentDocument
+                fields = ('__all__')
+                read_only = ('foo', 'embedded_list.child.name')
+
+        expected = dedent("""
+            CompoundParentSerializer():
+                id = ObjectIdField(read_only=True)
+                foo = CharField(required=False, read_only=True)
+                embedded_list = EmbeddedSerializer():
+                    name = CharField(required=False, read_only=True)
+                    age = IntegerField(required=False)
+                embedded_map = EmbeddedSerializer(required=False):
+                    name = CharField(required=False)
+                    age = IntegerField(required=False)
+        """)
+
+        import pdb
+        pdb.set_trace()
+        serializer = CompoundParentSerializer()
+        serializer.get_fields()
+
+        assert unicode_repr(CompoundParentSerializer()) == expected
+
+    def test_extra_field_kwargs(self):
+        pass
 
 
 class TestEmbeddedCustomizationIntegration(TestCase):
