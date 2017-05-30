@@ -87,19 +87,19 @@ class TestEmbeddedCustomizationMapping(TestCase):
             class Meta:
                 model = ParentDocument
                 fields = ('__all__')
-                read_only = ('foo', 'embedded.name')
+                read_only_fields = ('foo', 'embedded.name')
                 depth = 1
 
         expected = dedent("""
             ParentSerializer():
                 id = ObjectIdField(read_only=True)
-                foo = CharField(required=False)
+                foo = CharField(read_only=True)
                 nested_reference = NestedSerializer(read_only=True):
                     id = ObjectIdField(read_only=True)
                     foo = CharField(required=False)
                     bar = CharField(required=False)
                 embedded = EmbeddedSerializer(required=False):
-                    name = CharField(required=False)
+                    name = CharField(read_only=True)
                     age = IntegerField(required=False)
         """)
 
@@ -175,24 +175,24 @@ class TestCompoundCustomizationMapping(TestCase):
             class Meta:
                 model = CompoundParentDocument
                 fields = ('__all__')
-                read_only = ('foo', 'embedded_list.child.name')
+                read_only_fields = ('foo', 'embedded_list.child.name')
 
         expected = dedent("""
             CompoundParentSerializer():
                 id = ObjectIdField(read_only=True)
-                foo = CharField(required=False, read_only=True)
-                embedded_list = EmbeddedSerializer():
-                    name = CharField(required=False, read_only=True)
+                foo = CharField(read_only=True)
+                embedded_list = EmbeddedSerializer(many=True, required=False):
+                    name = CharField(read_only=True)
                     age = IntegerField(required=False)
-                embedded_map = EmbeddedSerializer(required=False):
+                embedded_map = EmbeddedSerializer(many=True, required=False):
                     name = CharField(required=False)
                     age = IntegerField(required=False)
         """)
 
-        import pdb
-        pdb.set_trace()
-        serializer = CompoundParentSerializer()
-        serializer.get_fields()
+        # import pdb
+        # pdb.set_trace()
+        # serializer = CompoundParentSerializer()
+        # serializer.get_fields()
 
         assert unicode_repr(CompoundParentSerializer()) == expected
 
