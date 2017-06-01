@@ -146,9 +146,10 @@ class TestCompoundCustomizationMapping(TestCase):
             CompoundParentSerializer():
                 embedded_list = EmbeddedSerializer(many=True, required=False):
                     name = CharField(required=False)
-                embedded_map = EmbeddedSerializer(many=True, required=False):
+                embedded_map = DictField(child=EmbeddedSerializer(required=False), required=False):
                     age = IntegerField(required=False)
         """)
+        print CompoundParentSerializer()
 
         assert unicode_repr(CompoundParentSerializer()) == expected
 
@@ -163,7 +164,7 @@ class TestCompoundCustomizationMapping(TestCase):
             CompoundParentSerializer():
                 embedded_list = EmbeddedSerializer(many=True, required=False):
                     name = CharField(required=False)
-                embedded_map = EmbeddedSerializer(many=True, required=False):
+                embedded_map = DictField(child=EmbeddedSerializer(required=False), required=False):
                     age = IntegerField(required=False)
         """)
 
@@ -184,7 +185,7 @@ class TestCompoundCustomizationMapping(TestCase):
                 embedded_list = EmbeddedSerializer(many=True, required=False):
                     name = CharField(read_only=True)
                     age = IntegerField(required=False)
-                embedded_map = EmbeddedSerializer(many=True, required=False):
+                embedded_map = DictField(child=EmbeddedSerializer(required=False), required=False):
                     name = CharField(required=False)
                     age = IntegerField(required=False)
         """)
