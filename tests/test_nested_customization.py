@@ -149,7 +149,9 @@ class TestCompoundCustomizationMapping(TestCase):
                 embedded_map = DictField(child=EmbeddedSerializer(required=False), required=False):
                     age = IntegerField(required=False)
         """)
-        print CompoundParentSerializer()
+
+        serializer = CompoundParentSerializer()
+        unicode_repr(serializer)
 
         assert unicode_repr(CompoundParentSerializer()) == expected
 
@@ -189,11 +191,6 @@ class TestCompoundCustomizationMapping(TestCase):
                     name = CharField(required=False)
                     age = IntegerField(required=False)
         """)
-
-        # import pdb
-        # pdb.set_trace()
-        # serializer = CompoundParentSerializer()
-        # serializer.get_fields()
 
         assert unicode_repr(CompoundParentSerializer()) == expected
 

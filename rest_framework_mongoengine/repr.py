@@ -139,8 +139,9 @@ def dict_repr(serializer, indent):
     ret = field_repr(serializer)
 
     child = serializer.child
-    if hasattr(child, 'field'):
+    if hasattr(child, 'fields'):
         ret = field_repr(serializer) + ":"
-        ret += serializer_repr(child, indent + 1)
+        ser_repr = serializer_repr(child, indent + 1)
+        ret += "\n" + ser_repr.split("\n", 1)[1]  # chop the name of seiralizer off
 
     return ret
