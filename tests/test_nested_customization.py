@@ -38,6 +38,7 @@ class ParentDocument(Document):
 class CompoundParentDocument(Document):
     foo = fields.StringField()
     embedded_list = fields.EmbeddedDocumentListField(ChildDocument)
+    list_of_embedded_documents = fields.ListField(fields.EmbeddedDocumentField(ChildDocument))
     embedded_map = fields.MapField(fields.EmbeddedDocumentField(ChildDocument))
 
 
@@ -139,7 +140,13 @@ class TestCompoundCustomizationMapping(TestCase):
         class CompoundParentSerializer(DocumentSerializer):
             class Meta:
                 model = CompoundParentDocument
-                fields = ('embedded_list', 'embedded_list.child.name', 'embedded_map', 'embedded_map.child.age')
+                fields = (
+                    'embedded_list',
+                    'embedded_list.child.name',
+                    'embedded_map',
+                    'embedded_map.child.age',
+                    'list_of_embedded_documents',
+                    'list_of_embedded_documents.child.name')
                 depth = 1
 
         expected = dedent("""
@@ -148,6 +155,8 @@ class TestCompoundCustomizationMapping(TestCase):
                     name = CharField(required=False)
                 embedded_map = DictField(child=EmbeddedSerializer(required=False), required=False):
                     age = IntegerField(required=False)
+                list_of_embedded_documents = EmbeddedSerializer(many=True, required=False):
+                    name = CharField(required=False)
         """)
 
         serializer = CompoundParentSerializer()
@@ -160,11 +169,19 @@ class TestCompoundCustomizationMapping(TestCase):
         class CompoundParentSerializer(DocumentSerializer):
             class Meta:
                 model = CompoundParentDocument
-                exclude = ('id', 'foo', 'embedded_list.child.age', 'embedded_map.child.name')
+                exclude = (
+                    'id',
+                    'foo',
+                    'embedded_list.child.age',
+                    'embedded_map.child.name',
+                    'list_of_embedded_documents.child.age'
+                )
 
         expected = dedent("""
             CompoundParentSerializer():
                 embedded_list = EmbeddedSerializer(many=True, required=False):
+                    name = CharField(required=False)
+                list_of_embedded_documents = EmbeddedSerializer(many=True, required=False):
                     name = CharField(required=False)
                 embedded_map = DictField(child=EmbeddedSerializer(required=False), required=False):
                     age = IntegerField(required=False)
@@ -178,7 +195,12 @@ class TestCompoundCustomizationMapping(TestCase):
             class Meta:
                 model = CompoundParentDocument
                 fields = ('__all__')
-                read_only_fields = ('foo', 'embedded_list.child.name')
+                read_only_fields = (
+                    'foo',
+                    'embedded_list.child.name',
+                    'list_of_embedded_documents.child.name',
+                    'embedded_map.child.name'
+                )
 
         expected = dedent("""
             CompoundParentSerializer():
@@ -187,15 +209,45 @@ class TestCompoundCustomizationMapping(TestCase):
                 embedded_list = EmbeddedSerializer(many=True, required=False):
                     name = CharField(read_only=True)
                     age = IntegerField(required=False)
+                list_of_embedded_documents = EmbeddedSerializer(many=True, required=False):
+                    name = CharField(read_only=True)
+                    age = IntegerField(required=False)
                 embedded_map = DictField(child=EmbeddedSerializer(required=False), required=False):
-                    name = CharField(required=False)
+                    name = CharField(read_only=True)
                     age = IntegerField(required=False)
         """)
 
         assert unicode_repr(CompoundParentSerializer()) == expected
 
     def test_extra_field_kwargs(self):
-        pass
+        class CompoundParentSerializer(DocumentSerializer):
+            class Meta:
+                model = CompoundParentDocument
+                fields = ('__all__')
+                depth = 1
+                extra_kwargs = {
+                    'foo': {'default': 'bar'},
+                    'embedded_list.child.name': {'default': 'Johnny'},
+                    'list_of_embedded_documents.child.name': {'default': 'B'},
+                    'embedded_map.child.name': {'default': 'Good'}
+                }
+
+        expected = dedent("""
+            CompoundParentSerializer():
+                id = ObjectIdField(read_only=True)
+                foo = CharField(default='bar')
+                embedded_list = EmbeddedSerializer(many=True, required=False):
+                    name = CharField(default='Johnny')
+                    age = IntegerField(required=False)
+                list_of_embedded_documents = EmbeddedSerializer(many=True, required=False):
+                    name = CharField(default='B')
+                    age = IntegerField(required=False)
+                embedded_map = DictField(child=EmbeddedSerializer(required=False), required=False):
+                    name = CharField(default='Good')
+                    age = IntegerField(required=False)
+        """)
+
+        assert unicode_repr(CompoundParentSerializer()) == expected
 
 
 class TestEmbeddedCustomizationIntegration(TestCase):
