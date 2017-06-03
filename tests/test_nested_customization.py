@@ -44,7 +44,10 @@ class CompoundParentDocument(Document):
 
 class TestEmbeddedCustomizationMapping(TestCase):
     def test_fields(self):
-        """Ensure `fields` is passed to embedded documents."""
+        """
+        Ensure `fields` is passed to embedded documents.
+        If 'embedded.name' is included, 'embedded' should be included, too.
+        """
         class ParentSerializer(DocumentSerializer):
             class Meta:
                 model = ParentDocument
@@ -58,7 +61,6 @@ class TestEmbeddedCustomizationMapping(TestCase):
                 nested_reference = NestedSerializer(read_only=True):
                     foo = CharField(required=False)
         """)
-        # TODO: what if parent field is not included, but child field is?
         assert unicode_repr(ParentSerializer()) == expected
 
     def test_exclude(self):
@@ -250,15 +252,147 @@ class TestCompoundCustomizationMapping(TestCase):
         assert unicode_repr(CompoundParentSerializer()) == expected
 
 
-class TestEmbeddedCustomizationIntegration(TestCase):
-    def test_fields(self):
+class TestEmbeddedCustomizationFieldsIntegration(TestCase):
+    class ParentSerializer(DocumentSerializer):
+        class Meta:
+            model = ParentDocument
+            fields = ('embedded', 'embedded.name', 'nested_reference', 'nested_reference.foo')
+            depth = 1
+
+    def doCleanups(self):
+        ParentDocument.drop_collection()
+
+    def test_parsing(self):
+        input_data = {
+            "foo":  "x",
+            "embedded": {'name': 'Joe', 'age': 9},
+            "nested_reference": {'foo': 'a', 'bar': 'b'}
+        }
+
+        import pdb
+        pdb.set_trace()
+
+        serializer = self.ParentSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+
+        expected = {
+            u'embedded': {u'name': u'Joe'},
+            u'nested_reference': {u'foo': u'a'}
+        }
+
+        assert serializer.validated_data == expected
+
+    def test_retrieval(self):
         pass
 
-    def test_exclude(self):
+    def test_create(self):
         pass
 
-    def test_read_only(self):
+    def test_update(self):
         pass
 
-    def test_extra_field_kwargs(self):
+    def test_delete(self):
+        pass
+
+
+class TestEmbeddedCustomizationExcludeIntegration(TestCase):
+    class ParentSerializer(DocumentSerializer):
+        class Meta:
+            model = ParentDocument
+            exclude = ('foo', 'embedded.age')
+            depth = 1
+
+    def doCleanups(self):
+        ParentDocument.drop_collection()
+
+    def test_parsing(self):
+        pass
+
+    def test_retrieval(self):
+        pass
+
+    def test_create(self):
+        pass
+
+    def test_update(self):
+        pass
+
+    def test_delete(self):
+        pass
+
+
+class TestEmbeddedCustomizationReadOnlyIntegration(TestCase):
+    class ParentSerializer(DocumentSerializer):
+        class Meta:
+            model = ParentDocument
+            fields = ('__all__')
+            read_only_fields = ('foo', 'embedded.name')
+            depth = 1
+
+    def doCleanups(self):
+        ParentDocument.drop_collection()
+
+    def test_parsing(self):
+        pass
+
+    def test_retrieval(self):
+        pass
+
+    def test_create(self):
+        pass
+
+    def test_update(self):
+        pass
+
+    def test_delete(self):
+        pass
+
+
+class TestEmbeddedCustomizationExtraFieldKwargsIntegration(TestCase):
+    class ParentSerializer(DocumentSerializer):
+        class Meta:
+            model = ParentDocument
+            fields = ('__all__')
+            depth = 1
+            extra_kwargs = {
+                'foo': {'default': 'bar'},
+                'embedded.name': {'default': 'Johnny B. Good'}
+            }
+
+    def doCleanups(self):
+        ParentDocument.drop_collection()
+
+    def test_parsing(self):
+        pass
+
+    def test_retrieval(self):
+        pass
+
+    def test_create(self):
+        pass
+
+    def test_update(self):
+        pass
+
+    def test_delete(self):
+        pass
+
+
+class TestEmbeddedCustomizationValidateMethodIntegration(TestCase):
+    def doCleanups(self):
+        ParentDocument.drop_collection()
+
+    def test_parsing(self):
+        pass
+
+    def test_retrieval(self):
+        pass
+
+    def test_put(self):
+        pass
+
+    def test_post(self):
+        pass
+
+    def test_delete(self):
         pass
