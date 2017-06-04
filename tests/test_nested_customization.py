@@ -348,26 +348,99 @@ class TestEmbeddedCustomizationFieldsIntegration(TestCase):
 
 
 class TestEmbeddedCustomizationExcludeIntegration(TestCase):
-    class ParentSerializer(DocumentSerializer):
-        class Meta:
-            model = ParentDocument
-            exclude = ('foo', 'embedded.age')
-            depth = 1
-
     def doCleanups(self):
         ParentDocument.drop_collection()
 
     def test_parsing(self):
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                exclude = ('foo', 'embedded.age', 'nested_reference.bar')
+                depth = 1
+
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        instance = ParentDocument.objects.create(
+            foo='x',
+            embedded=ChildDocument(name='Joe', age=9),
+            nested_reference=nested_reference
+        )
+        serializer = ParentSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'nested_reference': {'id': str(nested_reference.id), 'foo': 'a'},
+            'embedded': {'name': 'Joe'}
+        }
+        assert serializer.data == expected
 
     def test_retrieval(self):
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                exclude = ('foo', 'embedded.age', 'nested_reference.bar')
+                depth = 1
+
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        instance = ParentDocument.objects.create(
+            foo='x',
+            embedded=ChildDocument(name='Joe', age=9),
+            nested_reference=nested_reference
+        )
+        serializer = ParentSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'nested_reference': {'id': str(nested_reference.id), 'foo': 'a'},
+            'embedded': {'name': 'Joe'}
+        }
+        assert serializer.data == expected
 
     def test_create(self):
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                exclude = ('foo', 'embedded.age')
+
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        data = {
+            'nested_reference': nested_reference.id,
+            'embedded': {'name': 'Joe'}
+        }
+
+        serializer = ParentSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        expected = {
+            'id': str(serializer.instance.id),
+            'nested_reference': str(nested_reference.id),
+            'embedded': {'name': 'Joe'}
+        }
+        assert serializer.data == expected
 
     def test_update(self):
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                exclude = ('foo', 'embedded.age')
+
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        instance = ParentDocument.objects.create(
+            foo='x',
+            embedded=ChildDocument(name='Joe', age=9),
+            nested_reference=nested_reference
+        )
+
+        data = {
+            'embedded': {'name': 'Jack'}
+        }
+
+        serializer = ParentSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        expected = {
+            'id': str(serializer.instance.id),
+            'nested_reference': str(nested_reference.id),
+            'embedded': {'name': 'Jack'}
+        }
+        assert serializer.data == expected
 
 
 class TestEmbeddedCustomizationReadOnlyIntegration(TestCase):
