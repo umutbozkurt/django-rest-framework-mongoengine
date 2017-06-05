@@ -551,33 +551,120 @@ class TestEmbeddedCustomizationReadOnlyIntegration(TestCase):
 
 
 class TestEmbeddedCustomizationExtraFieldKwargsIntegration(TestCase):
-    class ParentSerializer(DocumentSerializer):
-        class Meta:
-            model = ParentDocument
-            fields = ('__all__')
-            depth = 1
-            extra_kwargs = {
-                'foo': {'default': 'bar'},
-                'embedded.name': {'default': 'Johnny B. Good'}
-            }
-
     def doCleanups(self):
+        ReferencedDocument.drop_collection()
         ParentDocument.drop_collection()
 
     def test_parsing(self):
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                fields = ('__all__')
+                depth = 1
+                extra_kwargs = {
+                    'foo': {'default': 'bar'},
+                    'embedded.name': {'default': 'Johnny B. Good'}
+                }
+
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        instance = ParentDocument.objects.create(
+            foo='x',
+            embedded=ChildDocument(name='Joe', age=9),
+            nested_reference=nested_reference
+        )
+        serializer = ParentSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'foo': 'x',
+            'nested_reference': {'id': str(nested_reference.id), 'foo': 'a', 'bar': 'b'},
+            'embedded': {'name': 'Joe', 'age': 9}
+        }
+        assert serializer.data == expected
 
     def test_retrieval(self):
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                fields = ('__all__')
+                depth = 1
+                extra_kwargs = {
+                    'foo': {'default': 'bar'},
+                    'embedded.name': {'default': 'Johnny B. Good'}
+                }
+
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        instance = ParentDocument.objects.create(
+            foo='x',
+            embedded=ChildDocument(name='Joe', age=9),
+            nested_reference=nested_reference
+        )
+        serializer = ParentSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'foo': 'x',
+            'nested_reference': {'id': str(nested_reference.id), 'foo': 'a', 'bar': 'b'},
+            'embedded': {'name': 'Joe', 'age': 9}
+        }
+        assert serializer.data == expected
 
     def test_create(self):
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                fields = ('__all__')
+                extra_kwargs = {
+                    'foo': {'default': 'bar'},
+                    'embedded.name': {'default': 'Johnny B. Good'}
+                }
+
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        data = {
+            'nested_reference': nested_reference.id,
+            'embedded': {'age': 9}
+        }
+
+        serializer = ParentSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        expected = {
+            'id': str(serializer.instance.id),
+            'foo': 'bar',
+            'nested_reference': str(nested_reference.id),
+            'embedded': {'name': 'Johnny B. Good', 'age': 9}
+        }
+        assert serializer.data == expected
 
     def test_update(self):
-        pass
+        class ParentSerializer(DocumentSerializer):
+            class Meta:
+                model = ParentDocument
+                fields = ('__all__')
+                extra_kwargs = {
+                    'foo': {'default': 'bar'},
+                    'embedded.name': {'default': 'Johnny B. Good'}
+                }
 
-    def test_delete(self):
-        pass
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        instance = ParentDocument.objects.create(
+            foo='x',
+            embedded=ChildDocument(name='Joe', age=9),
+            nested_reference=nested_reference
+        )
+
+        data = {
+            'embedded': {'age': 10}
+        }
+
+        serializer = ParentSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        expected = {
+            'id': str(serializer.instance.id),
+            'foo': 'bar',
+            'nested_reference': str(nested_reference.id),
+            'embedded': {'name': 'Johnny B. Good', 'age': 10}
+        }
+        assert serializer.data == expected
 
 
 class TestEmbeddedCustomizationValidateMethodIntegration(TestCase):
