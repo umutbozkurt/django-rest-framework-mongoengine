@@ -13,6 +13,7 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework.compat import unicode_repr
+from rest_framework.serializers import ValidationError
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
@@ -668,20 +669,87 @@ class TestEmbeddedCustomizationExtraFieldKwargsIntegration(TestCase):
 
 
 class TestEmbeddedCustomizationValidateMethodIntegration(TestCase):
+    class ParentSerializer(DocumentSerializer):
+        class Meta:
+            model = ParentDocument
+            fields = ('__all__')
+
+        def validate_embedded__name(self, value):
+            if len(value) < 4:
+                raise ValidationError('Minimum 4 characters.')
+            return value.title()
+
     def doCleanups(self):
+        ReferencedDocument.drop_collection()
         ParentDocument.drop_collection()
 
-    def test_parsing(self):
-        pass
+    def test_create_success(self):
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        data = {
+            'foo': 'x',
+            'nested_reference': nested_reference.id,
+            'embedded': {'name': "Jack", 'age': 9}
+        }
 
-    def test_retrieval(self):
-        pass
+        serializer = self.ParentSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        expected = {
+            'id': str(serializer.instance.id),
+            'foo': 'x',
+            'nested_reference': str(nested_reference.id),
+            'embedded': {'name': 'Jack', 'age': 9}
+        }
+        assert serializer.data == expected
 
-    def test_put(self):
-        pass
+    def test_create_fail(self):
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        data = {
+            'foo': 'x',
+            'nested_reference': nested_reference.id,
+            'embedded': {'name': "Joe", 'age': 9}
+        }
 
-    def test_post(self):
-        pass
+        serializer = self.ParentSerializer(data=data)
+        assert not serializer.is_valid()
+        assert serializer.errors == {'embedded': {'name': [u'Minimum 4 characters.']}}
 
-    def test_delete(self):
-        pass
+    def test_update_success(self):
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        instance = ParentDocument.objects.create(
+            foo='x',
+            embedded=ChildDocument(name='Jack', age=9),
+            nested_reference=nested_reference
+        )
+
+        data = {
+            'embedded': {'name': 'Johnny B. Good'}
+        }
+
+        serializer = self.ParentSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        # TODO: passing empty 'age' resets it to None - is this expected behavior, or we should raise error?
+        expected = {
+            'id': str(serializer.instance.id),
+            'foo': 'x',
+            'nested_reference': str(nested_reference.id),
+            'embedded': {'name': 'Johnny B. Good', 'age': None}
+        }
+        assert serializer.data == expected
+
+    def test_update_fail(self):
+        nested_reference = ReferencedDocument.objects.create(foo='a', bar='b')
+        instance = ParentDocument.objects.create(
+            foo='x',
+            embedded=ChildDocument(name='Jack', age=9),
+            nested_reference=nested_reference
+        )
+
+        data = {
+            'embedded': {'name': 'Joe'}
+        }
+
+        serializer = self.ParentSerializer(instance, data=data)
+        assert not serializer.is_valid()
+        assert serializer.errors == {'embedded': {'name': [u'Minimum 4 characters.']}}

@@ -530,8 +530,12 @@ class DocumentSerializer(serializers.ModelSerializer):
         # get nested_validate_methods dict {name: function}, rename e.g. 'validate_author__age()' -> 'validate_age()'
         # so that we can add them to nested serializer's definition under this new name
         # validate_methods are normally checked in rest_framework.Serializer.to_internal_value()
-        nested_validate_methods = {attr: getattr(self, attr) for attr in dir(self) if attr.startswith('validate_%s__' % field_name.replace('.', '__'))}
-        nested_validate_methods = {'validate_' + attr[len('validate_%s__' % field_name.replace('.', '__')):]: value for attr, value in nested_validate_methods}
+        nested_validate_methods = {}
+        for attr in dir(self.__class__):
+            if attr.startswith('validate_%s__' % field_name.replace('.', '__')):
+                method = getattr(self.__class__, attr).im_func
+                method_name = 'validate_' + attr[len('validate_%s__' % field_name.replace('.', '__')):]
+                nested_validate_methods[method_name] = method
 
         return Customization(nested_fields, nested_exclude, nested_extra_kwargs, nested_validate_methods)
 
@@ -554,7 +558,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             serializer.Meta.extra_kwargs = customization.extra_kwargs
 
         # apply validate_methods
-        for method_name, method in customization.validate_methods:
+        for method_name, method in customization.validate_methods.items():
             setattr(serializer, method_name, method)
 
     def build_field(self, field_name, info, model_class, nested_depth, embedded_depth):
