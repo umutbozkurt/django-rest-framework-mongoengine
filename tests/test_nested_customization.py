@@ -43,7 +43,7 @@ class CompoundParentDocument(Document):
     embedded_map = fields.MapField(fields.EmbeddedDocumentField(ChildDocument))
 
 
-class TestEmbeddedCustomizationMapping(TestCase):
+class TestNestedCustomizationMapping(TestCase):
     def test_fields(self):
         """
         Ensure `fields` is passed to embedded documents.
@@ -253,7 +253,7 @@ class TestCompoundCustomizationMapping(TestCase):
         assert unicode_repr(CompoundParentSerializer()) == expected
 
 
-class TestEmbeddedCustomizationFieldsIntegration(TestCase):
+class TestNestedCustomizationFieldsIntegration(TestCase):
     def doCleanups(self):
         ReferencedDocument.drop_collection()
         ParentDocument.drop_collection()
@@ -348,7 +348,7 @@ class TestEmbeddedCustomizationFieldsIntegration(TestCase):
         assert serializer.data == expected
 
 
-class TestEmbeddedCustomizationExcludeIntegration(TestCase):
+class TestNestedCustomizationExcludeIntegration(TestCase):
     def doCleanups(self):
         ReferencedDocument.drop_collection()
         ParentDocument.drop_collection()
@@ -445,7 +445,7 @@ class TestEmbeddedCustomizationExcludeIntegration(TestCase):
         assert serializer.data == expected
 
 
-class TestEmbeddedCustomizationReadOnlyIntegration(TestCase):
+class TestNestedCustomizationReadOnlyIntegration(TestCase):
     def doCleanups(self):
         ReferencedDocument.drop_collection()
         ParentDocument.drop_collection()
@@ -551,7 +551,7 @@ class TestEmbeddedCustomizationReadOnlyIntegration(TestCase):
         assert serializer.data == expected
 
 
-class TestEmbeddedCustomizationExtraFieldKwargsIntegration(TestCase):
+class TestNestedCustomizationExtraFieldKwargsIntegration(TestCase):
     def doCleanups(self):
         ReferencedDocument.drop_collection()
         ParentDocument.drop_collection()
@@ -668,7 +668,7 @@ class TestEmbeddedCustomizationExtraFieldKwargsIntegration(TestCase):
         assert serializer.data == expected
 
 
-class TestEmbeddedCustomizationValidateMethodIntegration(TestCase):
+class TestNestedCustomizationValidateMethodIntegration(TestCase):
     class ParentSerializer(DocumentSerializer):
         class Meta:
             model = ParentDocument
