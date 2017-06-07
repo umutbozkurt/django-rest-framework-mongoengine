@@ -753,3 +753,156 @@ class TestNestedCustomizationValidateMethodIntegration(TestCase):
         serializer = self.ParentSerializer(instance, data=data)
         assert not serializer.is_valid()
         assert serializer.errors == {'embedded': {'name': [u'Minimum 4 characters.']}}
+
+
+class TestNestedCompoundCustomizationFieldsIntegration(TestCase):
+    def doCleanups(self):
+        ReferencedDocument.drop_collection()
+        ParentDocument.drop_collection()
+
+    def test_parsing(self):
+        class CompoundParentSerializer(DocumentSerializer):
+            class Meta:
+                model = CompoundParentDocument
+                fields = (
+                    'embedded_list',
+                    'embedded_list.child.name',
+                    'embedded_map',
+                    'embedded_map.child.age',
+                    'list_of_embedded_documents',
+                    'list_of_embedded_documents.child.name'
+                )
+                depth = 1
+
+        input_data = {
+            "embedded_list": [{'name': 'Joe'}],
+            "embedded_map": {'0': {'age': 9}},
+            "list_of_embedded_documents": [{'name': 'Joe'}]
+        }
+
+        serializer = CompoundParentSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+
+        expected = {
+            "embedded_list": [{'name': 'Joe'}],
+            "embedded_map": {'0': {'age': 9}},
+            "list_of_embedded_documents": [{'name': 'Joe'}]
+        }
+
+        assert serializer.validated_data == expected
+
+    def test_retrieval(self):
+        class CompoundParentSerializer(DocumentSerializer):
+            class Meta:
+                model = CompoundParentDocument
+                fields = (
+                    'embedded_list',
+                    'embedded_list.child.name',
+                    'embedded_map',
+                    'embedded_map.child.age',
+                    'list_of_embedded_documents',
+                    'list_of_embedded_documents.child.name')
+                depth = 1
+
+        instance = CompoundParentDocument.objects.create(
+            foo='x',
+            embedded_list=[ChildDocument(name='Joe', age=9)],
+            embedded_map={'Joe': ChildDocument(name='Joe', age=9)},
+            list_of_embedded_documents=[ChildDocument(name='Joe', age=9)]
+        )
+        serializer = CompoundParentSerializer(instance)
+        expected = {
+            'embedded_list': [{'name': 'Joe'}],
+            'embedded_map': {'Joe': {'age': 9}},
+            'list_of_embedded_documents': [{'name': 'Joe'}]
+        }
+        assert serializer.data == expected
+
+    def test_create(self):
+        class CompoundParentSerializer(DocumentSerializer):
+            class Meta:
+                model = CompoundParentDocument
+                fields = (
+                    'embedded_list',
+                    'embedded_list.child.name',
+                    'embedded_map',
+                    'embedded_map.child.age',
+                    'list_of_embedded_documents',
+                    'list_of_embedded_documents.child.name'
+                )
+
+        data = {
+            'embedded_list': [{'name': 'Joe'}],
+            'embedded_map': {'Joe': {'age': 9}},
+            'list_of_embedded_documents': [{'name': 'Joe'}]
+        }
+
+        serializer = CompoundParentSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        expected = {
+            'embedded_list': [{'name': 'Joe'}],
+            'embedded_map': {'Joe': {'age': 9}},
+            'list_of_embedded_documents': [{'name': 'Joe'}]
+        }
+        assert serializer.data == expected
+
+    def test_update(self):
+        class CompoundParentSerializer(DocumentSerializer):
+            class Meta:
+                model = CompoundParentDocument
+                fields = (
+                    'embedded_list',
+                    'embedded_list.child.name',
+                    'embedded_map',
+                    'embedded_map.child.age',
+                    'list_of_embedded_documents',
+                    'list_of_embedded_documents.child.name'
+                )
+
+        instance = CompoundParentDocument.objects.create(
+            foo='x',
+            embedded_list=[ChildDocument(name='Joe', age=9)],
+            embedded_map={'Joe': ChildDocument(name='Joe', age=9)},
+            list_of_embedded_documents=[ChildDocument(name='Joe', age=9)]
+        )
+
+        data = {
+            'embedded_list': [{'name': 'Jack'}],
+            'embedded_map': {'Joe': {'age': 10}},
+            'list_of_embedded_documents': [{'name': 'Jack'}]
+        }
+
+        serializer = CompoundParentSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        expected = {
+            'embedded_list': [{'name': 'Jack'}],
+            'embedded_map': {'Joe': {'age': 10}},
+            'list_of_embedded_documents': [{'name': 'Jack'}]
+        }
+        assert serializer.data == expected
+
+
+class TestNestedCompoundCustomizationExcludeIntegration(TestCase):
+    def doCleanups(self):
+        ReferencedDocument.drop_collection()
+        ParentDocument.drop_collection()
+
+
+class TestNestedCompoundCustomizationReadOnlyIntegration(TestCase):
+    def doCleanups(self):
+        ReferencedDocument.drop_collection()
+        ParentDocument.drop_collection()
+
+
+class TestNestedCompoundCustomizationExtraFieldKwargsIntegration(TestCase):
+    def doCleanups(self):
+        ReferencedDocument.drop_collection()
+        ParentDocument.drop_collection()
+
+
+class TestNestedCompoundCustomizationValidateMethodIntegration(TestCase):
+    def doCleanups(self):
+        ReferencedDocument.drop_collection()
+        ParentDocument.drop_collection()
