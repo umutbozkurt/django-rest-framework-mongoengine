@@ -757,8 +757,7 @@ class TestNestedCustomizationValidateMethodIntegration(TestCase):
 
 class TestNestedCompoundCustomizationFieldsIntegration(TestCase):
     def doCleanups(self):
-        ReferencedDocument.drop_collection()
-        ParentDocument.drop_collection()
+        CompoundParentDocument.drop_collection()
 
     def test_parsing(self):
         class CompoundParentSerializer(DocumentSerializer):
@@ -887,8 +886,7 @@ class TestNestedCompoundCustomizationFieldsIntegration(TestCase):
 
 class TestNestedCompoundCustomizationExcludeIntegration(TestCase):
     def doCleanups(self):
-        ReferencedDocument.drop_collection()
-        ParentDocument.drop_collection()
+        CompoundParentDocument.drop_collection()
 
     def test_parsing(self):
         class CompoundParentSerializer(DocumentSerializer):
@@ -1013,8 +1011,7 @@ class TestNestedCompoundCustomizationExcludeIntegration(TestCase):
 
 class TestNestedCompoundCustomizationReadOnlyIntegration(TestCase):
     def doCleanups(self):
-        ReferencedDocument.drop_collection()
-        ParentDocument.drop_collection()
+        CompoundParentDocument.drop_collection()
 
     def test_parsing(self):
         class CompoundParentSerializer(DocumentSerializer):
@@ -1146,8 +1143,7 @@ class TestNestedCompoundCustomizationReadOnlyIntegration(TestCase):
 
 class TestNestedCompoundCustomizationExtraFieldKwargsIntegration(TestCase):
     def doCleanups(self):
-        ReferencedDocument.drop_collection()
-        ParentDocument.drop_collection()
+        CompoundParentDocument.drop_collection()
 
     def test_parsing(self):
         class CompoundParentSerializer(DocumentSerializer):
@@ -1282,6 +1278,104 @@ class TestNestedCompoundCustomizationExtraFieldKwargsIntegration(TestCase):
 
 
 class TestNestedCompoundCustomizationValidateMethodIntegration(TestCase):
+    class CompoundParentSerializer(DocumentSerializer):
+        class Meta:
+            model = CompoundParentDocument
+            fields = ('__all__')
+
+        def validate_embedded_list__child__name(self, value):
+            if len(value) < 4:
+                raise ValidationError('Minimum 4 characters.')
+            return value.title()
+
+        def validated_embedded_map__child__name(self, value):
+            if len(value) < 4:
+                raise ValidationError('Minimum 4 characters.')
+            return value.title()
+
+        def validated_list_of_embedded_documents__child__name(self, value):
+            if len(value) < 4:
+                raise ValidationError('Minimum 4 characters.')
+            return value.title()
+
     def doCleanups(self):
-        ReferencedDocument.drop_collection()
-        ParentDocument.drop_collection()
+        CompoundParentDocument.drop_collection()
+
+    def test_create_success(self):
+        data = {
+            "foo": 'x',
+            "embedded_list": [{'name': 'Jack', 'age': 9}],
+            "embedded_map": {'0': {'name': 'Jack', 'age': 9}},
+            "list_of_embedded_documents": [{'name': 'Jack', 'age': 9}]
+        }
+
+        serializer = self.CompoundParentSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        expected = {
+            'id': str(serializer.instance.id),
+            'foo': 'x',
+            'embedded_list': [{'name': 'Jack', 'age': 9}],
+            'embeddeed_map': {'0': {'name': 'Jack', 'age': 9}},
+            'list_of_embedded_documents': [{'name': 'Jack', 'age': 9}]
+        }
+        assert serializer.data == expected
+
+    def test_create_fail(self):
+        data = {
+            "foo": "bar",
+            "embedded_list": [{'name': 'Joe', 'age': 9}],
+            "embedded_map": {'0': {'name': 'Joe', 'age': 9}},
+            "list_of_embedded_documents": [{'name': 'Joe', 'age': 9}]
+        }
+
+        serializer = self.CompoundParentSerializer(data=data)
+        assert not serializer.is_valid()
+        assert serializer.errors == {'embedded_list': {'name': [u'Minimum 4 characters.']}}
+
+    def test_update_success(self):
+        instance = CompoundParentDocument.objects.create(
+            foo='x',
+            embedded_list=[ChildDocument(name='Joe', age=9)],
+            embedded_map={'Joe': ChildDocument(name='Joe', age=9)},
+            list_of_embedded_documents=[ChildDocument(name='Joe', age=9)]
+        )
+
+        data = {
+            "foo": "y",
+            "embedded_list": [{'name': 'Jack', 'age': 10}],
+            "embedded_map": {'0': {'name': 'Jack', 'age': 10}},
+            "list_of_embedded_documents": [{'name': 'Jack', 'age': 10}]
+        }
+
+        serializer = self.CompoundParentSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+
+        expected = {
+            'id': str(serializer.instance.id),
+            'foo': 'y',
+            "embedded_list": [{'name': 'Jack', 'age': 10}],
+            "embedded_map": {'0': {'name': 'Jack', 'age': 10}},
+            "list_of_embedded_documents": [{'name': 'Jack', 'age': 10}]
+        }
+        assert serializer.data == expected
+
+    def test_update_fail(self):
+        instance = CompoundParentDocument.objects.create(
+            foo='x',
+            embedded_list=[ChildDocument(name='Joe', age=9)],
+            embedded_map={'Joe': ChildDocument(name='Joe', age=9)},
+            list_of_embedded_documents=[ChildDocument(name='Joe', age=9)]
+        )
+
+        data = {
+            "foo": "y",
+            "embedded_list": [{'name': 'Jim', 'age': 10}],
+            "embedded_map": {'0': {'name': 'Jim', 'age': 10}},
+            "list_of_embedded_documents": [{'name': 'Jim', 'age': 10}]
+        }
+
+        serializer = self.CompoundParentSerializer(instance, data=data)
+        assert not serializer.is_valid()
+        assert serializer.errors == {'embedded_list': {'name': [u'Minimum 4 characters.']}}
