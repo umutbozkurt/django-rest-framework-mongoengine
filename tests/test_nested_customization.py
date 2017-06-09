@@ -1313,12 +1313,13 @@ class TestNestedCompoundCustomizationValidateMethodIntegration(TestCase):
         assert serializer.is_valid(), serializer.errors
         serializer.save()
         expected = {
-            'id': str(serializer.instance.id),
+            'embedded_list': [{'name': u'Jack', 'age': 9}],
+            'list_of_embedded_documents': [{'name': 'Jack', 'age': 9}],
             'foo': 'x',
-            'embedded_list': [{'name': 'Jack', 'age': 9}],
-            'embeddeed_map': {'0': {'name': 'Jack', 'age': 9}},
-            'list_of_embedded_documents': [{'name': 'Jack', 'age': 9}]
+            'id': str(serializer.instance.id),
+            'embedded_map': {'0': {'name': 'Jack', 'age': 9}}
         }
+
         assert serializer.data == expected
 
     def test_create_fail(self):
