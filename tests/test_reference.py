@@ -17,8 +17,10 @@ from .utils import dedent
 class ReferencedDoc(Document):
     name = fields.StringField()
 
+
 class ReferencedDocWithUniqueField(Document):
     name = fields.StringField(unique=True)
+
 
 class IntReferencedDoc(Document):
     id = fields.IntField(primary_key=True)
@@ -51,8 +53,10 @@ class RefFieldsDoc(Document):
 class ReferencingDoc(Document):
     ref = fields.ReferenceField(ReferencedDoc)
 
+
 class ReferencingDocWithUniqueField(Document):
     ref = fields.ReferenceField(ReferencedDocWithUniqueField, unique=True)
+
 
 class GenericReferencingDoc(Document):
     ref = fields.GenericReferenceField()

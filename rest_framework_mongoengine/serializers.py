@@ -1,11 +1,14 @@
 import copy
-from collections import OrderedDict
+import warnings
+from collections import OrderedDict, namedtuple
 
+from django.utils.six import get_unbound_function
 from mongoengine import fields as me_fields
 from mongoengine.errors import ValidationError as me_ValidationError
 from rest_framework import fields as drf_fields
 from rest_framework import serializers
 from rest_framework.compat import unicode_to_repr
+from rest_framework.serializers import ALL_FIELDS
 from rest_framework.utils.field_mapping import ClassLookupDict
 
 from rest_framework_mongoengine import fields as drfm_fields
@@ -20,6 +23,15 @@ from .utils import (
     get_nested_relation_kwargs, get_relation_kwargs, has_default,
     is_abstract_model
 )
+
+
+# This object is used for customization of nested field attributes in DocumentSerializer
+Customization = namedtuple("Customization", [
+    'fields',
+    'exclude',
+    'extra_kwargs',
+    'validate_methods'
+])
 
 
 def raise_errors_on_nested_writes(method_name, serializer, validated_data):
@@ -326,6 +338,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             # If the field is explicitly declared on the class then use that.
             if field_name in declared_fields:
                 fields[field_name] = declared_fields[field_name]
+                # We assume that in this case no extra_kwargs etc. should be considered
+                # No nested validators or validate_*() methods need to be applied
                 continue
 
             # Determine the serializer field class and keyword arguments.
@@ -346,10 +360,91 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return fields
 
-    def get_field_names(self, declared_fields, model_info):
-        field_names = super(DocumentSerializer, self).get_field_names(declared_fields, model_info)
+    def get_field_names(self, declared_fields, info):
+        """
+        Returns the list of all field names that should be created when
+        instantiating this serializer class. This is based on the default
+        set of fields, but also takes into account the `Meta.fields` or
+        `Meta.exclude` options if they have been specified.
+
+        It includes only direct children of serializer, not its grandchildren.
+        """
+        fields = getattr(self.Meta, 'fields', None)
+        exclude = getattr(self.Meta, 'exclude', None)
+
+        if fields and fields != ALL_FIELDS and not isinstance(fields, (list, tuple)):
+            raise TypeError(
+                'The `fields` option must be a list or tuple or "__all__". '
+                'Got %s.' % type(fields).__name__
+            )
+
+        if exclude and not isinstance(exclude, (list, tuple)):
+            raise TypeError(
+                'The `exclude` option must be a list or tuple. Got %s.' %
+                type(exclude).__name__
+            )
+
+        assert not (fields and exclude), (
+            "Cannot set both 'fields' and 'exclude' options on "
+            "serializer {serializer_class}.".format(
+                serializer_class=self.__class__.__name__
+            )
+        )
+
+        if fields is None and exclude is None:
+            warnings.warn(
+                "Creating a ModelSerializer without either the 'fields' "
+                "attribute or the 'exclude' attribute is deprecated "
+                "since 3.3.0. Add an explicit fields = '__all__' to the "
+                "{serializer_class} serializer.".format(
+                    serializer_class=self.__class__.__name__
+                ),
+                DeprecationWarning
+            )
+
+        if fields == ALL_FIELDS:
+            fields = self.get_default_field_names(declared_fields, info)
+        else:
+            if fields is not None:
+                # Ensure that all declared fields have also been included in the
+                # `Meta.fields` option.
+
+                # Do not require any fields that are declared a parent class,
+                # in order to allow serializer subclasses to only include
+                # a subset of fields.
+                required_field_names = set(declared_fields)
+                for cls in self.__class__.__bases__:
+                    required_field_names -= set(getattr(cls, '_declared_fields', []))
+
+                for field_name in required_field_names:
+                    assert field_name in fields, (
+                        "The field '{field_name}' was declared on serializer "
+                        "{serializer_class}, but has not been included in the "
+                        "'fields' option.".format(
+                            field_name=field_name,
+                            serializer_class=self.__class__.__name__
+                        )
+                    )
+            else:
+                # Use the default set of field names if `Meta.fields` is not specified.
+                fields = self.get_default_field_names(declared_fields, info)
+
+                if exclude is not None:
+                    # If `Meta.exclude` is included, then remove those fields.
+                    for field_name in exclude:
+                        if '.' not in field_name:  # ignore customization of nested fields - they'll be handled separately
+                            assert field_name in fields, (
+                                "The field '{field_name}' was included on serializer "
+                                "{serializer_class} in the 'exclude' option, but does "
+                                "not match any model field.".format(
+                                    field_name=field_name,
+                                    serializer_class=self.__class__.__name__
+                                )
+                            )
+                            fields.remove(field_name)
+
         # filter out child fields
-        return [fn for fn in field_names if '.child' not in fn]
+        return [field_name for field_name in fields if '.' not in field_name]
 
     def get_default_field_names(self, declared_fields, model_info):
         return (
@@ -359,6 +454,113 @@ class DocumentSerializer(serializers.ModelSerializer):
             list(model_info.references.keys()) +
             list(model_info.embedded.keys())
         )
+
+    def get_customization_for_nested_field(self, field_name):
+        """ Support of nested fields customization for:
+         * EmbeddedDocumentField
+         * NestedReference
+         * Compound fields with EmbeddedDocument as a child:
+            * ListField(EmbeddedDocument)/EmbeddedDocumentListField
+            * MapField(EmbeddedDocument)
+
+        Extracts fields, exclude, extra_kwargs and validate_*()
+        attributes from parent serializer, related to attributes of field_name.
+        """
+
+        # This method is supposed to be called after self.get_fields(),
+        # thus it assumes that fields and exclude are mutually exclusive
+        # and at least one of them is set.
+        #
+        # Also, all the sanity checks are left up to nested field's
+        # get_fields() method, so if something is wrong with customization
+        # nested get_fields() will report this.
+
+        fields = getattr(self.Meta, 'fields', None)
+        exclude = getattr(self.Meta, 'exclude', None)
+
+        if fields and fields != ALL_FIELDS and not isinstance(fields, (list, tuple)):
+            raise TypeError(
+                'The `fields` option must be a list or tuple or "__all__". '
+                'Got %s.' % type(fields).__name__
+            )
+
+        if exclude and not isinstance(exclude, (list, tuple)):
+            raise TypeError(
+                'The `exclude` option must be a list or tuple. Got %s.' %
+                type(exclude).__name__
+            )
+
+        assert not (fields and exclude), (
+            "Cannot set both 'fields' and 'exclude' options on "
+            "serializer {serializer_class}.".format(
+                serializer_class=self.__class__.__name__
+            )
+        )
+
+        if fields is None and exclude is None:
+            warnings.warn(
+                "Creating a ModelSerializer without either the 'fields' "
+                "attribute or the 'exclude' attribute is deprecated "
+                "since 3.3.0. Add an explicit fields = '__all__' to the "
+                "{serializer_class} serializer.".format(
+                    serializer_class=self.__class__.__name__
+                ),
+                DeprecationWarning
+            )
+            fields = ALL_FIELDS  # assume that fields are ALL_FIELDS
+
+        # TODO: validators
+
+        # get nested_fields or nested_exclude (supposed to be mutually exclusive, assign the other one to None)
+        if fields:
+            if fields == ALL_FIELDS:
+                nested_fields = ALL_FIELDS
+            else:
+                nested_fields = [field[len(field_name + '.'):] for field in fields if field.startswith(field_name + '.')]
+            nested_exclude = None
+        else:
+            # leave all the sanity checks up to get_fields() method of nested field's serializer
+            nested_fields = None
+            nested_exclude = [field[len(field_name + '.'):] for field in exclude if field.startswith(field_name + '.')]
+
+        # get nested_extra_kwargs (including read-only fields)
+        # TODO: uniqueness extra kwargs
+        extra_kwargs = self.get_extra_kwargs()
+        nested_extra_kwargs = {key[len(field_name + '.'):]: value for key, value in extra_kwargs.items() if key.startswith(field_name + '.')}
+
+        # get nested_validate_methods dict {name: function}, rename e.g. 'validate_author__age()' -> 'validate_age()'
+        # so that we can add them to nested serializer's definition under this new name
+        # validate_methods are normally checked in rest_framework.Serializer.to_internal_value()
+        nested_validate_methods = {}
+        for attr in dir(self.__class__):
+            if attr.startswith('validate_%s__' % field_name.replace('.', '__')):
+                method = get_unbound_function(getattr(self.__class__, attr))
+                method_name = 'validate_' + attr[len('validate_%s__' % field_name.replace('.', '__')):]
+                nested_validate_methods[method_name] = method
+
+        return Customization(nested_fields, nested_exclude, nested_extra_kwargs, nested_validate_methods)
+
+    def apply_customization(self, serializer, customization):
+        """
+        Applies fields customization to a nested or embedded DocumentSerializer.
+        """
+        # apply fields or exclude
+        if customization.fields is not None:
+            if len(customization.fields) == 0:
+                # customization fields are empty, set Meta.fields to '__all__'
+                serializer.Meta.fields = ALL_FIELDS
+            else:
+                serializer.Meta.fields = customization.fields
+        if customization.exclude is not None:
+            serializer.Meta.exclude = customization.exclude
+
+        # apply extra_kwargs
+        if customization.extra_kwargs is not None:
+            serializer.Meta.extra_kwargs = customization.extra_kwargs
+
+        # apply validate_methods
+        for method_name, method in customization.validate_methods.items():
+            setattr(serializer, method_name, method)
 
     def build_field(self, field_name, info, model_class, nested_depth, embedded_depth):
         if field_name in info.fields_and_pk:
@@ -473,8 +675,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         class NestedSerializer(subclass):
             class Meta:
                 model = relation_info.related_model
-                fields = '__all__'
                 depth = nested_depth - 1
+
+        # Apply customization to nested fields
+        customization = self.get_customization_for_nested_field(field_name)
+        self.apply_customization(NestedSerializer, customization)
 
         field_class = NestedSerializer
         field_kwargs = get_nested_relation_kwargs(field_name, relation_info)
@@ -491,8 +696,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         class EmbeddedSerializer(subclass):
             class Meta:
                 model = relation_info.related_model
-                fields = '__all__'
                 depth_embedding = embedded_depth - 1
+
+        # Apply customization to nested fields
+        customization = self.get_customization_for_nested_field(field_name)
+        self.apply_customization(EmbeddedSerializer, customization)
 
         field_class = EmbeddedSerializer
         field_kwargs = get_nested_embedded_kwargs(field_name, relation_info)
@@ -605,20 +813,20 @@ class DynamicDocumentSerializer(DocumentSerializer):
     Maps all undefined fields to :class:`fields.DynamicField`.
     """
     def to_internal_value(self, data):
-        '''
+        """
         Updates _validated_data with dynamic data, i.e. data,
         not listed in fields.
-        '''
+        """
         ret = super(DynamicDocumentSerializer, self).to_internal_value(data)
         dynamic_data = self._get_dynamic_data(ret)
         ret.update(dynamic_data)
         return ret
 
     def _get_dynamic_data(self, validated_data):
-        '''
+        """
         Returns dict of data, not declared in serializer fields.
         Should be called after self.is_valid().
-        '''
+        """
         result = {}
 
         for key in self.initial_data:

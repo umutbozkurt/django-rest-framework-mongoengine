@@ -1,13 +1,12 @@
 from __future__ import unicode_literals
 
+from bson import ObjectId
 from django.test import TestCase
 from rest_framework import permissions, status
 from rest_framework.test import APIRequestFactory
 
 from rest_framework_mongoengine import generics
 from rest_framework_mongoengine.serializers import DocumentSerializer
-
-from bson import ObjectId
 
 from .models import DumbDocument
 
