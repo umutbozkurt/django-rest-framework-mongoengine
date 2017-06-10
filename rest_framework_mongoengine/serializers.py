@@ -2,6 +2,7 @@ import copy
 import warnings
 from collections import OrderedDict, namedtuple
 
+from django.utils.six import get_unbound_function
 from mongoengine import fields as me_fields
 from mongoengine.errors import ValidationError as me_ValidationError
 from rest_framework import fields as drf_fields
@@ -533,7 +534,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         nested_validate_methods = {}
         for attr in dir(self.__class__):
             if attr.startswith('validate_%s__' % field_name.replace('.', '__')):
-                method = getattr(self.__class__, attr).__func__
+                method = get_unbound_function(getattr(self.__class__, attr))
                 method_name = 'validate_' + attr[len('validate_%s__' % field_name.replace('.', '__')):]
                 nested_validate_methods[method_name] = method
 
