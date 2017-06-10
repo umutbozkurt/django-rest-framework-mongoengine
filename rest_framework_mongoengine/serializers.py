@@ -533,7 +533,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         nested_validate_methods = {}
         for attr in dir(self.__class__):
             if attr.startswith('validate_%s__' % field_name.replace('.', '__')):
-                method = getattr(self.__class__, attr).im_func
+                method = getattr(self.__class__, attr).__func__
                 method_name = 'validate_' + attr[len('validate_%s__' % field_name.replace('.', '__')):]
                 nested_validate_methods[method_name] = method
 
