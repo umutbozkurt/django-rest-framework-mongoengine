@@ -37,7 +37,7 @@ class CustomIdSerializer(DocumentSerializer):
 
 
 class IncorrectSerializer(DocumentSerializer):
-    '''This serializer doesn't override id field, thus it is incorrect.'''
+    """This serializer doesn't override id field, thus it is incorrect."""
     class Meta:
         model = CustomIdModel
         fields = '__all__'
@@ -52,7 +52,7 @@ class IncorrectSerializerTestCase(TestCase):
         CustomIdModel.drop_collection()
 
     def test_incorrect(self):
-        '''This test shows that if we've overridden id field on a model and
+        """This test shows that if we've overridden id field on a model and
         haven't explicitly specified an id field on serializer, like in
         IncorrectSerializer, the serializer successfully passes DRFME
         validation, but Mongoengine validation raises a ValidationError
@@ -60,7 +60,7 @@ class IncorrectSerializerTestCase(TestCase):
 
         We need a more explicit error message here, which tells DRFME user to
         override id field on serializer; don't know, how to implement this.
-        '''
+        """
         serializer = IncorrectSerializer(data=self.data)
         assert serializer.is_valid()
         with self.assertRaises(me_ValidationError):

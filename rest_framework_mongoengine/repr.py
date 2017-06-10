@@ -14,6 +14,8 @@ from mongoengine.queryset import QuerySet
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import Field
 
+from fields import DictField
+
 
 def manager_repr(value):
     model = value._document
@@ -109,8 +111,10 @@ def serializer_repr(serializer, indent, force_many=None):
         ret += '\n' + indent_str + field_name + ' = '
         if hasattr(field, 'fields'):
             ret += serializer_repr(field, indent + 1)
-        elif hasattr(field, 'child'):
+        elif hasattr(field, 'child') and not isinstance(field, DictField):
             ret += list_repr(field, indent + 1)
+        elif hasattr(field, 'child') and isinstance(field, DictField):
+            ret += dict_repr(field, indent)
         else:
             ret += field_repr(field)
 
@@ -129,3 +133,15 @@ def list_repr(serializer, indent):
     if hasattr(child, 'fields'):
         return serializer_repr(serializer, indent, force_many=child)
     return field_repr(serializer)
+
+
+def dict_repr(serializer, indent):
+    ret = field_repr(serializer)
+
+    child = serializer.child
+    if hasattr(child, 'fields'):
+        ret = field_repr(serializer) + ":"
+        ser_repr = serializer_repr(child, indent + 1)
+        ret += "\n" + ser_repr.split("\n", 1)[1]  # chop the name of seiralizer off
+
+    return ret
