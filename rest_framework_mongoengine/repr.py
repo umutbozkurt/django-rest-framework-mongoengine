@@ -14,7 +14,7 @@ from mongoengine.queryset import QuerySet
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import Field
 
-from fields import DictField
+from rest_framework_mongoengine.fields import DictField
 
 
 def manager_repr(value):
