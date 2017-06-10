@@ -1,5 +1,5 @@
 from django.http import Http404
-from mongoengine import DoesNotExist
+from mongoengine import DoesNotExist, ValidationError
 from mongoengine.queryset.base import BaseQuerySet
 from rest_framework import generics as drf_generics
 from rest_framework import mixins
@@ -9,7 +9,7 @@ def get_object_or_404(queryset, *args, **kwargs):
     """ replacement of rest_framework.generics and django.shrtcuts analogues """
     try:
         return queryset.get(*args, **kwargs)
-    except (ValueError, TypeError, DoesNotExist):
+    except (ValueError, TypeError, DoesNotExist, ValidationError):
         raise Http404()
 
 

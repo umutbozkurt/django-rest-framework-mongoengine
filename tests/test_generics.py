@@ -7,6 +7,8 @@ from rest_framework.test import APIRequestFactory
 from rest_framework_mongoengine import generics
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
+from bson import ObjectId
+
 from .models import DumbDocument
 
 
@@ -72,3 +74,17 @@ class TestBasicViews(TestCase):
         request = self.client.get('/' + str(oid))
         response = view(request, id=oid).render()
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_retr_id_not_found(self):
+        view = RetrView.as_view()
+        oid = ObjectId()
+        request = self.client.get('/' + str(oid))
+        response = view(request, id=oid).render()
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_retr_id_invalid(self):
+        view = RetrView.as_view()
+        oid = 'invalid_id'
+        request = self.client.get('/' + oid)
+        response = view(request, id=oid).render()
+        assert response.status_code == status.HTTP_404_NOT_FOUND
