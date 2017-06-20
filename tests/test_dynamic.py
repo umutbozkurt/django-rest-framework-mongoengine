@@ -10,7 +10,8 @@ from rest_framework_mongoengine.serializers import (
     DocumentSerializer, DynamicDocumentSerializer, EmbeddedDocumentSerializer
 )
 
-from .models import DumbDocument, DumbDynamic, DumbEmbedded, EmbeddingDynamic
+from .models import DumbDocument, DumbDynamic, DumbEmbedded, EmbeddingDynamic, DumbDynamicEmbedded, \
+    DocumentEmbeddingDynamic
 from .utils import dedent
 
 
@@ -297,3 +298,106 @@ class TestEmbeddingDynamicIntegration(TestCase):
 
     def doCleanups(self):
         EmbeddingDynamic.drop_collection()
+
+
+class DumbDynamicEmbeddedSerializer(EmbeddedDocumentSerializer, DynamicDocumentSerializer):
+    class Meta:
+        model = DumbDynamicEmbedded
+        fields = '__all__'
+
+
+class DocumentEmbeddingDynamicSerializer(DocumentSerializer):
+    embedded = DumbDynamicEmbeddedSerializer()
+
+    class Meta:
+        model = DocumentEmbeddingDynamic
+        fields = ('name', 'foo', 'embedded')
+
+
+class TestDocumentEmbeddingDynamicMapping(TestCase):
+    def test_repr(self):
+        expected = dedent("""
+            DocumentEmbeddingDynamicSerializer():
+                name = CharField(required=False)
+                foo = IntegerField(required=False)
+                embedded = DumbDynamicEmbeddedSerializer():
+                    name = CharField(required=False)
+                    foo = IntegerField(required=False)
+        """)
+        assert unicode_repr(DocumentEmbeddingDynamicSerializer()) == expected
+
+
+class TestDocumentEmbeddingDynamicIntegration(TestCase):
+    data = {
+        'name': 'Ivan',
+        'foo': 42,
+        'embedded': {
+            'name': 'Dumb',
+            'foo': 2,
+            'bar': 43,
+            'baz': 'Baz',
+        },
+    }
+
+    def create_instance(self):
+        return DocumentEmbeddingDynamic.objects.create(
+            name='Ivan',
+            foo=42,
+            embedded=DumbDynamicEmbedded(name='Dumb', foo=2, bar=43, baz='Baz')
+        )
+
+    def test_parsing(self):
+        serializer = DocumentEmbeddingDynamicSerializer(data=self.data)
+        assert serializer.is_valid(), serializer.errors
+
+        assert serializer.validated_data == self.data
+
+    def test_retrieval(self):
+        instance = self.create_instance()
+        serializer = DocumentEmbeddingDynamicSerializer(instance)
+
+        assert serializer.data == self.data
+
+    def test_create(self):
+        serializer = DocumentEmbeddingDynamicSerializer(data=self.data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.name == 'Ivan'
+        assert instance.foo == 42
+        assert instance.embedded.name == 'Dumb'
+        assert instance.embedded.foo == 2
+        assert instance.embedded.bar == 43
+        assert instance.embedded.baz == 'Baz'
+
+    def test_update(self):
+        instance = self.create_instance()
+
+        new_data = {
+            'name': 'Ivan',
+            'foo': 142,
+            'embedded': {
+                'name': 'Bright',
+                'foo': 3,
+                'bar': 143,
+            },
+        }
+
+        serializer = DocumentEmbeddingDynamicSerializer(instance, data=new_data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.name == 'Ivan'
+        assert instance.foo == 142
+        assert instance.embedded.name == 'Bright'
+        assert instance.embedded.foo == 3
+        assert instance.embedded.bar == 143
+        assert not hasattr(instance.embedded, 'baz')
+
+        serializer_data_json = json.loads(json.dumps(sorted(serializer.data)))
+        new_data_json = json.loads(json.dumps(sorted(new_data)))
+
+        assert serializer_data_json == new_data_json
+
+    def doCleanups(self):
+        DocumentEmbeddingDynamic.drop_collection()

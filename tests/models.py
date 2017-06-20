@@ -1,7 +1,7 @@
 """ all models shared in tests
 class names should be unique across whole project
 """
-from mongoengine import Document, DynamicDocument, EmbeddedDocument, fields
+from mongoengine import Document, DynamicDocument, EmbeddedDocument, fields, DynamicEmbeddedDocument
 
 
 class DumbDocument(Document):
@@ -28,6 +28,14 @@ class OtherEmbedded(EmbeddedDocument):
     bar = fields.IntField(required=True)
 
 
+class DumbDynamicEmbedded(DynamicEmbeddedDocument):
+    name = fields.StringField()
+    foo = fields.IntField()
+
+    def __str__(self):
+        return "<DumbDynamicEmbedded %s %s>" % (self.name, self.foo)
+
+
 class DumbDynamic(DynamicDocument):
     name = fields.StringField()
     foo = fields.IntField()
@@ -37,3 +45,9 @@ class EmbeddingDynamic(DynamicDocument):
     name = fields.StringField()
     foo = fields.IntField()
     embedded = fields.EmbeddedDocumentField(DumbEmbedded)
+
+
+class DocumentEmbeddingDynamic(Document):
+    name = fields.StringField()
+    foo = fields.IntField()
+    embedded = fields.EmbeddedDocumentField(DumbDynamicEmbedded)
