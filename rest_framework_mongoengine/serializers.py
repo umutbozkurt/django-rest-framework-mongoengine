@@ -134,7 +134,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     serializer_url_field = None
 
     " class to create fields for references "
-    serializer_reference_field = drfm_fields.ReferenceField
+    serializer_reference_base_field = drfm_fields.ReferenceField
 
     " class to create fields for generic references "
     serializer_reference_generic = drfm_fields.GenericReferenceField
@@ -656,6 +656,13 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_kwargs['child'] = child_field
 
         return field_class, field_kwargs
+    
+    def serializer_reference_field_factory(self, field_class):
+        return type(
+            self.serializer_reference_base_field.__name__,
+            (self.serializer_reference_base_field,),
+            {'pk_field_class': field_class,}
+        )
 
     def build_reference_field(self, field_name, relation_info, nested_depth):
         if not relation_info.related_model:
@@ -664,7 +671,15 @@ class DocumentSerializer(serializers.ModelSerializer):
             if not issubclass(field_class, drfm_fields.DocumentField):
                 field_kwargs.pop('model_field', None)
         else:
-            field_class = self.serializer_reference_field
+            _, related_model = relation_info
+            related_class = related_model.id.__class__
+            try:
+                related_field = self.serializer_field_mapping[related_class]
+            except KeyError:
+                raise KeyError("Referencing a model with a " +
+                               related_class.__name__ +
+                               " primary key is not supported")
+            field_class = self.serializer_reference_field_factory(related_field)
             field_kwargs = get_relation_kwargs(field_name, relation_info)
 
         return field_class, field_kwargs
