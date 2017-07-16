@@ -208,8 +208,8 @@ class ReferenceField(serializers.Field):
     pk_field_class = ObjectIdField
     """ Serializer field class used to handle object ids.
 
-    If your docments have another type for ids, you need to create custom ReferenceField subclass and override this atribute to corresponding serializer field.
-    However, this custom ReferenceField subclass will not be used automagically by DocumentSerializer, and you have to declare fields manually.
+    ObjectIdField is the default. This attribute is dynamically overridden to
+    manage referenced models with a custom primary key.
     """
 
     def __init__(self, model=None, queryset=None, **kwargs):
@@ -279,7 +279,9 @@ class ReferenceField(serializers.Field):
             doc_id = self.parse_id(value)
 
         try:
-            return self.get_queryset().only('id').get(id=doc_id).to_dbref()
+            # Use the 'pk' attribute instead of 'id' as the second does not
+            # exist when the model has a custom primary key
+            return self.get_queryset().only('pk').get(pk=doc_id).to_dbref()
         except DoesNotExist:
             self.fail('not_found', pk_value=doc_id)
 

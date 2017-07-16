@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from django.test import TestCase
+from bson import DBRef
 from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import IntegerField
@@ -74,6 +75,30 @@ class ListReferencingModel(Document):
 
 class RecursiveReferencingDoc(Document):
     ref = fields.ReferenceField('self')
+
+
+class CustomPkModel(Document):
+    name = fields.StringField(primary_key=True)
+
+
+class ReferencingWithCustomPk(Document):
+    ref = fields.ReferenceField(CustomPkModel)
+
+
+class ReferencingWithCustomPkSerializer(DocumentSerializer):
+    class Meta:
+        model = ReferencingWithCustomPk
+        fields = '__all__'
+
+
+class ListReferencingWithCustomPk(Document):
+    refs = fields.ListField(fields.ReferenceField(CustomPkModel))
+
+
+class ListReferencingWithCustomPkSerializer(DocumentSerializer):
+    class Meta:
+        model = ListReferencingWithCustomPk
+        fields = '__all__'
 
 
 class TestReferenceField(TestCase):
@@ -804,4 +829,186 @@ class TestComboReferenceIntegration(TestCase):
             'id': str(instance.id),
             'ref': str(new_target.id)
         }
+        assert serializer.data == expected
+
+
+class TestReferenceCustomPk(TestCase):
+    """Operational test
+    
+    Test if all operations performed correctly
+    """
+    
+    def doCleanups(self):
+        CustomPkModel.drop_collection()
+        ReferencingWithCustomPk.drop_collection()
+
+    def test_parsing(self):
+        input_data = {'ref': 'foo'}
+        
+        serializer = ReferencingWithCustomPkSerializer(data=input_data)
+        # No CustomPkModel object with name 'foo'
+        assert not serializer.is_valid(), not serializer.errors
+
+        CustomPkModel.objects.create(name='foo')
+        serializer = ReferencingWithCustomPkSerializer(data=input_data)
+
+        assert serializer.is_valid(), serializer.errors
+
+        expected = {'ref': DBRef('custom_pk_model', 'foo')}
+
+        assert serializer.validated_data == expected
+
+    def test_retrieve(self):
+        referenced = CustomPkModel.objects.create(name='foo') 
+        referencing = ReferencingWithCustomPk.objects.create(ref=referenced)
+        serializer = ReferencingWithCustomPkSerializer(referencing)
+
+        expected = {
+            'id': str(referencing.id),
+            'ref': referenced.name
+        }
+
+        assert serializer.data == expected
+
+    def test_create(self):
+        referenced = CustomPkModel.objects.create(name='foo') 
+
+        input_data = {'ref': 'unexisting'}
+        serializer = ReferencingWithCustomPkSerializer(data=input_data)
+        assert not serializer.is_valid(), not serializer.errors
+
+        input_data = {'ref': 'foo'}
+        serializer = ReferencingWithCustomPkSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.ref.name == 'foo'
+
+        expected = {
+            'id': str(instance.id),
+            'ref': 'foo',
+        }
+
+        assert serializer.data == expected
+
+    def test_update(self):
+        referenced = CustomPkModel.objects.create(name='foo') 
+        referenced2 = CustomPkModel.objects.create(name='bar') 
+        instance = ReferencingWithCustomPk.objects.create(ref=referenced)
+
+        data = {'ref': 'unexisting'}
+        serializer = ReferencingWithCustomPkSerializer(instance, data=data)
+        assert not serializer.is_valid(), not serializer.errors
+
+        data = {'ref': 'bar'}
+        serializer = ReferencingWithCustomPkSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.ref.name == 'bar'
+
+        expected = {
+            'id': str(instance.id),
+            'ref': 'bar',
+        }
+
+        assert serializer.data == expected
+
+
+class TestListReferenceCustomPk(TestCase):
+    """Operational test
+    
+    Test if all operations performed correctly
+    """
+    
+    def doCleanups(self):
+        CustomPkModel.drop_collection()
+        ListReferencingWithCustomPk.drop_collection()
+
+    def test_parsing(self):
+        input_data = {'refs': ['foo', 'bar']}
+        
+        serializer = ListReferencingWithCustomPkSerializer(data=input_data)
+        # No CustomPkModel object with name 'foo'
+        assert not serializer.is_valid(), not serializer.errors
+
+        CustomPkModel.objects.create(name='foo')
+
+        serializer = ListReferencingWithCustomPkSerializer(data=input_data)
+        # No CustomPkModel object with name 'bar'
+        assert not serializer.is_valid(), not serializer.errors
+
+        CustomPkModel.objects.create(name='bar')
+
+        serializer = ListReferencingWithCustomPkSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+
+        expected = {'refs': [
+            DBRef('custom_pk_model', 'foo'),
+            DBRef('custom_pk_model', 'bar')
+        ]}
+
+        assert serializer.validated_data == expected
+
+    def test_retrieve(self):
+        referenced = CustomPkModel.objects.create(name='foo') 
+        referenced2 = CustomPkModel.objects.create(name='bar') 
+        referencing = ListReferencingWithCustomPk.objects.create(refs=[referenced, referenced2])
+        serializer = ListReferencingWithCustomPkSerializer(referencing)
+
+        expected = {
+            'id': str(referencing.id),
+            'refs': ['foo', 'bar']
+        }
+
+        assert serializer.data == expected
+
+    def test_create(self):
+        input_data = {'refs': ['foo', 'bar']}
+        serializer = ListReferencingWithCustomPkSerializer(data=input_data)
+        assert not serializer.is_valid(), not serializer.errors
+
+        referenced = CustomPkModel.objects.create(name='foo') 
+
+        input_data = {'refs': ['foo', 'bar']}
+        serializer = ListReferencingWithCustomPkSerializer(data=input_data)
+        assert not serializer.is_valid(), not serializer.errors
+
+        referenced2 = CustomPkModel.objects.create(name='bar') 
+
+        input_data = {'refs': ['foo', 'bar']}
+        serializer = ListReferencingWithCustomPkSerializer(data=input_data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.refs[0].name == 'foo', instance.refs[1].name == 'bar'
+
+        expected = {
+            'id': str(instance.id),
+            'refs': ['foo', 'bar'],
+        }
+
+        assert serializer.data == expected
+
+    def test_update(self):
+        referenced = CustomPkModel.objects.create(name='foo') 
+        CustomPkModel.objects.create(name='bar') 
+        instance = ListReferencingWithCustomPk.objects.create(refs=[referenced])
+
+        data = {'refs': ['unexisting']}
+        serializer = ListReferencingWithCustomPkSerializer(instance, data=data)
+        assert not serializer.is_valid(), not serializer.errors
+
+        data = {'refs': ['bar']}
+        serializer = ListReferencingWithCustomPkSerializer(instance, data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert instance.refs[0].name == 'bar'
+
+        expected = {
+            'id': str(instance.id),
+            'refs': ['bar'],
+        }
+
         assert serializer.data == expected
