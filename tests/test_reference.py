@@ -834,17 +834,17 @@ class TestComboReferenceIntegration(TestCase):
 
 class TestReferenceCustomPk(TestCase):
     """Operational test
-    
+
     Test if all operations performed correctly
     """
-    
+
     def doCleanups(self):
         CustomPkModel.drop_collection()
         ReferencingWithCustomPk.drop_collection()
 
     def test_parsing(self):
         input_data = {'ref': 'foo'}
-        
+
         serializer = ReferencingWithCustomPkSerializer(data=input_data)
         # No CustomPkModel object with name 'foo'
         assert not serializer.is_valid(), not serializer.errors
@@ -859,7 +859,7 @@ class TestReferenceCustomPk(TestCase):
         assert serializer.validated_data == expected
 
     def test_retrieve(self):
-        referenced = CustomPkModel.objects.create(name='foo') 
+        referenced = CustomPkModel.objects.create(name='foo')
         referencing = ReferencingWithCustomPk.objects.create(ref=referenced)
         serializer = ReferencingWithCustomPkSerializer(referencing)
 
@@ -871,7 +871,7 @@ class TestReferenceCustomPk(TestCase):
         assert serializer.data == expected
 
     def test_create(self):
-        referenced = CustomPkModel.objects.create(name='foo') 
+        CustomPkModel.objects.create(name='foo')
 
         input_data = {'ref': 'unexisting'}
         serializer = ReferencingWithCustomPkSerializer(data=input_data)
@@ -892,8 +892,8 @@ class TestReferenceCustomPk(TestCase):
         assert serializer.data == expected
 
     def test_update(self):
-        referenced = CustomPkModel.objects.create(name='foo') 
-        referenced2 = CustomPkModel.objects.create(name='bar') 
+        referenced = CustomPkModel.objects.create(name='foo')
+        CustomPkModel.objects.create(name='bar')
         instance = ReferencingWithCustomPk.objects.create(ref=referenced)
 
         data = {'ref': 'unexisting'}
@@ -917,17 +917,17 @@ class TestReferenceCustomPk(TestCase):
 
 class TestListReferenceCustomPk(TestCase):
     """Operational test
-    
+
     Test if all operations performed correctly
     """
-    
+
     def doCleanups(self):
         CustomPkModel.drop_collection()
         ListReferencingWithCustomPk.drop_collection()
 
     def test_parsing(self):
         input_data = {'refs': ['foo', 'bar']}
-        
+
         serializer = ListReferencingWithCustomPkSerializer(data=input_data)
         # No CustomPkModel object with name 'foo'
         assert not serializer.is_valid(), not serializer.errors
@@ -951,8 +951,8 @@ class TestListReferenceCustomPk(TestCase):
         assert serializer.validated_data == expected
 
     def test_retrieve(self):
-        referenced = CustomPkModel.objects.create(name='foo') 
-        referenced2 = CustomPkModel.objects.create(name='bar') 
+        referenced = CustomPkModel.objects.create(name='foo')
+        referenced2 = CustomPkModel.objects.create(name='bar')
         referencing = ListReferencingWithCustomPk.objects.create(refs=[referenced, referenced2])
         serializer = ListReferencingWithCustomPkSerializer(referencing)
 
@@ -968,13 +968,13 @@ class TestListReferenceCustomPk(TestCase):
         serializer = ListReferencingWithCustomPkSerializer(data=input_data)
         assert not serializer.is_valid(), not serializer.errors
 
-        referenced = CustomPkModel.objects.create(name='foo') 
+        CustomPkModel.objects.create(name='foo')
 
         input_data = {'refs': ['foo', 'bar']}
         serializer = ListReferencingWithCustomPkSerializer(data=input_data)
         assert not serializer.is_valid(), not serializer.errors
 
-        referenced2 = CustomPkModel.objects.create(name='bar') 
+        CustomPkModel.objects.create(name='bar')
 
         input_data = {'refs': ['foo', 'bar']}
         serializer = ListReferencingWithCustomPkSerializer(data=input_data)
@@ -991,8 +991,8 @@ class TestListReferenceCustomPk(TestCase):
         assert serializer.data == expected
 
     def test_update(self):
-        referenced = CustomPkModel.objects.create(name='foo') 
-        CustomPkModel.objects.create(name='bar') 
+        referenced = CustomPkModel.objects.create(name='foo')
+        CustomPkModel.objects.create(name='bar')
         instance = ListReferencingWithCustomPk.objects.create(refs=[referenced])
 
         data = {'refs': ['unexisting']}

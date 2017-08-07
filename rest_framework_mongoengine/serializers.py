@@ -656,12 +656,12 @@ class DocumentSerializer(serializers.ModelSerializer):
             field_kwargs['child'] = child_field
 
         return field_class, field_kwargs
-    
+
     def serializer_reference_field_factory(self, field_class):
         return type(
             self.serializer_reference_base_field.__name__,
             (self.serializer_reference_base_field,),
-            {'pk_field_class': field_class,}
+            {'pk_field_class': field_class}
         )
 
     def build_reference_field(self, field_name, relation_info, nested_depth):
