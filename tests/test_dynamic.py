@@ -10,8 +10,10 @@ from rest_framework_mongoengine.serializers import (
     DocumentSerializer, DynamicDocumentSerializer, EmbeddedDocumentSerializer
 )
 
-from .models import DumbDocument, DumbDynamic, DumbEmbedded, EmbeddingDynamic, DumbDynamicEmbedded, \
-    DocumentEmbeddingDynamic
+from .models import (
+    DocumentEmbeddingDynamic, DumbDocument, DumbDynamic, DumbDynamicEmbedded,
+    DumbEmbedded, EmbeddingDynamic
+)
 from .utils import dedent
 
 

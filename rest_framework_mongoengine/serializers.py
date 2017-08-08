@@ -24,7 +24,6 @@ from .utils import (
     is_abstract_model
 )
 
-
 # This object is used for customization of nested field attributes in DocumentSerializer
 Customization = namedtuple("Customization", [
     'fields',

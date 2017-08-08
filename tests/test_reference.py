@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
-from django.test import TestCase
 from bson import DBRef
+from django.test import TestCase
 from mongoengine import Document, fields
 from rest_framework.compat import unicode_repr
 from rest_framework.fields import IntegerField
