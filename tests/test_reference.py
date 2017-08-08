@@ -325,7 +325,7 @@ class TestReferenceMapping(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                ref = CustomReferencing(queryset=ReferencedDoc.objects, required=False)
+                ref = ReferenceField(queryset=ReferencedDoc.objects, required=False)
         """)
         assert unicode_repr(TestSerializer()) == expected
 
