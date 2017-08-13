@@ -59,6 +59,11 @@ class ReferencingDocWithUniqueField(Document):
     ref = fields.ReferenceField(ReferencedDocWithUniqueField, unique=True)
 
 
+class ReferencingDocWithUniqueWithField(Document):
+    ref1 = fields.ReferenceField(ReferencedDoc, unique_with='ref2')
+    ref2 = fields.ReferenceField(OtherReferencedDoc)
+
+
 class GenericReferencingDoc(Document):
     ref = fields.GenericReferenceField()
 
@@ -609,6 +614,109 @@ class TestUniqueReferenceIntegration(TestCase):
             'ref': str(new_target.id)
         }
         assert serializer.data == expected
+
+
+class TestUniqueWithReferenceIntegration(TestCase):
+    def setUp(self):
+        self.target1 = ReferencedDoc.objects.create(
+            name='Foo'
+        )
+        self.target2 = OtherReferencedDoc.objects.create(
+            name='Bar'
+        )
+        self.target2_ = OtherReferencedDoc.objects.create(
+            name='Bar2'
+        )
+
+    def doCleanups(self):
+        ReferencedDocWithUniqueField.drop_collection()
+        ReferencingDocWithUniqueWithField.drop_collection()
+
+    def test_retrieval(self):
+        instance = ReferencingDocWithUniqueWithField.objects.create(
+            ref1=self.target1,
+            ref2=self.target2
+        )
+
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingDocWithUniqueWithField
+                fields = '__all__'
+                depth = 0
+
+        serializer = TestSerializer(instance)
+        expected = {
+            'id': str(instance.id),
+            'ref1': str(self.target1.id),
+            'ref2': str(self.target2.id),
+        }
+        assert serializer.data == expected
+    
+    def test_create(self):
+        instance = ReferencingDocWithUniqueWithField.objects.create(
+            ref1=self.target1,
+            ref2=self.target2
+        )
+
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingDocWithUniqueWithField
+                fields = '__all__'
+                depth = 0
+
+        data = {'ref1': str(self.target1.id), 'ref2': str(self.target2.id)}
+        serializer = TestSerializer(data=data)
+
+        assert not serializer.is_valid(), not serializer.errors
+
+        data = {'ref1': str(self.target1.id), 'ref2': str(self.target2_.id)}
+        serializer = TestSerializer(data=data)
+
+        assert serializer.is_valid(), serializer.errors
+
+        expected = {
+            'id': str(instance.id),
+            'ref1': str(self.target1.id),
+            'ref2': str(self.target2_.id),
+        }
+        assert serializer.data == expected
+
+
+    def test_update(self):
+        instance1 = ReferencingDocWithUniqueWithField.objects.create(
+            ref1=self.target1,
+            ref2=self.target2
+        )
+        instance2 = ReferencingDocWithUniqueWithField.objects.create(
+            ref1=self.target1,
+            ref2=self.target2_
+        )
+
+        class TestSerializer(DocumentSerializer):
+            class Meta:
+                model = ReferencingDocWithUniqueWithField
+                fields = '__all__'
+                depth = 0
+
+        data = {'ref1': str(instance1.ref1.id)}
+        serializer = TestSerializer(instance1, data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        expected = {
+            'id': str(instance1.id),
+            'ref1': str(self.target1.id),
+            'ref2': str(self.target2.id),
+        }
+        assert serializer.data == expected
+
+        obj = serializer.save()
+        assert obj.id == instance1.id
+        assert obj.ref1 == instance1.ref1
+        assert obj.ref2 == instance1.ref2
+
+        data = {'ref2': str(instance2.ref2.id)}
+        serializer = TestSerializer(instance1, data=data)
+        assert not serializer.is_valid(), not serializer.errors
 
 
 class TestGenericReferenceIntegration(TestCase):
