@@ -60,8 +60,17 @@ class ReferencingDocWithUniqueField(Document):
 
 
 class ReferencingDocWithUniqueWithField(Document):
-    ref1 = fields.ReferenceField(ReferencedDoc, unique_with='ref2')
+    ref1 = fields.ReferenceField(ReferencedDoc)
     ref2 = fields.ReferenceField(OtherReferencedDoc)
+
+    meta = {
+        'indexes': [
+            {
+                'fields': ['ref1', 'ref2'],
+                'unique': True
+            }
+        ]
+    }
 
 
 class GenericReferencingDoc(Document):
@@ -666,7 +675,6 @@ class TestUniqueWithReferenceIntegration(TestCase):
 
         data = {'ref1': str(self.target1.id), 'ref2': str(self.target2.id)}
         serializer = TestSerializer(data=data)
-
         assert not serializer.is_valid(), not serializer.errors
 
         data = {'ref1': str(self.target1.id), 'ref2': str(self.target2_.id)}
@@ -675,7 +683,6 @@ class TestUniqueWithReferenceIntegration(TestCase):
         assert serializer.is_valid(), serializer.errors
 
         expected = {
-            'id': str(instance.id),
             'ref1': str(self.target1.id),
             'ref2': str(self.target2_.id),
         }
@@ -699,15 +706,8 @@ class TestUniqueWithReferenceIntegration(TestCase):
                 depth = 0
 
         data = {'ref1': str(instance1.ref1.id)}
-        serializer = TestSerializer(instance1, data=data)
+        serializer = TestSerializer(instance1, data=data, partial=True,)
         assert serializer.is_valid(), serializer.errors
-
-        expected = {
-            'id': str(instance1.id),
-            'ref1': str(self.target1.id),
-            'ref2': str(self.target2.id),
-        }
-        assert serializer.data == expected
 
         obj = serializer.save()
         assert obj.id == instance1.id
@@ -715,7 +715,7 @@ class TestUniqueWithReferenceIntegration(TestCase):
         assert obj.ref2 == instance1.ref2
 
         data = {'ref2': str(instance2.ref2.id)}
-        serializer = TestSerializer(instance1, data=data)
+        serializer = TestSerializer(instance1, data=data, partial=True,)
         assert not serializer.is_valid(), not serializer.errors
 
 
