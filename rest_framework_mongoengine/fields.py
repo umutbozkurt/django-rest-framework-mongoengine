@@ -445,6 +445,8 @@ class GeoPointField(MongoValidatingField, serializers.Field):
             self.fail('not_a_list', input_value=repr(value))
         if len(value) != 2:
             self.fail('not_2d', input_value=repr(value))
+        if value == [None, None]:
+            return value
         try:
             return [float(value[0]), float(value[1])]
         except ValueError:
