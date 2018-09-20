@@ -7,13 +7,13 @@ Django Rest Framework Mongoengine
 [![Join the chat at https://gitter.im/BurkovBA/django-rest-framework-mongoengine](https://badges.gitter.im/BurkovBA/django-rest-framework-mongoengine.svg)](https://gitter.im/BurkovBA/django-rest-framework-mongoengine?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
-The package provides [mongoengine](http://mongoengine.org/) support for [django-rest-framework](https://github.com/tomchristie/django-rest-framework)
+The package provides [mongoengine](http://mongoengine.org/) support for [django-rest-framework](https://github.com/tomchristie/django-rest-framework).
 
 ## Documentation
 
-For full documentation, usage and examples refer to [DRF manuals](http://www.django-rest-framework.org/). 
+For full documentation, usage and examples refer to [DRF manuals](http://www.django-rest-framework.org/).
 
-The features and differences of this package are described in [API documentation](http://umutbozkurt.github.io/django-rest-framework-mongoengine/) 
+The features and differences of this package are described in [API documentation](http://umutbozkurt.github.io/django-rest-framework-mongoengine/).
 
 ## Requirements
 
@@ -48,7 +48,7 @@ It may contain non-working code. Before using it, run tests to ensure the code i
 ```Python
 INSTALLED_APPS = (
     ...
-    'rest_framework'
+    'rest_framework',
     'rest_framework_mongoengine',
     ...
 )
@@ -60,12 +60,12 @@ Use corresponding classes from this package in place of original DRF stuff. Refe
 
 ## Testing
 
-If you discover something does not work on the DRFM side, the best way to ensure that and report an issue - is to write a test case, with minimal code that fails. 
+If you discover something does not work on the DRFM side, the best way to ensure that and report an issue - is to write a test case, with minimal code that fails.
 You may use [this template](https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/master/tests/test_dumb.py) to create your case.
 
 If you have something (Django, DRF, mongoengine) at a version, not mentioned in release notes, you better run all the tests in your environment to ensure the DRFM is compatible with that version.
 
-For tests to work, you need pytest in your environment. 
+For tests to work, you need pytest in your environment.
 
 To run all the tests:
 
@@ -77,7 +77,7 @@ To run tests from separate file, class or method:
 
 ## Releases
 
-### Current release 
+### Current release
 
 Intended to match DRF API. The major and minor version number matches supported version of DRF.
 Note: this release is incompatible with all previous.
@@ -88,7 +88,7 @@ Releases 2.x were not well compatible with DRF and mongoengine. Current code is 
 
 ### Ancient releases
 
-Releases 1.x were developed to work with `DRF 2`. This branch is no longer supported. 
+Releases 1.x were developed to work with `DRF 2`. This branch is no longer supported.
 Documentation available [here](https://github.com/umutbozkurt/django-rest-framework-mongoengine/blob/drf_2_support/README.md)
 
 ## Maintainers
