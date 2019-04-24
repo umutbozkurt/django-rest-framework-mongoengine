@@ -87,6 +87,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         * ``UUIDField``
         * ``GeoPointField``
         * ``GeoJsonBaseField`` (all those fields)
+        * ``DateField``
 
     Compound fields: ``ListField`` and ``DictField`` are mapped to corresponding DRF fields, with respect to nested field specification.
 
@@ -115,6 +116,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         me_fields.DecimalField: drf_fields.DecimalField,
         me_fields.BooleanField: drf_fields.BooleanField,
         me_fields.DateTimeField: drf_fields.DateTimeField,
+        me_fields.DateField: drf_fields.DateField,
         me_fields.ComplexDateTimeField: drf_fields.DateTimeField,
         me_fields.ObjectIdField: drfm_fields.ObjectIdField,
         me_fields.FileField: drfm_fields.FileField,
