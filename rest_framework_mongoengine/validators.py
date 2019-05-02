@@ -20,6 +20,15 @@ class UniqueValidator(MongoValidatorMixin, validators.UniqueValidator):
 
     Used by :class:`DocumentSerializer` for fields, present in unique indexes.
     """
+
+    def __init__(self, queryset, message=None, lookup=''):
+        """
+        Setting empty string as default lookup for UniqueValidator.
+        For Mongoengine exact is a shortcut to query with regular experission.
+        This fixes https://github.com/umutbozkurt/django-rest-framework-mongoengine/issues/264
+        """
+        return super(UniqueValidator, self).__init__(queryset, message, lookup)
+
     def __call__(self, value):
         queryset = self.queryset
         queryset = self.filter_queryset(value, queryset)
