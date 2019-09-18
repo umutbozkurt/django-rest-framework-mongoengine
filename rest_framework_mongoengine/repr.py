@@ -11,7 +11,6 @@ from django.utils.encoding import force_str
 from mongoengine.base import BaseDocument
 from mongoengine.fields import BaseField
 from mongoengine.queryset import QuerySet
-from rest_framework.compat import unicode_repr
 from rest_framework.fields import Field
 
 from rest_framework_mongoengine.fields import DictField
@@ -55,7 +54,7 @@ def smart_repr(value):
     if isinstance(value, Field):
         return field_repr(value)
 
-    value = unicode_repr(value)
+    value = repr(value)
 
     # Representations like u'help text'
     # should simply be presented as 'help text'

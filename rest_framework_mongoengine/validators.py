@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from rest_framework import validators
-from rest_framework.compat import unicode_to_repr
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField
 
@@ -56,7 +55,7 @@ class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherVali
             raise ValidationError(self.message.format(field_names=field_names))
 
     def __repr__(self):
-        return unicode_to_repr('<%s(queryset=%s, fields=%s)>' % (
+        return repr('<%s(queryset=%s, fields=%s)>' % (
             self.__class__.__name__,
             smart_repr(self.queryset),
             smart_repr(self.fields)
