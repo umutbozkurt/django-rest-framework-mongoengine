@@ -7,7 +7,6 @@ from mongoengine import fields as me_fields
 from mongoengine.errors import ValidationError as me_ValidationError
 from rest_framework import fields as drf_fields
 from rest_framework import serializers
-from rest_framework.compat import unicode_to_repr
 from rest_framework.serializers import ALL_FIELDS
 from rest_framework.utils.field_mapping import ClassLookupDict
 
@@ -798,7 +797,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         return []
 
     def __repr__(self):
-        return unicode_to_repr(serializer_repr(self, indent=1))
+        return repr(serializer_repr(self, indent=1))
 
 
 class EmbeddedDocumentSerializer(DocumentSerializer):

@@ -1,6 +1,5 @@
 from django.test import TestCase
 from mongoengine import Document, fields
-from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.fields import GeoJSONField, GeoPointField
 from rest_framework_mongoengine.serializers import DocumentSerializer
@@ -168,4 +167,4 @@ class TestGeoMapping(TestCase):
                 multi_line_field = GeoJSONField(geo_type='MultiLineString', required=False)
                 multi_poly_field = GeoJSONField(geo_type='MultiPolygon', required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected

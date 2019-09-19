@@ -12,7 +12,6 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 from mongoengine import Document, EmbeddedDocument, fields
-from rest_framework.compat import unicode_repr
 from rest_framework.serializers import ValidationError
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
@@ -62,7 +61,7 @@ class TestNestedCustomizationMapping(TestCase):
                 nested_reference = NestedSerializer(read_only=True):
                     foo = CharField(required=False)
         """)
-        assert unicode_repr(ParentSerializer()) == expected
+        assert repr(ParentSerializer()) == expected
 
     def test_exclude(self):
         """Ensure `exclude` is passed to embedded documents."""
@@ -83,7 +82,7 @@ class TestNestedCustomizationMapping(TestCase):
                     name = CharField(required=False)
         """)
 
-        assert unicode_repr(ParentSerializer()) == expected
+        assert repr(ParentSerializer()) == expected
 
     def test_read_only(self):
         """Ensure `read_only` are passed to embedded documents."""
@@ -107,7 +106,7 @@ class TestNestedCustomizationMapping(TestCase):
                     age = IntegerField(required=False)
         """)
 
-        assert unicode_repr(ParentSerializer()) == expected
+        assert repr(ParentSerializer()) == expected
 
     def test_extra_field_kwargs(self):
         """Ensure `extra_kwargs` are passed to embedded documents."""
@@ -134,7 +133,7 @@ class TestNestedCustomizationMapping(TestCase):
                     age = IntegerField(required=False)
         """)
 
-        assert unicode_repr(ParentSerializer()) == expected
+        assert repr(ParentSerializer()) == expected
 
 
 class TestCompoundCustomizationMapping(TestCase):
@@ -163,9 +162,9 @@ class TestCompoundCustomizationMapping(TestCase):
         """)
 
         serializer = CompoundParentSerializer()
-        unicode_repr(serializer)
+        repr(serializer)
 
-        assert unicode_repr(CompoundParentSerializer()) == expected
+        assert repr(CompoundParentSerializer()) == expected
 
     def test_exclude(self):
         """Ensure `exclude` is passed to embedded documents."""
@@ -190,7 +189,7 @@ class TestCompoundCustomizationMapping(TestCase):
                     age = IntegerField(required=False)
         """)
 
-        assert unicode_repr(CompoundParentSerializer()) == expected
+        assert repr(CompoundParentSerializer()) == expected
 
     def test_read_only(self):
         """Ensure `read_only` are passed to embedded documents."""
@@ -220,7 +219,7 @@ class TestCompoundCustomizationMapping(TestCase):
                     age = IntegerField(required=False)
         """)
 
-        assert unicode_repr(CompoundParentSerializer()) == expected
+        assert repr(CompoundParentSerializer()) == expected
 
     def test_extra_field_kwargs(self):
         class CompoundParentSerializer(DocumentSerializer):
@@ -250,7 +249,7 @@ class TestCompoundCustomizationMapping(TestCase):
                     age = IntegerField(required=False)
         """)
 
-        assert unicode_repr(CompoundParentSerializer()) == expected
+        assert repr(CompoundParentSerializer()) == expected
 
 
 class TestNestedCustomizationFieldsIntegration(TestCase):

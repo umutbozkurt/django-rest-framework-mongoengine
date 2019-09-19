@@ -3,7 +3,6 @@ from collections import OrderedDict
 from bson import DBRef
 from django.test import TestCase
 from mongoengine import Document, fields
-from rest_framework.compat import unicode_repr
 from rest_framework.fields import IntegerField
 from rest_framework.serializers import Serializer
 
@@ -257,7 +256,8 @@ class TestReferenceMapping(TestCase):
                 cached = ReferenceField(queryset=ReferencedDoc.objects, required=False)
                 generic = GenericReferenceField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
+
 
     def test_shallow(self):
         class TestSerializer(DocumentSerializer):
@@ -271,7 +271,7 @@ class TestReferenceMapping(TestCase):
                 id = ObjectIdField(read_only=True)
                 ref = ReferenceField(queryset=ReferencedDoc.objects, required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_deep(self):
         class TestSerializer(DocumentSerializer):
@@ -287,7 +287,7 @@ class TestReferenceMapping(TestCase):
                     id = ObjectIdField(read_only=True)
                     name = CharField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_recursive(self):
         class TestSerializer(DocumentSerializer):
@@ -307,7 +307,7 @@ class TestReferenceMapping(TestCase):
                             id = ObjectIdField(read_only=True)
                             ref = ReferenceField(queryset=RecursiveReferencingDoc.objects, required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_custom_field(self):
 
@@ -327,7 +327,7 @@ class TestReferenceMapping(TestCase):
                 id = ObjectIdField(read_only=True)
                 ref = ReferenceField(queryset=ReferencedDoc.objects, required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_custom_generic(self):
         class CustomReferencing(GenericReferenceField):
@@ -346,7 +346,7 @@ class TestReferenceMapping(TestCase):
                 id = ObjectIdField(read_only=True)
                 ref = CustomReferencing(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_custom_nested(self):
         class CustomReferencing(Serializer):
@@ -366,7 +366,7 @@ class TestReferenceMapping(TestCase):
                 ref = NestedSerializer(read_only=True):
                     foo = IntegerField()
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
 
 class DisplayableReferencedModel(Document):

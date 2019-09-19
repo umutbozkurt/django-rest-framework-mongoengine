@@ -4,7 +4,6 @@ import pytest
 from django.test import TestCase
 from mongoengine import Document, EmbeddedDocument, fields
 from rest_framework import fields as drf_fields
-from rest_framework.compat import unicode_repr
 from rest_framework.serializers import Field, Serializer
 
 from rest_framework_mongoengine.fields import DocumentField
@@ -61,7 +60,7 @@ class TestEmbeddingMapping(TestCase):
                 name = CharField(required=False)
                 foo = IntegerField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding(self):
         class TestSerializer(DocumentSerializer):
@@ -78,7 +77,7 @@ class TestEmbeddingMapping(TestCase):
                         name = CharField(required=False)
                         foo = IntegerField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_nodepth(self):
         class TestSerializer(DocumentSerializer):
@@ -95,7 +94,7 @@ class TestEmbeddingMapping(TestCase):
                         name = CharField(required=False)
                         foo = IntegerField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_restricted(self):
         class TestSerializer(DocumentSerializer):
@@ -110,7 +109,7 @@ class TestEmbeddingMapping(TestCase):
                     name = CharField(required=False)
                     embedded = HiddenField(default=None, required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_recursive(self):
         class TestSerializer(DocumentSerializer):
@@ -135,7 +134,7 @@ class TestEmbeddingMapping(TestCase):
         """)
 
         serializer = TestSerializer()
-        assert unicode_repr(serializer) == expected
+        assert repr(serializer) == expected
 
     def test_embedding_recursive_restricted(self):
         class TestSerializer(DocumentSerializer):
@@ -154,7 +153,7 @@ class TestEmbeddingMapping(TestCase):
         """)
 
         serializer = TestSerializer()
-        assert unicode_repr(serializer) == expected
+        assert repr(serializer) == expected
 
     def test_embedding_nested(self):
         class TestSerializer(DocumentSerializer):
@@ -170,7 +169,7 @@ class TestEmbeddingMapping(TestCase):
                         name = CharField(required=False)
                         foo = IntegerField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_list(self):
         class TestSerializer(DocumentSerializer):
@@ -184,7 +183,7 @@ class TestEmbeddingMapping(TestCase):
                     name = CharField(required=False)
                     foo = IntegerField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_required(self):
         class TestSerializer(DocumentSerializer):
@@ -198,7 +197,7 @@ class TestEmbeddingMapping(TestCase):
                     name = CharField(required=False)
                     foo = IntegerField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_generic(self):
         class TestSerializer(DocumentSerializer):
@@ -211,7 +210,7 @@ class TestEmbeddingMapping(TestCase):
                 id = ObjectIdField(read_only=True)
                 embedded = GenericEmbeddedDocumentField(model_field=<mongoengine.fields.GenericEmbeddedDocumentField: embedded>, required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_custom_generic(self):
 
@@ -230,7 +229,7 @@ class TestEmbeddingMapping(TestCase):
                 id = ObjectIdField(read_only=True)
                 embedded = CustomEmbedding(model_field=<mongoengine.fields.GenericEmbeddedDocumentField: embedded>, required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_custom_nested(self):
         class CustomTestSerializer(Serializer):
@@ -249,7 +248,7 @@ class TestEmbeddingMapping(TestCase):
                 embedded = EmbeddedSerializer(required=False):
                     bla = CharField()
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_embedding_custom_bottom(self):
         class CustomEmbedding(Field):
@@ -268,7 +267,7 @@ class TestEmbeddingMapping(TestCase):
                 id = ObjectIdField(read_only=True)
                 embedded = CustomEmbedding(default=None, required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
 
 class EmbeddingSerializer(DocumentSerializer):

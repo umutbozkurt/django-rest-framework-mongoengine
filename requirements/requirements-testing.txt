@@ -3,4 +3,4 @@ pytest-cov
 pytest-django
 mock
 six
-
+pytz
