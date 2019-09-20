@@ -797,7 +797,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         return []
 
     def __repr__(self):
-        return repr(serializer_repr(self, indent=1))
+        return serializer_repr(self, indent=1)
 
 
 class EmbeddedDocumentSerializer(DocumentSerializer):

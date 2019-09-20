@@ -613,7 +613,7 @@ class TestEmbeddedValidation(TestCase):
         serializer = ValidatingListSerializer(data={'embedded_list': [{'text': 'Fo'}]})
         assert not serializer.is_valid()
         assert 'embedded_list' in serializer.errors
-        assert 'text' in serializer.errors['embedded_list']
+        assert 'text' in serializer.errors['embedded_list'][0]
 
     def test_nested_validation_passing(self):
         serializer = ValidatingListSerializer(data={'embedded_list': [{'text': 'Text'}]})

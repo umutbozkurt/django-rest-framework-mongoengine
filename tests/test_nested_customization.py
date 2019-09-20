@@ -751,7 +751,7 @@ class TestNestedCustomizationValidateMethodIntegration(TestCase):
 
         serializer = self.ParentSerializer(instance, data=data)
         assert not serializer.is_valid()
-        assert serializer.errors == {'embedded': {'name': [u'Minimum 4 characters.']}}
+        assert dict(serializer.errors) == {'embedded': {'name': [u'Minimum 4 characters.']}}
 
 
 class TestNestedCompoundCustomizationFieldsIntegration(TestCase):
@@ -1331,7 +1331,7 @@ class TestNestedCompoundCustomizationValidateMethodIntegration(TestCase):
 
         serializer = self.CompoundParentSerializer(data=data)
         assert not serializer.is_valid()
-        assert serializer.errors == {'embedded_list': {'name': [u'Minimum 4 characters.']}}
+        assert dict(serializer.errors) == {'embedded_list': {0: {'name': [u'Minimum 4 characters.']}}}
 
     def test_update_success(self):
         instance = CompoundParentDocument.objects.create(
@@ -1378,4 +1378,4 @@ class TestNestedCompoundCustomizationValidateMethodIntegration(TestCase):
 
         serializer = self.CompoundParentSerializer(instance, data=data)
         assert not serializer.is_valid()
-        assert serializer.errors == {'embedded_list': {'name': [u'Minimum 4 characters.']}}
+        assert dict(serializer.errors) == {'embedded_list': {0: {'name': [u'Minimum 4 characters.']}}}

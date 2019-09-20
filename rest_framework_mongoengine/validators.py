@@ -27,10 +27,10 @@ class UniqueValidator(MongoValidatorMixin, validators.UniqueValidator):
             raise ValidationError(self.message.format())
 
     def __repr__(self):
-        return repr('<%s(queryset=%s)>' % (
+        return '<%s(queryset=%s)>' % (
             self.__class__.__name__,
             smart_repr(self.queryset)
-        ))
+        )
 
 
 class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherValidator):
@@ -55,11 +55,11 @@ class UniqueTogetherValidator(MongoValidatorMixin, validators.UniqueTogetherVali
             raise ValidationError(self.message.format(field_names=field_names))
 
     def __repr__(self):
-        return repr('<%s(queryset=%s, fields=%s)>' % (
+        return '<%s(queryset=%s, fields=%s)>' % (
             self.__class__.__name__,
             smart_repr(self.queryset),
             smart_repr(self.fields)
-        ))
+        )
 
 
 class OptionalUniqueTogetherValidator(UniqueTogetherValidator):
