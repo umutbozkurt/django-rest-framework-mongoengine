@@ -1,16 +1,14 @@
 language: python
 
 python:
-    - "3.5"
+    - "3.6"
+    - "3.8"
 
 services: mongodb
 
 sudo: false
 
 env:
-    - TOX_ENV=py27-lint
-# We don't have documentation source in the repo, so no py27-docs yet:
-#    - TOX_ENV=py27-docs
     - TOX_ENV=dj111-py36-me016
     - TOX_ENV=dj111-py36-me018
     - TOX_ENV=dj111-py38-me016
