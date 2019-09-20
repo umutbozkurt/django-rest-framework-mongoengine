@@ -8,7 +8,6 @@ from rest_framework_mongoengine.serializers import DocumentSerializer
 from rest_framework_mongoengine.validators import (
     UniqueTogetherValidator, UniqueValidator
 )
-
 from .utils import dedent
 
 
@@ -220,6 +219,7 @@ class TestUniqueTogetherValidation(TestCase):
             class Meta:
                 model = NullValidatingModel
                 fields = '__all__'
+
         data = {'name': 'existing', 'code': None, 'other': "xxx"}
         serializer = NullUniqueTogetherValidatorSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
@@ -277,6 +277,7 @@ class TestUniqueTogetherSerializer(TestCase):
         When model fields are not included in a serializer and have no defaults,
         then uniqueness validators should not be added for that field.
         """
+
         class UniqueTogetherSerializer(DocumentSerializer):
             class Meta:
                 model = UniqueTogetherModel

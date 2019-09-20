@@ -38,6 +38,7 @@ def mongo_doc_repr(value):
         u = '[Bad Unicode data]'
     return force_str('<%s: %s>' % (value.__class__.__name__, u))
 
+
 uni_lit_re = re.compile("u'(.*?)'")
 
 

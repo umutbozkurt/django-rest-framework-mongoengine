@@ -258,7 +258,6 @@ class TestReferenceMapping(TestCase):
         """)
         assert repr(TestSerializer()) == expected
 
-
     def test_shallow(self):
         class TestSerializer(DocumentSerializer):
             class Meta:
@@ -310,7 +309,6 @@ class TestReferenceMapping(TestCase):
         assert repr(TestSerializer()) == expected
 
     def test_custom_field(self):
-
         class CustomReferencing(ReferenceField):
             pass
 
@@ -709,6 +707,7 @@ class ComboReferencingSerializer(DocumentSerializer):
     class Meta:
         model = ReferencingDoc
         fields = '__all__'
+
     ref = ComboReferenceField(serializer=ReferencedSerializer)
 
     def save_subdocs(self, validated_data):
@@ -750,6 +749,7 @@ class TestComboReferenceIntegration(TestCase):
                 model = ReferencingDoc
                 fields = '__all__'
                 depth = 1
+
             ref = ComboReferenceField(serializer=ReferencedSerializer)
 
         serializer = TestSerializer(instance)
