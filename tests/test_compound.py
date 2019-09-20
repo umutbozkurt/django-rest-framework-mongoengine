@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 from mongoengine import Document, fields
-from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
@@ -47,7 +46,7 @@ class TestCompundFieldMappings(TestCase):
                 int_dict_field = DictField(child=IntegerField(required=False), required=False)
                 int_map_field = DictField(child=IntegerField(required=False), required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_suboptions(self):
         class TestSerializer(DocumentSerializer):
@@ -60,7 +59,7 @@ class TestCompundFieldMappings(TestCase):
                 id = ObjectIdField(read_only=True)
                 int_list_field = ListField(child=IntegerField(max_value=7, min_value=3, required=False), required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_nested(self):
         class TestSerializer(DocumentSerializer):
@@ -75,7 +74,7 @@ class TestCompundFieldMappings(TestCase):
                 list_dict_field = DictField(child=ListField(required=False), required=False)
                 list_dict_list_field = ListField(child=DictField(child=ListField(required=False), required=False), required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
 
 class TestSerializer(DocumentSerializer):

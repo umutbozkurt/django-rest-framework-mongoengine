@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 from rest_framework import fields
-from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
@@ -49,7 +48,7 @@ class TestMapping(TestCase):
         """)
 
         # better output then self.assertEqual()
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
 
 class TestSerializer(DocumentSerializer):

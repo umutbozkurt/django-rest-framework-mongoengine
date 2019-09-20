@@ -4,7 +4,6 @@ import json
 
 from django.test import TestCase
 from rest_framework import fields as drf_fields
-from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import (
     DocumentSerializer, DynamicDocumentSerializer, EmbeddedDocumentSerializer
@@ -83,7 +82,7 @@ class TestDynamicMapping(TestCase):
                 name = CharField(required=False)
                 foo = IntegerField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_extended(self):
         class TestSerializer(DynamicDocumentSerializer):
@@ -100,7 +99,7 @@ class TestDynamicMapping(TestCase):
                 name = CharField(required=False)
                 foo = IntegerField(required=False)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
 
 class TestSerializer(DynamicDocumentSerializer):
@@ -216,7 +215,7 @@ class TestEmbeddingDynamicMapping(TestCase):
                     name = CharField(required=False)
                     foo = IntegerField(required=False)
         """)
-        assert unicode_repr(EmbeddingDynamicSerializer()) == expected
+        assert repr(EmbeddingDynamicSerializer()) == expected
 
 
 class TestEmbeddingDynamicIntegration(TestCase):
@@ -326,7 +325,7 @@ class TestDocumentEmbeddingDynamicMapping(TestCase):
                     name = CharField(required=False)
                     foo = IntegerField(required=False)
         """)
-        assert unicode_repr(DocumentEmbeddingDynamicSerializer()) == expected
+        assert repr(DocumentEmbeddingDynamicSerializer()) == expected
 
 
 class TestDocumentEmbeddingDynamicIntegration(TestCase):

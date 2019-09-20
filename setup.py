@@ -29,7 +29,7 @@ def get_package_data(package):
 
 setup(
     name='django-rest-framework-mongoengine',
-    version='3.3.1',
+    version='3.4.0',
     description='MongoEngine support for Django Rest Framework.',
     packages=get_packages('rest_framework_mongoengine'),
     package_data=get_package_data('rest_framework_mongoengine'),

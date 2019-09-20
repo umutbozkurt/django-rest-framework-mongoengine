@@ -18,7 +18,6 @@ from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from mongoengine import Document, fields
 from rest_framework import serializers
-from rest_framework.compat import unicode_repr
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
@@ -128,7 +127,7 @@ class TestRegularFieldMappings(TestCase):
                 custom_field = DocumentField(model_field=<tests.test_basic.CustomField: custom_field>, required=False)
         """ % regex_repr)
 
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_meta_fields(self):
         """
@@ -145,7 +144,7 @@ class TestRegularFieldMappings(TestCase):
                 str_field = CharField(required=False)
         """)
 
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_meta_exclude(self):
         """
@@ -180,7 +179,7 @@ class TestRegularFieldMappings(TestCase):
                 id_field = ObjectIdField(required=False)
         """ % regex_repr)
 
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_field_options(self):
         class TestSerializer(DocumentSerializer):
@@ -209,7 +208,7 @@ class TestRegularFieldMappings(TestCase):
         #         "('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')",
         #         "(u'red', u'Red'), (u'blue', u'Blue'), (u'green', u'Green')"
         #     )
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_method_field(self):
         """
@@ -226,7 +225,7 @@ class TestRegularFieldMappings(TestCase):
                 id = ObjectIdField(read_only=True)
                 method = ReadOnlyField()
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_pk_fields(self):
         """
@@ -242,7 +241,7 @@ class TestRegularFieldMappings(TestCase):
                 pk = IntegerField(read_only=True)
                 auto_field = IntegerField(read_only=True)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_id_field(self):
         """
@@ -257,7 +256,7 @@ class TestRegularFieldMappings(TestCase):
             TestSerializer():
                 id = ObjectIdField(read_only=True)
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_extra_field_kwargs(self):
         """
@@ -274,7 +273,7 @@ class TestRegularFieldMappings(TestCase):
                 id = ObjectIdField(read_only=True)
                 str_field = CharField(default='extra')
         """)
-        assert unicode_repr(TestSerializer()) == expected
+        assert repr(TestSerializer()) == expected
 
     def test_invalid_field(self):
         """

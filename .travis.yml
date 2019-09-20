@@ -1,40 +1,23 @@
 language: python
 
 python:
-    - "3.5"
+    - "3.6"
 
 services: mongodb
 
 sudo: false
 
 env:
-    - TOX_ENV=py27-lint
-# We don't have documentation source in the repo, so no py27-docs yet:
-#    - TOX_ENV=py27-docs
-    - TOX_ENV=dj18-py27-me09
-    - TOX_ENV=dj18-py35-me09
-    - TOX_ENV=dj18-py27-me010
-    - TOX_ENV=dj18-py35-me010
-    - TOX_ENV=dj18-py27-me011
-    - TOX_ENV=dj18-py35-me011
-    - TOX_ENV=dj19-py27-me09
-    - TOX_ENV=dj19-py35-me09
-    - TOX_ENV=dj19-py27-me010
-    - TOX_ENV=dj19-py35-me010
-    - TOX_ENV=dj19-py27-me011
-    - TOX_ENV=dj19-py35-me011
-    - TOX_ENV=dj110-py27-me09
-    - TOX_ENV=dj110-py35-me09
-    - TOX_ENV=dj110-py27-me010
-    - TOX_ENV=dj110-py35-me010
-    - TOX_ENV=dj110-py27-me011
-    - TOX_ENV=dj110-py35-me011
+    - TOX_ENV=dj111-py36-me016
+    - TOX_ENV=dj111-py36-me018
+    - TOX_ENV=dj22-py36-me016
+    - TOX_ENV=dj22-py36-me018
 
 matrix:
     fast_finish: true
 
 install:
-    - pip install tox "virtualenv<14" djangorestframework codecov
+    - pip install tox virtualenv djangorestframework codecov
 
 script:
     - tox -e $TOX_ENV
