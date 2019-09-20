@@ -2,7 +2,6 @@ language: python
 
 python:
     - "3.6"
-    - "3.8"
 
 services: mongodb
 
@@ -11,12 +10,8 @@ sudo: false
 env:
     - TOX_ENV=dj111-py36-me016
     - TOX_ENV=dj111-py36-me018
-    - TOX_ENV=dj111-py38-me016
-    - TOX_ENV=dj111-py38-me018
     - TOX_ENV=dj22-py36-me016
     - TOX_ENV=dj22-py36-me018
-    - TOX_ENV=dj22-py38-me016
-    - TOX_ENV=dj22-py38-me018
 
 matrix:
     fast_finish: true
