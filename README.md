@@ -17,13 +17,10 @@ The features and differences of this package are described in [API documentation
 
 ## Requirements
 
-* Django == 1.*
+* Django == 1.* | 2.*
 * djangorestframework == 3.*
-* mongoengine == 0.11.* | 0.10.* | 0.9.*
+* mongoengine == 0.16.* | 0.17.* | 0.18.*
 * blinker == 1.* (for mongoengine referencefields to work)
-* With mongoengine 0.11: pymongo == 3.*
-* With mongoengine 0.10: pymongo == 3.*
-* With mongoengine 0.9: pymongo == 2.*
 
 ## Installation
 
