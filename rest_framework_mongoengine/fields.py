@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 from bson import DBRef, ObjectId
 from bson.errors import InvalidId
-from django.utils import six
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from mongoengine import fields as me_fields
@@ -250,7 +249,7 @@ class ReferenceField(serializers.Field):
 
         return OrderedDict([
             (
-                six.text_type(self.to_representation(item)),
+                str(self.to_representation(item)),
                 self.display_value(item)
             )
             for item in queryset
@@ -261,7 +260,7 @@ class ReferenceField(serializers.Field):
         return self.choices
 
     def display_value(self, instance):
-        return six.text_type(instance)
+        return str(instance)
 
     def parse_id(self, value):
         try:
@@ -529,7 +528,7 @@ class DictField(serializers.DictField):
                 api_settings.NON_FIELD_ERRORS_KEY: [message]
             })
         return {
-            six.text_type(key): self.child.run_validation(value)
+            str(key): self.child.run_validation(value)
             for key, value in data.items()
         }
 
