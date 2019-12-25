@@ -12,7 +12,6 @@ from decimal import Decimal
 from uuid import UUID
 
 import pytest
-import six
 from bson import ObjectId
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
@@ -101,11 +100,7 @@ class TestRegularFieldMappings(TestCase):
                 model = RegularModel
                 fields = '__all__'
 
-        # in pythons 2 and 3 regex reprs are different
-        if six.PY2:
-            regex_repr = "<_sre.SRE_Pattern object>"
-        else:
-            regex_repr = "re.compile('^valid_regex')"
+        regex_repr = "re.compile('^valid_regex')"
 
         expected = dedent("""
             TestSerializer():
@@ -155,11 +150,7 @@ class TestRegularFieldMappings(TestCase):
                 model = RegularModel
                 exclude = ('decimal_field', 'custom_field')
 
-        # in pythons 2 and 3 regex reprs are different
-        if six.PY2:
-            regex_repr = "<_sre.SRE_Pattern object>"
-        else:
-            regex_repr = "re.compile('^valid_regex')"
+        regex_repr = "re.compile('^valid_regex')"
 
         expected = dedent("""
             TestSerializer():
@@ -201,13 +192,7 @@ class TestRegularFieldMappings(TestCase):
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)
                 decimal_field = DecimalField(decimal_places=4, max_digits=8, max_value=9999, required=False)
         """)
-        # if six.PY2:
-        #     # This particular case is too awkward to resolve fully across
-        #     # both py2 and py3.
-        #     expected = expected.replace(
-        #         "('red', 'Red'), ('blue', 'Blue'), ('green', 'Green')",
-        #         "(u'red', u'Red'), (u'blue', u'Blue'), (u'green', u'Green')"
-        #     )
+        
         assert repr(TestSerializer()) == expected
 
     def test_method_field(self):
