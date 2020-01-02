@@ -8,10 +8,8 @@ services: mongodb
 sudo: false
 
 env:
-    - TOX_ENV=dj111-py36-me016
-    - TOX_ENV=dj111-py36-me018
-    - TOX_ENV=dj22-py36-me016
-    - TOX_ENV=dj22-py36-me018
+    - TOX_ENV=dj2-py36-me019
+    - TOX_ENV=dj30-py36-me019
 
 matrix:
     fast_finish: true
