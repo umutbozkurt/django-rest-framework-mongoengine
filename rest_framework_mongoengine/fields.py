@@ -2,18 +2,19 @@ from collections import OrderedDict
 
 from bson import DBRef, ObjectId
 from bson.errors import InvalidId
-from django.utils.encoding import smart_text
-from django.utils.translation import ugettext_lazy as _
-from mongoengine import fields as me_fields
+from django.utils.encoding import smart_str
+from django.utils.translation import gettext_lazy as _
 from mongoengine import Document, EmbeddedDocument
+from mongoengine import fields as me_fields
 from mongoengine.base import get_document
 from mongoengine.base.common import _document_registry
-from mongoengine.errors import ValidationError as MongoValidationError
 from mongoengine.errors import DoesNotExist, NotRegistered
+from mongoengine.errors import ValidationError as MongoValidationError
 from mongoengine.queryset import QuerySet, QuerySetManager
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import empty, html
+from rest_framework.fields import empty
+from rest_framework.utils import html
 from rest_framework.settings import api_settings
 
 
@@ -22,12 +23,12 @@ class ObjectIdField(serializers.Field):
 
     def to_internal_value(self, value):
         try:
-            return ObjectId(smart_text(value))
+            return ObjectId(smart_str(value))
         except InvalidId:
             raise serializers.ValidationError("'%s' is not a valid ObjectId" % value)
 
     def to_representation(self, value):
-        return smart_text(value)
+        return smart_str(value)
 
 
 class DocumentField(serializers.Field):
@@ -59,13 +60,13 @@ class DocumentField(serializers.Field):
 
         DRF ModelField uses ``value_to_string`` for this purpose. Mongoengine fields do not have such method.
 
-        This implementation uses ``django.utils.encoding.smart_text`` to convert everything to text, while keeping json-safe types intact.
+        This implementation uses ``django.utils.encoding.smart_str`` to convert everything to text, while keeping json-safe types intact.
 
         NB: The argument is whole object, instead of attribute value. This is upstream feature.
         Probably because the field can be represented by a complicated method with nontrivial way to extract data.
         """
         value = self.model_field.__get__(obj, None)
-        return smart_text(value, strings_only=True)
+        return smart_str(value, strings_only=True)
 
     def run_validators(self, value):
         """ validate value.
@@ -120,7 +121,7 @@ class GenericField(serializers.Field):
     """ Field for generic values.
 
     Recursively traverses lists and dicts.
-    Primitive values are serialized using ``django.utils.encoding.smart_text`` (keeping json-safe intact).
+    Primitive values are serialized using ``django.utils.encoding.smart_str`` (keeping json-safe intact).
     Embedded documents handled using temporary GenericEmbeddedField.
 
     No validation performed.
@@ -142,7 +143,7 @@ class GenericField(serializers.Field):
         elif data is None:
             return None
         else:
-            return smart_text(data, strings_only=True)
+            return smart_str(data, strings_only=True)
 
     def to_internal_value(self, value):
         return self.parse_data(value)
@@ -546,7 +547,7 @@ class FileField(serializers.FileField):
     """
 
     def to_representation(self, value):
-        return smart_text(value.grid_id) if hasattr(value, 'grid_id') else None
+        return smart_str(value.grid_id) if hasattr(value, 'grid_id') else None
 
 
 class ImageField(FileField):

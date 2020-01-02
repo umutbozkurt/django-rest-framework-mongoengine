@@ -19,7 +19,6 @@ from mongoengine import Document, fields
 from rest_framework import serializers
 
 from rest_framework_mongoengine.serializers import DocumentSerializer
-
 from .utils import dedent
 
 
@@ -81,11 +80,13 @@ class FieldOptionsModel(Document):
     value_limit_field = fields.IntField(min_value=3, max_value=12)
     decimal_field = fields.DecimalField(precision=4, max_value=9999)
 
+
 DECIMAL_CHOICES = (('low', Decimal('0.1')), ('medium', Decimal('0.5')), ('high', Decimal('0.9')))
 
 
 class ComplexChoicesModel(Document):
-    choices_field_with_nonstandard_args = fields.DecimalField(precision=1, choices=DECIMAL_CHOICES, verbose_name='A label')
+    choices_field_with_nonstandard_args = fields.DecimalField(precision=1, choices=DECIMAL_CHOICES,
+                                                              verbose_name='A label')
 
 
 class TestRegularFieldMappings(TestCase):
@@ -95,6 +96,7 @@ class TestRegularFieldMappings(TestCase):
         """
         Model fields should map to their equivelent serializer fields.
         """
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
@@ -128,6 +130,7 @@ class TestRegularFieldMappings(TestCase):
         """
         Serializer should respect Meta.fields
         """
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
@@ -145,6 +148,7 @@ class TestRegularFieldMappings(TestCase):
         """
         Serializer should respect Meta.exclude
         """
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
@@ -192,7 +196,7 @@ class TestRegularFieldMappings(TestCase):
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)
                 decimal_field = DecimalField(decimal_places=4, max_digits=8, max_value=9999, required=False)
         """)
-        
+
         assert repr(TestSerializer()) == expected
 
     def test_method_field(self):
@@ -200,6 +204,7 @@ class TestRegularFieldMappings(TestCase):
         Properties and methods on the model should be allowed as `Meta.fields`
         values, and should map to `ReadOnlyField`.
         """
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
@@ -216,6 +221,7 @@ class TestRegularFieldMappings(TestCase):
         """
         Both `pk` and the actual primary key name are valid in `Meta.fields`.
         """
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = AutoFieldModel
@@ -232,6 +238,7 @@ class TestRegularFieldMappings(TestCase):
         """
         The autocreated id field should be mapped properly
         """
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = OneFieldModel
@@ -247,6 +254,7 @@ class TestRegularFieldMappings(TestCase):
         """
         Ensure `extra_kwargs` are passed to generated fields.
         """
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
@@ -265,6 +273,7 @@ class TestRegularFieldMappings(TestCase):
         Field names that do not map to a model field or relationship should
         raise a configuration errror.
         """
+
         class TestSerializer(DocumentSerializer):
             class Meta:
                 model = RegularModel
@@ -280,6 +289,7 @@ class TestRegularFieldMappings(TestCase):
         Fields that have been declared on the serializer class must be included
         in the `Meta.fields` if it exists.
         """
+
         class TestSerializer(DocumentSerializer):
             missing = serializers.ReadOnlyField()
 
@@ -300,6 +310,7 @@ class TestRegularFieldMappings(TestCase):
         Fields that have been declared on a parent of the serializer class may
         be excluded from the `Meta.fields` option.
         """
+
         class TestSerializer(DocumentSerializer):
             missing = serializers.ReadOnlyField()
 
@@ -321,6 +332,7 @@ class TestRegularFieldMappings(TestCase):
         Fields that have been declared on a parent of the serializer class may
         be excluded from the `Meta.fields` option.
         """
+
         class TestSerializer(DocumentSerializer):
             missing = serializers.ReadOnlyField()
 
@@ -333,7 +345,7 @@ class TestRegularFieldMappings(TestCase):
 
             class Meta:
                 model = RegularModel
-                exclude = ('missing', )
+                exclude = ('missing',)
 
         ChildSerializer().fields
 
