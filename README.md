@@ -17,9 +17,9 @@ The features and differences of this package are described in [API documentation
 
 ## Requirements
 
-* Django == 1.* | 2.*
+* Django == 2.* | 3.0
 * djangorestframework == 3.*
-* mongoengine == 0.16.* | 0.17.* | 0.18.*
+* mongoengine == 0.18.* | 0.19.*
 * blinker == 1.* (for mongoengine referencefields to work)
 
 ## Installation
@@ -93,6 +93,6 @@ Documentation available [here](https://github.com/umutbozkurt/django-rest-framew
 @qwiglydee
 @BurkovBA
 @Vayel
-@uixou
+@uoxiu
 
 Feel free to mail me if you consider being a maintainer.

@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 import re
 
-from django.utils import six
 from django.utils.encoding import force_str
 from mongoengine.base import BaseDocument
 from mongoengine.fields import BaseField
@@ -33,7 +32,7 @@ def mongo_field_repr(value):
 def mongo_doc_repr(value):
     # mimic django models.Model.__repr__
     try:
-        u = six.text_type(value)
+        u = str(value)
     except (UnicodeEncodeError, UnicodeDecodeError):
         u = '[Bad Unicode data]'
     return force_str('<%s: %s>' % (value.__class__.__name__, u))

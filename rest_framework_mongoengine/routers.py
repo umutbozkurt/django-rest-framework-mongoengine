@@ -6,7 +6,8 @@ class MongoRouterMixin(object):
 
     Determines base_name from mongo queryset
     """
-    def get_default_base_name(self, viewset):
+
+    def get_default_basename(self, viewset):
         queryset = getattr(viewset, 'queryset', None)
         assert queryset is not None, ('`base_name` argument not specified, and could '
                                       'not automatically determine the name from the viewset, as '
