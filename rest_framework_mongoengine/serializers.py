@@ -690,6 +690,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             class Meta:
                 model = relation_info.related_model
                 depth = nested_depth - 1
+                ref_name = f"{self.get_model().__name__}.{field_name}"
 
         # Apply customization to nested fields
         customization = self.get_customization_for_nested_field(field_name)
