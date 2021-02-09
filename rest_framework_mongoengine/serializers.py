@@ -683,6 +683,9 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return field_class, field_kwargs
 
+    def _generate_nested_reference_serializer_ref_name(self, field_name, relation_info, nested_depth):
+        return self.get_model().__name__ + "." + field_name
+
     def build_nested_reference_field(self, field_name, relation_info, nested_depth):
         subclass = self.serializer_reference_nested or DocumentSerializer
 
@@ -690,7 +693,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             class Meta:
                 model = relation_info.related_model
                 depth = nested_depth - 1
-                ref_name = f"{self.get_model().__name__}.{field_name}"
+                ref_name = self._generate_nested_reference_serializer_ref_name(field_name, relation_info, nested_depth)
 
         # Apply customization to nested fields
         customization = self.get_customization_for_nested_field(field_name)
@@ -705,6 +708,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         field_kwargs = get_generic_embedded_kwargs(field_name, relation_info)
         return field_class, field_kwargs
 
+    def _generate_nested_embedded_serializer_ref_name(self, field_name, relation_info, embedded_depth):
+        return self.get_model().__name__ + "." + field_name
+
     def build_nested_embedded_field(self, field_name, relation_info, embedded_depth):
         subclass = self.serializer_embedded_nested or EmbeddedDocumentSerializer
 
@@ -712,7 +718,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             class Meta:
                 model = relation_info.related_model
                 depth_embedding = embedded_depth - 1
-                ref_name = f"{self.get_model().__name__}.{field_name}"
+                ref_name = self._generate_nested_embedded_serializer_ref_name(field_name, relation_info, embedded_depth)
 
         # Apply customization to nested fields
         customization = self.get_customization_for_nested_field(field_name)
