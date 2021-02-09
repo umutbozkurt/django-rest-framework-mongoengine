@@ -291,6 +291,16 @@ class DocumentSerializer(serializers.ModelSerializer):
         return ret
 
     def get_model(self):
+        """
+        By default returns the model defined in the Meta class.
+
+        When customizing the behavior and the returned model may differ,
+        overriding the 'fields' property will be necessary.
+        'fields' is evaluated lazily and cached afterwards.
+        This improves performance for static serializers but is an issue for dynamic serializers.
+        Alternatively avoid 'fields' entirely as done in 'DynamicDocumentSerializer'.
+        """
+
         assert hasattr(self.Meta, 'model'), (
             'Class {serializer_class} missing "Meta.model" attribute'.format(
                 serializer_class=self.__class__.__name__
