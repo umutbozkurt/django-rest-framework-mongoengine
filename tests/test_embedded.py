@@ -40,6 +40,10 @@ class ListEmbeddingDoc(Document):
     embedded_list = fields.EmbeddedDocumentListField(DumbEmbedded)
 
 
+class NullableListEmbeddingDoc(Document):
+    embedded_list = fields.EmbeddedDocumentListField(DumbEmbedded, null=True)
+
+
 class RecursiveEmbeddingDoc(Document):
     embedded = fields.EmbeddedDocumentField(SelfEmbeddingDoc)
 
@@ -279,6 +283,12 @@ class TestEmbeddingMapping(TestCase):
 class EmbeddingSerializer(DocumentSerializer):
     class Meta:
         model = EmbeddingDoc
+        fields = '__all__'
+
+
+class NullableListEmbeddingSerializer(DocumentSerializer):
+    class Meta:
+        model = NullableListEmbeddingDoc
         fields = '__all__'
 
 
@@ -581,6 +591,24 @@ class TestListEmbeddingIntegration(TestCase):
     @pytest.mark.skipif(True, reason="TODO")
     def test_update_partial(self):
         pass
+
+    def test_list_none(self):
+        data = {
+            'embedded_list': None,
+        }
+
+        serializer = NullableListEmbeddingSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        instance = serializer.save()
+        assert isinstance(instance, NullableListEmbeddingDoc)
+        assert instance.embedded_list is None
+
+        expected = {
+            'id': str(instance.id),
+            'embedded_list': None,
+        }
+        assert serializer.data == expected
 
 
 class ValidatingEmbeddedModel(EmbeddedDocument):
