@@ -155,7 +155,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         raise_errors_on_nested_writes('create', self, validated_data)
 
-        ModelClass = self.Meta.model
+        ModelClass = self.get_model()
         try:
             # recursively create EmbeddedDocuments from their validated data
             # before creating the document instance itself
@@ -253,7 +253,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         # create (if needed), save (if needed) and return mongoengine instance
         if not instance:
-            instance = self.Meta.model(**me_data)
+            instance = self.get_model()(**me_data)
         else:
             for key, value in me_data.items():
                 setattr(instance, key, value)
@@ -291,16 +291,26 @@ class DocumentSerializer(serializers.ModelSerializer):
         return ret
 
     def get_model(self):
+        """
+        By default returns the model defined in the Meta class.
+
+        When customizing the behavior and the returned model may differ,
+        overriding the 'fields' property will be necessary.
+        'fields' is evaluated lazily and cached afterwards.
+        This improves performance for static serializers but is an issue for dynamic serializers.
+        Alternatively avoid 'fields' entirely as done in 'DynamicDocumentSerializer'.
+        """
+
+        assert hasattr(self.Meta, 'model'), (
+            'Class {serializer_class} missing "Meta.model" attribute'.format(
+                serializer_class=self.__class__.__name__
+            )
+        )
         return self.Meta.model
 
     def get_fields(self):
         assert hasattr(self, 'Meta'), (
             'Class {serializer_class} missing "Meta" attribute'.format(
-                serializer_class=self.__class__.__name__
-            )
-        )
-        assert hasattr(self.Meta, 'model'), (
-            'Class {serializer_class} missing "Meta.model" attribute'.format(
                 serializer_class=self.__class__.__name__
             )
         )
@@ -683,6 +693,9 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         return field_class, field_kwargs
 
+    def _generate_nested_reference_serializer_ref_name(self, field_name, relation_info, nested_depth):
+        return self.get_model().__name__ + "." + field_name
+
     def build_nested_reference_field(self, field_name, relation_info, nested_depth):
         subclass = self.serializer_reference_nested or DocumentSerializer
 
@@ -690,6 +703,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             class Meta:
                 model = relation_info.related_model
                 depth = nested_depth - 1
+                ref_name = self._generate_nested_reference_serializer_ref_name(field_name, relation_info, nested_depth)
 
         # Apply customization to nested fields
         customization = self.get_customization_for_nested_field(field_name)
@@ -704,6 +718,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         field_kwargs = get_generic_embedded_kwargs(field_name, relation_info)
         return field_class, field_kwargs
 
+    def _generate_nested_embedded_serializer_ref_name(self, field_name, relation_info, embedded_depth):
+        return self.get_model().__name__ + "." + field_name
+
     def build_nested_embedded_field(self, field_name, relation_info, embedded_depth):
         subclass = self.serializer_embedded_nested or EmbeddedDocumentSerializer
 
@@ -711,6 +728,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             class Meta:
                 model = relation_info.related_model
                 depth_embedding = embedded_depth - 1
+                ref_name = self._generate_nested_embedded_serializer_ref_name(field_name, relation_info, embedded_depth)
 
         # Apply customization to nested fields
         customization = self.get_customization_for_nested_field(field_name)
@@ -729,7 +747,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     def get_uniqueness_extra_kwargs(self, field_names, extra_kwargs):
         # extra_kwargs contains 'default', 'required', 'validators=[UniqValidator]'
         # hidden_fields contains fields involved in constraints, but missing in serializer fields
-        model = self.Meta.model
+        model = self.get_model()
 
         uniq_extra_kwargs = {}
 
@@ -775,7 +793,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         return extra_kwargs, hidden_fields
 
     def get_unique_together_validators(self):
-        model = self.Meta.model
+        model = self.get_model()
         validators = []
         field_names = set(self.get_field_names(self._declared_fields, self.field_info))
 
