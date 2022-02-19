@@ -19,7 +19,7 @@ class BasicCompoundDoc(Document):
 
 
 class OptionsCompoundDoc(Document):
-    int_list_field = fields.ListField(fields.IntField(min_value=3, max_value=7))
+    int_list_field = fields.ListField(fields.IntField(min_value=3, max_value=7, style={'color': 'red'}))
 
 
 class NestedCompoundDoc(Document):
@@ -57,7 +57,7 @@ class TestCompundFieldMappings(TestCase):
         expected = dedent("""
             TestSerializer():
                 id = ObjectIdField(read_only=True)
-                int_list_field = ListField(child=IntegerField(max_value=7, min_value=3, required=False), required=False)
+                int_list_field = ListField(child=IntegerField(max_value=7, min_value=3, required=False, style={'color': 'red'}), required=False)
         """)
         assert repr(TestSerializer()) == expected
 
