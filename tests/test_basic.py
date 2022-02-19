@@ -79,6 +79,7 @@ class FieldOptionsModel(Document):
     length_limit_field = fields.StringField(min_length=3, max_length=12)
     value_limit_field = fields.IntField(min_value=3, max_value=12)
     decimal_field = fields.DecimalField(precision=4, max_value=9999)
+    style_field = fields.StringField(style={'placeholder': 'Style placeholder', 'base_template': 'style.html'})
 
 
 DECIMAL_CHOICES = (('low', Decimal('0.1')), ('medium', Decimal('0.5')), ('high', Decimal('0.9')))
@@ -195,7 +196,8 @@ class TestRegularFieldMappings(TestCase):
                 length_limit_field = CharField(max_length=12, min_length=3, required=False)
                 value_limit_field = IntegerField(max_value=12, min_value=3, required=False)
                 decimal_field = DecimalField(decimal_places=4, max_digits=8, max_value=9999, required=False)
-        """)
+                style_field = CharField(required=False, style={'placeholder': 'Style placeholder', 'base_template': 'style.html'})
+                """)
 
         assert repr(TestSerializer()) == expected
 

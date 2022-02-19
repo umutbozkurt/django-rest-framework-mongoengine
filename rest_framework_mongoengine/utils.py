@@ -21,7 +21,6 @@ RelationInfo = namedtuple('RelationInfo', [
     'related_model'
 ])
 
-
 NUMERIC_FIELD_TYPES = (
     me_fields.IntField,
     me_fields.LongField,
@@ -125,6 +124,9 @@ def get_field_kwargs(field_name, model_field):
     if hasattr(model_field, 'help_text'):
         kwargs['help_text'] = model_field.help_text
 
+    if hasattr(model_field, 'style'):
+        kwargs['style'] = model_field.style
+
     if isinstance(model_field, me_fields.DecimalField):
         precision = model_field.precision
         max_value = getattr(model_field, 'max_value', None)
@@ -204,6 +206,8 @@ def get_relation_kwargs(field_name, relation_info):
             kwargs['label'] = capfirst(model_field.verbose_name)
         if hasattr(model_field, 'help_text'):
             kwargs['help_text'] = model_field.help_text
+        if hasattr(model_field, 'style'):
+            kwargs['style'] = model_field.style
 
         kwargs['required'] = model_field.required
 
