@@ -643,11 +643,6 @@ class DocumentSerializer(serializers.ModelSerializer):
             # `allow_blank` is only valid for textual fields.
             field_kwargs.pop('allow_blank', None)
 
-        if field_class is drf_fields.BooleanField and field_kwargs.get('allow_null', False):
-            field_kwargs.pop('allow_null', None)
-            field_kwargs.pop('default', None)
-            field_class = drf_fields.NullBooleanField
-
         return field_class, field_kwargs
 
     def build_compound_field(self, field_name, model_field, child_field):
